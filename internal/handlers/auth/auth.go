@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"net/http"
+
+	userService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 )
 
 type AuthHandler struct {
+	AuthService userService.UserServiceInterface
 }
 
 func NewAuthHandler() *AuthHandler {
