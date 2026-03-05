@@ -5,18 +5,19 @@ import (
 
 	"github.com/go-chi/chi"
 
-	AuthHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
+	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
 )
 
 func main() {
 	mux := chi.NewRouter()
 
-	auth := AuthHandlers.NewAuthHandler()
+	auth := authHandlers.NewAuthHandler()
 
-	mux.HandleFunc("/login", auth.Login)
-	mux.HandleFunc("/logout", auth.Logout)
-	mux.HandleFunc("/register", auth.Register)
-	mux.HandleFunc("/", auth.Root)
-
+	mux.Route("/api/v1/auth", func(mux chi.Router) {
+		mux.Post("/login", auth.Login)
+		mux.Post("/logout", auth.Logout)
+		mux.Post("/register", auth.Register)
+		mux.Get("/", auth.Root)
+	})
 	http.ListenAndServe(":8080", mux)
 }
