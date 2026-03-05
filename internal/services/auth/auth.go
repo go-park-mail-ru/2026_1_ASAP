@@ -1,13 +1,15 @@
 package auth
 
 import (
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/models"
+	"fmt"
+
+	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/auth"
 )
 
 type UserServiceInterface interface {
-	Register(user *models.User) error
-	Login(user *models.User) error
-	Logout(user *models.User) error
+	Register(user *models.RequestRegistrate) error
+	Login(user *models.RequestLogin) error
+	Logout(user *models.RequestLogout) error
 }
 
 type UserService struct {
@@ -17,14 +19,15 @@ func NewUserService() *UserService {
 	return &UserService{}
 }
 
-func (userService *UserService) Register(user *models.User) error {
+func (userService *UserService) Register(user *models.RequestRegistrate) error {
+	fmt.Printf("%+v\n", user)
 	return nil
 }
 
-func (userService *UserService) Login(user *models.User) error {
+func (userService *UserService) Login(user *models.RequestLogin) error {
 	return nil
 }
 
-func (userService *UserService) Logout(user *models.User) error {
+func (userService *UserService) Logout(user *models.RequestLogout) error {
 	return nil
 }
