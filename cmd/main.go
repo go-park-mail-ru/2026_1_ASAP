@@ -2,33 +2,21 @@ package main
 
 import (
 	"net/http"
+
 	"github.com/go-chi/chi"
+
+	AuthHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
 )
 
 func main() {
 	mux := chi.NewRouter()
 
-	mux.HandleFunc("/login", loginHandler)
-	mux.HandleFunc("/logout", logoutHandler)
-	mux.HandleFunc("/register", registerHandler)
-	mux.HandleFunc("/", mainHandler)
+	auth := AuthHandlers.NewAuthHandler()
+
+	mux.HandleFunc("/login", auth.Login)
+	mux.HandleFunc("/logout", auth.Logout)
+	mux.HandleFunc("/register", auth.Register)
+	mux.HandleFunc("/", auth.Root)
 
 	http.ListenAndServe(":8080", mux)
-}
-
-
-func loginHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello from login page"))
-}
-
-func registerHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello from register page"))
-}
-
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello from logout page"))
-}
-
-func mainHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello from main page"))
 }
