@@ -1,31 +1,47 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
+	modelsAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/auth"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 )
 
 type AuthHandler struct {
-	AuthService authService.UserServiceInterface
+	AuthService authService.AuthServiceInterface
 }
 
-func NewAuthHandler(authService authService.UserServiceInterface) *AuthHandler {
+func NewAuthHandler(authService authService.AuthServiceInterface) *AuthHandler {
 	return &AuthHandler{AuthService: authService}
 }
 
-func (authHeandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello from login page"))
 }
 
-func (authHeandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	decoder := json.NewDecoder(r.Body)
+	newRequestRegister := new(modelsAuth.RequestRegistrate)
+
+	err := decoder.Decode(newRequestRegister)
+	if err != nil {
+		// TODO: Обработать ошибку
+		return
+	}
+
+	authHandler.AuthService.Register(newRequestRegister)
+
+	// TODO: Написать функцию отдачи ответов
 	w.Write([]byte("Hello from register page"))
 }
 
-func (authHeandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello from logout page"))
 }
 
-func (authHeandler *AuthHandler) Root(w http.ResponseWriter, r *http.Request) {
+func (authHandler *AuthHandler) Root(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello from root page"))
 }
