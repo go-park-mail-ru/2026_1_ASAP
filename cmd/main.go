@@ -9,6 +9,7 @@ import (
 
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
+	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 )
 
 func main() {
@@ -19,7 +20,8 @@ func main() {
 
 	mux := chi.NewRouter()
 
-	auth := authHandlers.NewAuthHandler()
+	userService := authService.NewUserService()
+	auth := authHandlers.NewAuthHandler(userService)
 
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
