@@ -77,6 +77,9 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 	resp := dtoApi.ApiResponse{
 		Status: dtoApi.SUCCESS,
+		Body: dtoAuth.ResponseLoginSuccess{
+			Login: newRequestLogin.Login,
+		},
 	}
 
 	response.Send(w, http.StatusOK, resp)
@@ -138,7 +141,42 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 }
 
 func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello from logout page"))
+	sessionID, ok := r.Context().Value("sessionID").(string)
+	if !ok {
+		response.Send(w, http.StatusUnauthorized, dtoApi.ApiResponse{
+			Status: dtoApi.ERROR,
+			Error: []dtoApi.ApiError{
+				{
+					Code:    "UNAUTHORIZED",
+					Message: "Unauthorized",
+				},
+			},
+		})
+		return
+	}
+	newRequestLogout := &dtoAuth.RequestLogout{
+		SessionID: sessionID,
+	}
+	err := authHandler.AuthService.Logout(newRequestLogout)
+	if err != nil {
+		resp := dtoApi.ApiResponse{
+			Status: dtoApi.ERROR,
+			Error: []dtoApi.ApiError{
+				{
+					Code:    "FAIL_LOGOUT",
+					Message: "Failed to logout",
+				},
+			},
+		}
+		response.Send(w, http.StatusInternalServerError, resp)
+		return
+	}
+	resp := dtoApi.ApiResponse{
+		Status: dtoApi.SUCCESS,
+		Body:   dtoAuth.ResponseLogoutSuccess{},
+	}
+
+	response.Send(w, http.StatusOK, resp)
 }
 
 func (authHandler *AuthHandler) Root(w http.ResponseWriter, r *http.Request) {
@@ -153,6 +191,7 @@ func (authHandler *AuthHandler) Root(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		})
+		return
 	}
 	w.Write([]byte(userID.String()))
 }

@@ -40,6 +40,7 @@ func AuthMiddleware(sessionService session.SessionServiceInterface) func(http.Ha
 			}
 
 			ctx := context.WithValue(r.Context(), "userID", userID)
+			ctx = context.WithValue(ctx, "sessionID", cookie.Value)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

@@ -91,5 +91,10 @@ func (authService *AuthService) Login(request *dtoAuth.RequestLogin) (*modelsSes
 }
 
 func (authService *AuthService) Logout(request *dtoAuth.RequestLogout) error {
+	err := authService.SessionService.DeleteSession(request.SessionID)
+	if err != nil {
+		return errors.New("Failed to logout")
+	}
+
 	return nil
 }
