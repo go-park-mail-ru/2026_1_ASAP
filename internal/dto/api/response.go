@@ -15,5 +15,5 @@ const (
 type ApiResponse struct {
 	Status ResponseStatus `json:"status"`
 	Body   interface{}    `json:"body,omitempty"`
-	Error  []ApiError     `json:"error,omitempty"`
+	Error  []ApiError     `json:"errors,omitempty"`
 }
