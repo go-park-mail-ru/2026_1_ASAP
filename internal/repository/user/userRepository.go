@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"log"
 	"sync"
 
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
@@ -41,7 +42,7 @@ func (userRepository *UserRepository) Create(user *models.User) error {
 	user.Id = userRepository.nextId
 	userRepository.nextId++
 	userRepository.storage[user.Email] = user
-
+	log.Println("%+v", userRepository.storage)
 	return nil
 }
 

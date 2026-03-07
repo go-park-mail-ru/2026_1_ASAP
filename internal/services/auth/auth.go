@@ -3,16 +3,16 @@ package auth
 import (
 	"errors"
 
-	modelsAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/auth"
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthServiceInterface interface {
-	Register(request *modelsAuth.RequestRegistrate) error
-	Login(request *modelsAuth.RequestLogin) error
-	Logout(request *modelsAuth.RequestLogout) error
+	Register(request *dtoAuth.RequestRegistrate) error
+	Login(request *dtoAuth.RequestLogin) error
+	Logout(request *dtoAuth.RequestLogout) error
 }
 
 type AuthService struct {
@@ -23,7 +23,7 @@ func NewAuthService(userRepository userRepository.UserRepositoryInterface) *Auth
 	return &AuthService{userRepository: userRepository}
 }
 
-func (authService *AuthService) Register(request *modelsAuth.RequestRegistrate) error {
+func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) error {
 	_, err := authService.userRepository.GetUserByEmail(request.Email)
 	if err == nil {
 		return errors.New("User already registered")
@@ -49,10 +49,10 @@ func (authService *AuthService) Register(request *modelsAuth.RequestRegistrate) 
 	return nil
 }
 
-func (authService *AuthService) Login(request *modelsAuth.RequestLogin) error {
+func (authService *AuthService) Login(request *dtoAuth.RequestLogin) error {
 	return nil
 }
 
-func (authService *AuthService) Logout(request *modelsAuth.RequestLogout) error {
+func (authService *AuthService) Logout(request *dtoAuth.RequestLogout) error {
 	return nil
 }

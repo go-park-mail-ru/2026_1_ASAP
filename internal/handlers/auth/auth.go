@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	modelsAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/auth"
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 )
 
@@ -24,7 +24,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 	defer r.Body.Close()
 
 	decoder := json.NewDecoder(r.Body)
-	newRequestRegister := new(modelsAuth.RequestRegistrate)
+	newRequestRegister := new(dtoAuth.RequestRegistrate)
 
 	err := decoder.Decode(newRequestRegister)
 	if err != nil {
