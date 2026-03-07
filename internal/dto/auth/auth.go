@@ -12,9 +12,17 @@ type RequestLogin struct {
 }
 
 type RequestLogout struct {
+	SessionID string `json:"session_id"`
 }
 
 type ResponseRegisterSuccess struct {
 	Login string `json:"login"`
 	Email string `json:"email"`
+}
+
+type ResponseLoginSuccess struct {
+	Login string `json:"login"`
+}
+
+type ResponseLogoutSuccess struct {
 }

@@ -51,7 +51,6 @@ func (repo *UserRepository) Create(user *models.User) error {
 	repo.storage[user.Id] = user
 	repo.emailIndex[user.Email] = user.Id
 	repo.loginIndex[user.Login] = user.Id
-
 	return nil
 }
 

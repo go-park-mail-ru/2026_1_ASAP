@@ -153,3 +153,11 @@ func ValidationRequestRegistrate(request *dtoAuth.RequestRegistrate) []Validatio
 
 	return errs
 }
+
+func ValidationRequestLogin(request *dtoAuth.RequestLogin) []ValidationError {
+	var errs []ValidationError
+	errs = append(errs, ValidateLogin(request.Login)...)
+	errs = append(errs, ValidatePassword(request.Password)...)
+
+	return errs
+}

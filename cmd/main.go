@@ -9,8 +9,11 @@ import (
 
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
+	sessionRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
 )
 
 func main() {
@@ -20,15 +23,21 @@ func main() {
 	}
 
 	mux := chi.NewRouter()
-
+	sessionRepository := sessionRepository.NewSessionRepository()
+	sessionService := session.NewSessionService(sessionRepository, config.SessionConfig.SessionTTL)
 	userRepository := userRepository.NewUserRepository()
-	userService := authService.NewAuthService(userRepository)
+	userService := authService.NewAuthService(userRepository, sessionService)
 	auth := authHandlers.NewAuthHandler(userService)
 
+	authMiddleware := middleware.AuthMiddleware(sessionService)
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
-		mux.Post("/logout", auth.Logout)
 		mux.Post("/register", auth.Register)
+		mux.With(authMiddleware).Post("/logout", auth.Logout)
+	})
+
+	mux.Group(func(mux chi.Router) {
+		mux.Use(authMiddleware)
 		mux.Get("/", auth.Root)
 	})
 
