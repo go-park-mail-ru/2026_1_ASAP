@@ -3,16 +3,18 @@ package auth
 import (
 	"errors"
 
-	modelsAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/auth"
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
+
 )
 
 type AuthServiceInterface interface {
-	Register(request *modelsAuth.RequestRegistrate) error
-	Login(request *modelsAuth.RequestLogin) error
-	Logout(request *modelsAuth.RequestLogout) error
+	Register(request *dtoAuth.RequestRegistrate) []validation.ValidationError
+	Login(request *dtoAuth.RequestLogin) error
+	Logout(request *dtoAuth.RequestLogout) error
 }
 
 type AuthService struct {
@@ -23,36 +25,52 @@ func NewAuthService(userRepository userRepository.UserRepositoryInterface) *Auth
 	return &AuthService{userRepository: userRepository}
 }
 
-func (authService *AuthService) Register(request *modelsAuth.RequestRegistrate) error {
-	_, err := authService.userRepository.GetUserByEmail(request.Email)
-	if err == nil {
-		return errors.New("User already registered")
+func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) []validation.ValidationError {
+	user := &modelsUser.User{
+		Login: request.Login,
+		Email: request.Email,
 	}
 
-	passwordHashed, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+	passwordHash, err := hash.HashPassword(request.Password)
 	if err != nil {
-		// Не так
-		return errors.New("Password")
+		return []validation.ValidationError{
+			{
+				Code:    "HASH_ERROR",
+				Message: "Failed to hash password",
+				Field:   "password",
+			},
+		}
 	}
+	user.PasswordHash = passwordHash
 
-	u := &modelsUser.User{
-		Login:        request.Login,
-		Email:        request.Email,
-		PasswordHash: string(passwordHashed),
-	}
-
-	err = authService.userRepository.Create(u)
+	err = authService.userRepository.Create(user)
 	if err != nil {
-		// Подумать над ошибками, как их делать
-		return err
+		if errors.Is(err, userRepository.ErrEmailAlreadyRegister) {
+			return []validation.ValidationError{
+				{
+					Code:    "EMAIL_ALREADY_REGISTERED",
+					Message: err.Error(),
+					Field:   "email",
+				},
+			}
+		} else if errors.Is(err, userRepository.ErrLoginAlreadyRegister) {
+			return []validation.ValidationError{
+				{
+					Code:    "LOGIN_ALREADY_REGISTERED",
+					Message: err.Error(),
+					Field:   "login",
+				},
+			}
+		}
 	}
+
 	return nil
 }
 
-func (authService *AuthService) Login(request *modelsAuth.RequestLogin) error {
+func (authService *AuthService) Login(request *dtoAuth.RequestLogin) error {
 	return nil
 }
 
-func (authService *AuthService) Logout(request *modelsAuth.RequestLogout) error {
+func (authService *AuthService) Logout(request *dtoAuth.RequestLogout) error {
 	return nil
 }
