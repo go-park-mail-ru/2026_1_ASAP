@@ -13,3 +13,8 @@ type RequestLogin struct {
 
 type RequestLogout struct {
 }
+
+type ResponseRegisterSuccess struct {
+	Login string `json:"login"`
+	Email string `json:"email"`
+}

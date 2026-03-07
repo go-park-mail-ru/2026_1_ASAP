@@ -3,6 +3,8 @@ package validation
 import (
 	"regexp"
 	"unicode"
+
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 )
 
 type ValidationError struct {
@@ -29,7 +31,7 @@ func ValidateEmail(email string) []ValidationError {
 		errs = append(errs, ValidationError{
 			Field:   "email",
 			Message: "Invalid email format",
-			Code:    "INVALID_EMAIL",
+			Code:    "EMAIL_INVALID",
 		})
 	}
 
@@ -139,6 +141,15 @@ func ValidatePassword(password string) []ValidationError {
 			Code:    "PASSWORD_NO_SPECIAL",
 		})
 	}
+
+	return errs
+}
+
+func ValidationRequestRegistrate(request *dtoAuth.RequestRegistrate) []ValidationError {
+	var errs []ValidationError
+	errs = ValidateEmail(request.Email)
+	errs = append(errs, ValidateLogin(request.Login)...)
+	errs = append(errs, ValidatePassword(request.Password)...)
 
 	return errs
 }

@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
+	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/mapper"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 )
 
 type AuthHandler struct {
@@ -28,14 +32,51 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 
 	err := decoder.Decode(newRequestRegister)
 	if err != nil {
-		// TODO: Обработать ошибку
+		resp := dtoApi.ApiResponse{
+			Status: dtoApi.ERROR,
+			Error: []dtoApi.ApiError{
+				{
+					Code:    "INVALID_JSON",
+					Message: "Invalid request body",
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
 		return
 	}
 
-	authHandler.AuthService.Register(newRequestRegister)
+	errs := validation.ValidationRequestRegistrate(newRequestRegister)
+	if len(errs) > 0 {
+		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
+		resp := dtoApi.ApiResponse{
+			Status: dtoApi.ERROR,
+			Error:  apiErrors,
+		}
 
-	// TODO: Написать функцию отдачи ответов
-	w.Write([]byte("Hello from register page"))
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	errs = authHandler.AuthService.Register(newRequestRegister)
+	if len(errs) > 0 {
+		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
+		resp := dtoApi.ApiResponse{
+			Status: dtoApi.ERROR,
+			Error:  apiErrors,
+		}
+
+		response.Send(w, http.StatusConflict, resp)
+		return
+	}
+
+	resp := dtoApi.ApiResponse{
+		Status: dtoApi.SUCCESS,
+		Body: dtoAuth.ResponseRegisterSuccess{
+			Email: newRequestRegister.Email,
+			Login: newRequestRegister.Login,
+		},
+	}
+	response.Send(w, http.StatusOK, resp)
 }
 
 func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {

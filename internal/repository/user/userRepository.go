@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"log"
 	"sync"
 
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
