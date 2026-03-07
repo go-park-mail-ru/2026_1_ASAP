@@ -2,7 +2,6 @@ package sessions
 
 import (
 	"errors"
-	"log"
 	"sync"
 
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
@@ -10,7 +9,7 @@ import (
 )
 
 type SessionRepositoryInterface interface {
-	CreateSession(session *models.Session) (string, error)
+	CreateSession(session *models.Session) (*models.SessionData, error)
 	GetSession(sessionID string) (*models.Session, error)
 	DeleteSession(sessionID string) error
 }
@@ -26,15 +25,18 @@ func NewSessionRepository() *SessionRpository {
 	}
 }
 
-func (s *SessionRpository) CreateSession(session *models.Session) (string, error) {
+func (s *SessionRpository) CreateSession(session *models.Session) (*models.SessionData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	sessionID := uuid.New().String()
 	s.sessions[sessionID] = session
-	log.Println(s.sessions)
 
-	return sessionID, nil
+	return &models.SessionData{
+		SessionID: sessionID,
+		Expire:    session.Expire,
+	}, nil
+
 }
 
 func (s *SessionRpository) GetSession(sessionID string) (*models.Session, error) {

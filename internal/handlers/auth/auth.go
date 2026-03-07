@@ -10,6 +10,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
+	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -53,7 +54,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session_id, err := authHandler.AuthService.Login(newRequestLogin)
+	session, err := authHandler.AuthService.Login(newRequestLogin)
 	if err != nil {
 		resp := dtoApi.ApiResponse{
 			Status: dtoApi.ERROR,
@@ -67,12 +68,12 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		response.Send(w, http.StatusUnauthorized, resp)
 		return
 	}
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
-		Value:    session_id,
+		Value:    session.SessionID,
 		Path:     "/",
 		HttpOnly: true,
+		Expires:  session.Expire,
 	})
 	resp := dtoApi.ApiResponse{
 		Status: dtoApi.SUCCESS,
@@ -141,5 +142,17 @@ func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (authHandler *AuthHandler) Root(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello from root page"))
+	userID, ok := r.Context().Value("userID").(uuid.UUID)
+	if !ok {
+		response.Send(w, http.StatusUnauthorized, dtoApi.ApiResponse{
+			Status: dtoApi.ERROR,
+			Error: []dtoApi.ApiError{
+				{
+					Code:    "UNAUTHORIZED",
+					Message: "Unauthorized",
+				},
+			},
+		})
+	}
+	w.Write([]byte(userID.String()))
 }

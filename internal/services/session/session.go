@@ -10,7 +10,7 @@ import (
 )
 
 type SessionServiceInterface interface {
-	CreateSession(userID uuid.UUID) (string, error)
+	CreateSession(userID uuid.UUID) (*sessionModel.SessionData, error)
 	GetUserID(sessionID string) (uuid.UUID, error)
 	DeleteSession(sessionID string) error
 }
@@ -27,12 +27,11 @@ func NewSessionService(repository sessions.SessionRepositoryInterface, sessionTT
 	}
 }
 
-func (sessionService *SessionService) CreateSession(userID uuid.UUID) (string, error) {
+func (sessionService *SessionService) CreateSession(userID uuid.UUID) (*sessionModel.SessionData, error) {
 	session := &sessionModel.Session{
 		UserID: userID,
 		Expire: time.Now().Add(sessionService.sessionTTL),
 	}
-
 	return sessionService.sessionRepository.CreateSession(session)
 }
 
@@ -49,4 +48,11 @@ func (sessionService *SessionService) GetUserID(sessionID string) (uuid.UUID, er
 	}
 
 	return session.UserID, nil
+}
+
+func (sessionService *SessionService) DeleteSession(sessionID string) error {
+	return sessionService.sessionRepository.DeleteSession(sessionID)
+}
+func (sessionService *SessionService) TTL() time.Duration {
+	return sessionService.sessionTTL
 }

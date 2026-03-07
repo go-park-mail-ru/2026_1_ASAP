@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
+	modelsSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
 	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
@@ -13,19 +14,19 @@ import (
 
 type AuthServiceInterface interface {
 	Register(request *dtoAuth.RequestRegistrate) []validation.ValidationError
-	Login(request *dtoAuth.RequestLogin) (string, error)
+	Login(request *dtoAuth.RequestLogin) (*modelsSession.SessionData, error)
 	Logout(request *dtoAuth.RequestLogout) error
 }
 
 type AuthService struct {
 	userRepository userRepository.UserRepositoryInterface
-	sessionService *session.SessionService
+	SessionService *session.SessionService
 }
 
 func NewAuthService(userRepository userRepository.UserRepositoryInterface, sessionService *session.SessionService) *AuthService {
 	return &AuthService{
 		userRepository: userRepository,
-		sessionService: sessionService,
+		SessionService: sessionService,
 	}
 }
 
@@ -71,22 +72,22 @@ func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) []v
 	return nil
 }
 
-func (authService *AuthService) Login(request *dtoAuth.RequestLogin) (string, error) {
+func (authService *AuthService) Login(request *dtoAuth.RequestLogin) (*modelsSession.SessionData, error) {
 	user, err := authService.userRepository.GetUserByLogin(request.Login)
 	if err != nil {
-		return "", errors.New("Invalid credentials")
+		return nil, errors.New("Invalid credentials")
 	}
 
 	if !hash.CheckPassword(user.PasswordHash, request.Password) {
-		return "", errors.New("Invalid credentials")
+		return nil, errors.New("Invalid credentials")
 	}
 
-	sessionID, err := authService.sessionService.CreateSession(user.Id)
+	sessionData, err := authService.SessionService.CreateSession(user.Id)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return sessionID, nil
+	return sessionData, nil
 }
 
 func (authService *AuthService) Logout(request *dtoAuth.RequestLogout) error {

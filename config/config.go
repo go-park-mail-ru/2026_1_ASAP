@@ -53,7 +53,8 @@ func LoadConfigFromEnv() (*Config, error) {
 	}
 	sessionConfig.SessionTTL = time.Duration(sessionTTL) * time.Second
 	config := &Config{
-		ServerConfig: serverConfig,
+		ServerConfig:  serverConfig,
+		SessionConfig: sessionConfig,
 	}
 
 	return config, nil
