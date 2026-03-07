@@ -1,12 +1,10 @@
 package auth
 
 import (
-	"errors"
-
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
 )
 
 type AuthServiceInterface interface {
@@ -24,28 +22,22 @@ func NewAuthService(userRepository userRepository.UserRepositoryInterface) *Auth
 }
 
 func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) error {
-	_, err := authService.userRepository.GetUserByEmail(request.Email)
-	if err == nil {
-		return errors.New("User already registered")
+	user := &modelsUser.User{
+		Login: request.Login,
+		Email: request.Email,
 	}
 
-	passwordHashed, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+	passwordHash, err := hash.HashPassword(request.Password)
 	if err != nil {
-		// Не так
-		return errors.New("Password")
-	}
-
-	u := &modelsUser.User{
-		Login:        request.Login,
-		Email:        request.Email,
-		PasswordHash: string(passwordHashed),
-	}
-
-	err = authService.userRepository.Create(u)
-	if err != nil {
-		// Подумать над ошибками, как их делать
 		return err
 	}
+	user.PasswordHash = passwordHash
+
+	err = authService.userRepository.Create(user)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
