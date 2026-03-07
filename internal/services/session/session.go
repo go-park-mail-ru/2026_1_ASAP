@@ -53,6 +53,3 @@ func (sessionService *SessionService) GetUserID(sessionID string) (uuid.UUID, er
 func (sessionService *SessionService) DeleteSession(sessionID string) error {
 	return sessionService.sessionRepository.DeleteSession(sessionID)
 }
-func (sessionService *SessionService) TTL() time.Duration {
-	return sessionService.sessionTTL
-}
