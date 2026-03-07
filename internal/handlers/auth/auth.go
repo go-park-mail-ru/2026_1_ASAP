@@ -21,7 +21,64 @@ func NewAuthHandler(authService authService.AuthServiceInterface) *AuthHandler {
 }
 
 func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello from login page"))
+	defer r.Body.Close()
+
+	decoder := json.NewDecoder(r.Body)
+	newRequestLogin := new(dtoAuth.RequestLogin)
+
+	err := decoder.Decode(newRequestLogin)
+	if err != nil {
+		resp := dtoApi.ApiResponse{
+			Status: dtoApi.ERROR,
+			Error: []dtoApi.ApiError{
+				{
+					Code:    "INVALID_JSON",
+					Message: "Invalid request body",
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	errs := validation.ValidationRequestLogin(newRequestLogin)
+	if len(errs) > 0 {
+		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
+		resp := dtoApi.ApiResponse{
+			Status: dtoApi.ERROR,
+			Error:  apiErrors,
+		}
+
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	session_id, err := authHandler.AuthService.Login(newRequestLogin)
+	if err != nil {
+		resp := dtoApi.ApiResponse{
+			Status: dtoApi.ERROR,
+			Error: []dtoApi.ApiError{
+				{
+					Code:    "INVALID_CREDENTIALS",
+					Message: "Invalid credentials",
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    session_id,
+		Path:     "/",
+		HttpOnly: true,
+	})
+	resp := dtoApi.ApiResponse{
+		Status: dtoApi.SUCCESS,
+	}
+
+	response.Send(w, http.StatusOK, resp)
 }
 
 func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {

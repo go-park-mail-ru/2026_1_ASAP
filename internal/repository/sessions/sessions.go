@@ -1,21 +1,23 @@
 package sessions
 
 import (
-	"github.com/google/uuid"
-	"sync"
 	"errors"
+	"log"
+	"sync"
+
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
+	"github.com/google/uuid"
 )
 
 type SessionRepositoryInterface interface {
-    CreateSession(session *models.Session) (string, error)
-    GetUserID(sessionID string) (uuid.UUID, error)
-    DeleteSession(sessionID string) error
+	CreateSession(session *models.Session) (string, error)
+	GetSession(sessionID string) (*models.Session, error)
+	DeleteSession(sessionID string) error
 }
 
 type SessionRpository struct {
 	sessions map[string]*models.Session
-	mu sync.RWMutex
+	mu       sync.RWMutex
 }
 
 func NewSessionRepository() *SessionRpository {
@@ -30,20 +32,21 @@ func (s *SessionRpository) CreateSession(session *models.Session) (string, error
 
 	sessionID := uuid.New().String()
 	s.sessions[sessionID] = session
+	log.Println(s.sessions)
 
 	return sessionID, nil
 }
 
-func (s *SessionRpository) GetUserID(sessionID string) (uuid.UUID, error) {
+func (s *SessionRpository) GetSession(sessionID string) (*models.Session, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	session, ok := s.sessions[sessionID]
 	if !ok {
-		return uuid.Nil, errors.New("userID not found")
+		return nil, errors.New("Session not found")
 	}
 
-	return session.UserID, nil
+	return session, nil
 }
 
 func (s *SessionRpository) DeleteSession(sessionID string) error {

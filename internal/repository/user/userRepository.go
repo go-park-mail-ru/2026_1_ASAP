@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"log"
 	"sync"
 
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
@@ -52,6 +53,7 @@ func (repo *UserRepository) Create(user *models.User) error {
 	repo.emailIndex[user.Email] = user.Id
 	repo.loginIndex[user.Login] = user.Id
 
+	log.Println(repo.storage)
 	return nil
 }
 
