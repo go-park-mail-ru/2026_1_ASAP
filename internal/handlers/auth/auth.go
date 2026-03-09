@@ -23,6 +23,17 @@ func NewAuthHandler(authService authService.AuthServiceInterface) *AuthHandler {
 	return &AuthHandler{AuthService: authService}
 }
 
+// Login godoc
+// @Summary Логин пользователя
+// @Description Аутентификация юзера с логином и паролем
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body dtoAuth.RequestLogin true "Запрос на логин"
+// @Success 200 {object} dtoApi.ResponseLoginSuccessForSwagger
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Неправильный запрос или ошибка формата полей"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Некорректные данные логины"
+// @Router /api/v1/auth/login [post]
 func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -87,6 +98,17 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, resp)
 }
 
+// Register godoc
+// @Summary Регистрация пользователя
+// @Description Создаёт нового пользователя с email и login
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body dtoAuth.RequestRegistrate true "Запрос на регистрацию"
+// @Success 200 {object} dtoApi.ResponseRegisterSuccessForSwagger
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Неправильный запрос или ошибка формата полей"
+// @Failure 409 {object} dtoApi.ApiErrorResponse "пользователь уже существует"
+// @Router /api/v1/auth/register [post]
 func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -142,6 +164,16 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 	response.Send(w, http.StatusOK, resp)
 }
 
+// Logout godoc
+// @Summary Выход пользователя
+// @Description Завершение сессии пользователя
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} dtoApi.ResponseLogoutSuccessForSwagger
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Неавторизован"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Ошибка выхода"
+// @Router /api/v1/auth/logout [post]
 func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	sessionID, ok := r.Context().Value(middleware.SessionID).(string)
 	if !ok {

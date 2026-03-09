@@ -3,11 +3,11 @@ package main
 import (
 	"net/http"
 
-	"github.com/go-chi/chi"
-
 	"log"
 
+	"github.com/go-chi/chi"
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
+	_ "github.com/go-park-mail-ru/2026_1_ASAP/docs"
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
@@ -17,8 +17,14 @@ import (
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 	chatService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// @title API Pulse App
+// @version 1.0
+// @description API веб-приложения Pulse
+// @host 212.233.96.180:8080
+// @BasePath /api/v1
 func main() {
 	config, err := config.LoadConfigFromEnv()
 	if err != nil {
@@ -47,6 +53,8 @@ func main() {
 		mux.With(authMiddleware).Post("/", chatsHandler.ChatCreate)
 		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
 	})
+
+	mux.Get("/swagger/*", httpSwagger.Handler())
 
 	log.Printf("Server started at %s\n", config.ServerConfig.ServerInfo())
 	err = http.ListenAndServe(config.ServerConfig.ServerInfo(), mux)

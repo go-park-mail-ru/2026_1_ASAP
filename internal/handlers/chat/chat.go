@@ -25,6 +25,16 @@ func NewChatHandler(chatService chatService.ChatServiceInterface) *ChatsHandler 
 	}
 }
 
+// GetChats godoc
+// @Summary Получить список чатов
+// @Description Возвращает все чаты пользователя
+// @Tags chats
+// @Accept json
+// @Produce json
+// @Success 200 {object} dtoApi.ResponseGetChatsSuccessForSwagger
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Невозможно получить чаты"
+// @Router /api/v1/chats [get]
 func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserID).(uuid.UUID)
 	if !ok {
@@ -63,6 +73,18 @@ func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, resp)
 }
 
+// ChatCreate godoc
+// @Summary Создать чат
+// @Description Создаёт новый чат
+// @Tags chats
+// @Accept json
+// @Produce json
+// @Param request body dto.ChatCreate true "Запрос на создание чата"
+// @Success 201 {object} dtoApi.ResponseCreateChatSuccessForSwagger
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Некорретный запрос или ошибка формата полей"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь неавторизован"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Ошибка создания чата"
+// @Router /api/v1/chats [post]
 func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -90,7 +112,7 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 			Errors: []dtoApi.ApiError{
 				{
 					Code:    "INVALID_JSON",
-					Message: "Invalid 1request body",
+					Message: "Invalid request body",
 				},
 			},
 		}
@@ -144,6 +166,19 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusCreated, resp)
 }
 
+// GetChatByID godoc
+// @Summary Получить чат по ID
+// @Description Возвращает информацию о чате
+// @Tags chats
+// @Accept json
+// @Produce json
+// @Param chat_id path string true "ID чата"
+// @Success 200 {object} dtoApi.ResponseGetChatByIDSuccessForSwagger
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Некорректный ID чата"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь неавторизован"
+// @Failure 404 {object} dtoApi.ApiErrorResponse "Чат не найден"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутреняя ошибка"
+// @Router /api/v1/chats/{chat_id} [get]
 func (h *ChatsHandler) GetChatByID(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserID).(uuid.UUID)
 	if !ok {
