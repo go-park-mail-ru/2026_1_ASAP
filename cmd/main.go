@@ -8,7 +8,6 @@ import (
 	"log"
 
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
@@ -18,7 +17,6 @@ import (
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 	chatService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
-	utils "github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
 
 func main() {
@@ -38,36 +36,16 @@ func main() {
 	chatsHandler := chatHandlers.NewChatHandler(chatService)
 	authMiddleware := middleware.AuthMiddleware(sessionService)
 
-	chatsHandlers := authMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			chatsHandler.GetChats(w, r)
-		case http.MethodPost:
-			chatsHandler.ChatCreate(w, r)
-		default:
-			utils.Send(w, http.StatusMethodNotAllowed, api.ApiResponse{})
-		}
-	}))
-
-	chatInfo := authMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			utils.Send(w, http.StatusMethodNotAllowed, api.ApiResponse{})
-		}
-		chatsHandler.GetChatByID(w, r)
-	}))
-
-	mux.Handle("/api/v1/chats", chatsHandlers)
-	mux.Handle("/api/v1/chats/{id}", chatInfo)
-
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
 		mux.With(authMiddleware).Post("/logout", auth.Logout)
 	})
 
-	mux.Group(func(mux chi.Router) {
-		mux.Use(authMiddleware)
-		mux.Get("/", auth.Root)
+	mux.Route("api/v1/chats", func(mux chi.Router) {
+		mux.With(authMiddleware).Get("/", chatsHandler.GetChats)
+		mux.With(authMiddleware).Post("/", chatsHandler.ChatCreate)
+		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
 	})
 
 	log.Printf("Server started at %s\n", config.ServerConfig.ServerInfo())
