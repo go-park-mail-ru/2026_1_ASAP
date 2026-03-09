@@ -1,10 +1,11 @@
 package chat
 
 import (
-	"github.com/google/uuid"
-	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
-	"sync"
 	"errors"
+	"sync"
+
+	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
+	"github.com/google/uuid"
 )
 
 var (
@@ -17,6 +18,7 @@ type ChatRepositoryInterface interface{
 	GetChatByID(chatID uuid.UUID) (*models.Chat, error)
 	CreateChat(chat *models.Chat) error
 	GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Message, error)
+	GetLastMessageOfChat(chatID uuid.UUID) (*models.Message, error)
 }
 
 type ChatRepository struct {
@@ -100,4 +102,21 @@ func (c *ChatRepository) GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Mes
 	}
 
 	return lastMessages, nil
+}
+
+func (c *ChatRepository) GetLastMessageOfChat(chatID uuid.UUID) (*models.Message, error) {
+	chat, err := c.GetChatByID(chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	chatMessages := c.messages[chat.ID]
+	if len(chatMessages) == 0 {
+		return &models.Message{}, nil
+	}
+
+	return chatMessages[len(chatMessages)-1], nil
 }

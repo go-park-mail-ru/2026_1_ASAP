@@ -9,6 +9,10 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
 
+type ctxKey string
+const UserID ctxKey = "userID"
+const SessionID ctxKey = "sessionID"
+
 func AuthMiddleware(sessionService session.SessionServiceInterface) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,8 +43,8 @@ func AuthMiddleware(sessionService session.SessionServiceInterface) func(http.Ha
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), "userID", userID)
-			ctx = context.WithValue(ctx, "sessionID", cookie.Value)
+			ctx := context.WithValue(r.Context(), UserID, userID)
+			ctx = context.WithValue(ctx, SessionID, cookie.Value)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

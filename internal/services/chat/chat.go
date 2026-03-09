@@ -2,16 +2,21 @@ package chat
 
 import (
 	"time"
-
+	"errors"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
 	"github.com/google/uuid"
 )
 
+var (
+	ErrAccessDenied = errors.New("You don't have access to this chat")
+)
+
 type ChatServiceInterface interface {
 	GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, error)
 	CreateChat(chatDTO dto.ChatCreate) (*dto.ChatInformationDTO, error)
+	GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error)
 }
 
 type ChatService struct {
@@ -72,4 +77,33 @@ func (s *ChatService) CreateChat(chatDTO dto.ChatCreate) (*dto.ChatInformationDT
 		Title:       chat.Title,
 		LastMessage: dto.MessageDTO{},
 	}, nil
+}
+
+func (s *ChatService) GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error) {
+	chats, err := s.chatRepository.GetAllChatsByUserID(userID)
+	if err != nil {
+		return nil ,err
+	}
+
+	for _, chat := range chats {
+		if chat.ID == chatID {
+			lasMessage, err := s.chatRepository.GetLastMessageOfChat(chat.ID)
+			if err != nil {
+				return nil, err
+			}
+			message := &dto.MessageDTO{
+				Sender: lasMessage.UserID,
+				Text: lasMessage.Text,
+				CreatedAt: lasMessage.CreatedAt,
+			}
+
+			return &dto.ChatInformationDTO{
+				ID: chat.ID,
+				Title: chat.Title,
+				LastMessage: *message,
+			}, nil
+		}
+	}
+
+	return nil, ErrAccessDenied
 }
