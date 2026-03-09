@@ -28,11 +28,11 @@ func NewChatHandler(chatService chatService.ChatServiceInterface) *ChatsHandler 
 func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserID).(uuid.UUID)
 	if !ok {
-		resp := dtoApi.ApiResponse{
+		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,
-			Error: []dtoApi.ApiError{
+			Errors: []dtoApi.ApiError{
 				{
-					Code: "UNAUTHORIZED",
+					Code:    "UNAUTHORIZED",
 					Message: "User not authorized",
 				},
 			},
@@ -43,11 +43,11 @@ func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 
 	chats, err := h.chatService.GetAllChats(userID)
 	if err != nil {
-		resp := dtoApi.ApiResponse{
+		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,
-			Error: []dtoApi.ApiError{
+			Errors: []dtoApi.ApiError{
 				{
-					Code: "INTERNAL",
+					Code:    "INTERNAL",
 					Message: "Cant get all chats",
 				},
 			},
@@ -56,9 +56,9 @@ func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := dtoApi.ApiResponse{
+	resp := dtoApi.ApiSucessResponse[[]dto.ChatInformationDTO]{
 		Status: dtoApi.SUCCESS,
-		Body: chats,
+		Body:   chats,
 	}
 	response.Send(w, http.StatusOK, resp)
 }
@@ -68,11 +68,11 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 
 	userID, ok := r.Context().Value(middleware.UserID).(uuid.UUID)
 	if !ok {
-		resp := dtoApi.ApiResponse{
+		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,
-			Error: []dtoApi.ApiError{
+			Errors: []dtoApi.ApiError{
 				{
-					Code: "UNAUTHORIZED",
+					Code:    "UNAUTHORIZED",
 					Message: "User not authorized",
 				},
 			},
@@ -85,9 +85,9 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 	var req dto.ChatCreate
 	err := decoder.Decode(&req)
 	if err != nil {
-		resp := dtoApi.ApiResponse{
+		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,
-			Error: []dtoApi.ApiError{
+			Errors: []dtoApi.ApiError{
 				{
 					Code:    "INVALID_JSON",
 					Message: "Invalid 1request body",
@@ -101,9 +101,9 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 	errs := validation.ValidationChatCreate(&req)
 	if errs != nil {
 		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
-		resp := dtoApi.ApiResponse{
+		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,
-			Error:  apiErrors,
+			Errors: apiErrors,
 		}
 
 		response.Send(w, http.StatusBadRequest, resp)
@@ -124,11 +124,11 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 
 	createdChat, err := h.chatService.CreateChat(req)
 	if err != nil {
-		resp := dtoApi.ApiResponse{
+		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,
-			Error: []dtoApi.ApiError{
+			Errors: []dtoApi.ApiError{
 				{
-					Code: "CREATE_FAILED",
+					Code:    "CREATE_FAILED",
 					Message: "Failed to create chat",
 				},
 			},
@@ -137,21 +137,21 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := dtoApi.ApiResponse{
+	resp := dtoApi.ApiSucessResponse[*dto.ChatInformationDTO]{
 		Status: dtoApi.SUCCESS,
-		Body: createdChat,
+		Body:   createdChat,
 	}
 	response.Send(w, http.StatusCreated, resp)
 }
 
-func (h *ChatsHandler) GetChatByID (w http.ResponseWriter, r *http.Request) {
+func (h *ChatsHandler) GetChatByID(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserID).(uuid.UUID)
 	if !ok {
-		resp := dtoApi.ApiResponse{
+		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,
-			Error: []dtoApi.ApiError{
+			Errors: []dtoApi.ApiError{
 				{
-					Code: "UNAUTHORIZED",
+					Code:    "UNAUTHORIZED",
 					Message: "User not authorized",
 				},
 			},
@@ -163,11 +163,11 @@ func (h *ChatsHandler) GetChatByID (w http.ResponseWriter, r *http.Request) {
 	chatIDurl := chi.URLParam(r, "id")
 	chatID, err := uuid.Parse(chatIDurl)
 	if err != nil {
-		resp := dtoApi.ApiResponse{
+		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,
-			Error: []dtoApi.ApiError{
+			Errors: []dtoApi.ApiError{
 				{
-					Code: "INVALID_ID",
+					Code:    "INVALID_ID",
 					Message: "Invalid chat id",
 				},
 			},
@@ -178,11 +178,11 @@ func (h *ChatsHandler) GetChatByID (w http.ResponseWriter, r *http.Request) {
 
 	chat, err := h.chatService.GetChatByID(chatID, userID)
 	if err != nil {
-		resp := dtoApi.ApiResponse{
+		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,
-			Error: []dtoApi.ApiError{
+			Errors: []dtoApi.ApiError{
 				{
-					Code: "ACCESS_DENIED",
+					Code:    "ACCESS_DENIED",
 					Message: "You don't have access to this chat",
 				},
 			},
@@ -191,9 +191,9 @@ func (h *ChatsHandler) GetChatByID (w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := dtoApi.ApiResponse{
+	resp := dtoApi.ApiSucessResponse[*dto.ChatInformationDTO]{
 		Status: dtoApi.SUCCESS,
-		Body: chat,
+		Body:   chat,
 	}
 	response.Send(w, http.StatusOK, resp)
 }

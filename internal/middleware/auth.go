@@ -10,6 +10,7 @@ import (
 )
 
 type ctxKey string
+
 const UserID ctxKey = "userID"
 const SessionID ctxKey = "sessionID"
 
@@ -18,9 +19,9 @@ func AuthMiddleware(sessionService session.SessionServiceInterface) func(http.Ha
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			cookie, err := r.Cookie("session_id")
 			if err != nil {
-				response.Send(w, http.StatusUnauthorized, dtoApi.ApiResponse{
+				response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 					Status: dtoApi.ERROR,
-					Error: []dtoApi.ApiError{
+					Errors: []dtoApi.ApiError{
 						{
 							Code:    "UNAUTHORIZED",
 							Message: "Unauthorized",
@@ -31,9 +32,9 @@ func AuthMiddleware(sessionService session.SessionServiceInterface) func(http.Ha
 			}
 			userID, err := sessionService.GetUserID(cookie.Value)
 			if err != nil {
-				response.Send(w, http.StatusUnauthorized, dtoApi.ApiResponse{
+				response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 					Status: dtoApi.ERROR,
-					Error: []dtoApi.ApiError{
+					Errors: []dtoApi.ApiError{
 						{
 							Code:    "UNAUTHORIZED",
 							Message: "Unauthorized",

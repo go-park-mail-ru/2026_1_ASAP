@@ -12,8 +12,12 @@ const (
 	ERROR   ResponseStatus = "error"
 )
 
-type ApiResponse struct {
+type ApiSucessResponse[T any] struct {
 	Status ResponseStatus `json:"status"`
-	Body   interface{}    `json:"body,omitempty"`
-	Error  []ApiError     `json:"errors,omitempty"`
+	Body   T              `json:"body,omitempty"`
+}
+
+type ApiErrorResponse struct {
+	Status ResponseStatus `json:"status"`
+	Errors []ApiError     `json:"errors"`
 }
