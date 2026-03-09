@@ -520,6 +520,14 @@ const docTemplate = `{
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO": {
             "type": "object",
             "properties": {
+                "chat_type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatType"
+                        }
+                    ],
+                    "example": "dialog"
+                },
                 "id": {
                     "type": "string",
                     "example": "00000000-0000-0000-0000-000000000000"
@@ -554,12 +562,20 @@ const docTemplate = `{
                     "example": "2026-01-01T00:00:00+09:00"
                 },
                 "sender": {
-                    "type": "string",
-                    "example": "00000000-0000-0000-0000-000000000000"
+                    "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_user.UserDTO"
                 },
                 "text": {
                     "type": "string",
                     "example": "Hello, my name is Artem"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_user.UserDTO": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string",
+                    "example": "alice"
                 }
             }
         }

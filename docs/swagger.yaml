@@ -147,6 +147,10 @@ definitions:
     type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO:
     properties:
+      chat_type:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatType'
+        example: dialog
       id:
         example: 00000000-0000-0000-0000-000000000000
         type: string
@@ -172,10 +176,15 @@ definitions:
         example: "2026-01-01T00:00:00+09:00"
         type: string
       sender:
-        example: 00000000-0000-0000-0000-000000000000
-        type: string
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_user.UserDTO'
       text:
         example: Hello, my name is Artem
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_user.UserDTO:
+    properties:
+      login:
+        example: alice
         type: string
     type: object
 host: 212.233.96.180:8080
