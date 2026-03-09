@@ -3,7 +3,6 @@ package chat
 import (
 	"errors"
 	"sync"
-
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
 	"github.com/google/uuid"
 )
@@ -120,4 +119,3 @@ func (c *ChatRepository) GetLastMessageOfChat(chatID uuid.UUID) (*models.Message
 
 	return chatMessages[len(chatMessages)-1], nil
 }
-
