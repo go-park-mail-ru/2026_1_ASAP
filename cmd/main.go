@@ -42,7 +42,7 @@ func main() {
 		mux.With(authMiddleware).Post("/logout", auth.Logout)
 	})
 
-	mux.Route("api/v1/chats", func(mux chi.Router) {
+	mux.Route("/api/v1/chats", func(mux chi.Router) {
 		mux.With(authMiddleware).Get("/", chatsHandler.GetChats)
 		mux.With(authMiddleware).Post("/", chatsHandler.ChatCreate)
 		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
