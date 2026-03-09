@@ -15,7 +15,7 @@ type ValidationError struct {
 	Code    string
 }
 
-var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]+$`)
+var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 
 func ValidateEmail(email string) []ValidationError {
 	var errs []ValidationError
@@ -189,8 +189,8 @@ func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
 		})
 	} else {
 		validTypes := map[dtoChat.ChatType]bool{
-			dtoChat.ChatTypeDialog: true,
-			dtoChat.ChatTypeGroup: true,
+			dtoChat.ChatTypeDialog:  true,
+			dtoChat.ChatTypeGroup:   true,
 			dtoChat.ChatTypeChannel: true,
 		}
 
