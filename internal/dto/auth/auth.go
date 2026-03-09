@@ -1,14 +1,14 @@
 package auth
 
 type RequestRegistrate struct {
-	Login    string `json:"login"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Login    string `json:"login" example:"user1"`
+	Email    string `json:"email" example:"testemail@dev.mail.ru"`
+	Password string `json:"password" example:"passWo1d&"`
 }
 
 type RequestLogin struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	Login    string `json:"login" example:"user1"`
+	Password string `json:"password" example:"passWo1d&"`
 }
 
 type RequestLogout struct {
@@ -16,12 +16,12 @@ type RequestLogout struct {
 }
 
 type ResponseRegisterSuccess struct {
-	Login string `json:"login"`
-	Email string `json:"email"`
+	Login string `json:"login" example:"user1"`
+	Email string `json:"email" example:"testemail@dev.mail.ru"`
 }
 
 type ResponseLoginSuccess struct {
-	Login string `json:"login"`
+	Login string `json:"login" example:"user1"`
 }
 
 type ResponseLogoutSuccess struct {

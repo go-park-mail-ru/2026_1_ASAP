@@ -1,33 +1,34 @@
 package dto
 
 import (
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type ChatType string
 
 const (
-    ChatTypeDialog  ChatType = "dialog"
-    ChatTypeGroup   ChatType = "group"
-    ChatTypeChannel ChatType = "channel"
+	ChatTypeDialog  ChatType = "dialog"
+	ChatTypeGroup   ChatType = "group"
+	ChatTypeChannel ChatType = "channel"
 )
 
 type MessageDTO struct {
-	Sender uuid.UUID `json:"sender"`
-	Text string `json:"text"`
-	CreatedAt time.Time `json:"created_at"`
+	Sender    uuid.UUID `json:"sender" example:"00000000-0000-0000-0000-000000000000"`
+	Text      string    `json:"text" example:"Hello, my name is Artem"`
+	CreatedAt time.Time `json:"created_at" example:"2026-01-01T00:00:00+09:00"`
 }
 
 type ChatInformationDTO struct {
-	ID uuid.UUID `json:"id"`
-	Title string `json:"title"`
+	ID          uuid.UUID  `json:"id" example:"00000000-0000-0000-0000-000000000000"`
+	Title       string     `json:"title" example:"Chat Title"`
 	LastMessage MessageDTO `json:"last_message"`
 }
 
 type ChatCreate struct {
-	ID uuid.UUID `json:"id"`
-	Title string `json:"title"`
-	Type ChatType `json:"type"`
-	MembersID []uuid.UUID `json:"members_id"`
+	ID        uuid.UUID   `json:"id" example:"00000000-0000-0000-0000-000000000000"`
+	Title     string      `json:"title" example:"Chat Title"`
+	Type      ChatType    `json:"type" example:"Dialog"`
+	MembersID []uuid.UUID `json:"members_id" example:"00000000-0000-0000-0000-00000000000"`
 }
