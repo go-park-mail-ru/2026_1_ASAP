@@ -3,9 +3,9 @@ package main
 import (
 	"net/http"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/cors"
 	"log"
+
+	"github.com/go-chi/cors"
 
 	"github.com/go-chi/chi"
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
@@ -36,7 +36,7 @@ func main() {
 	mux := chi.NewRouter()
 
 	mux.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"}, 
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		ExposedHeaders:   []string{"Link"},
