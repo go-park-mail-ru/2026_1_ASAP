@@ -120,3 +120,4 @@ func (c *ChatRepository) GetLastMessageOfChat(chatID uuid.UUID) (*models.Message
 
 	return chatMessages[len(chatMessages)-1], nil
 }
+
