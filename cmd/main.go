@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-
+	"github.com/go-chi/cors"
 	"log"
 
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
@@ -26,6 +26,16 @@ func main() {
 	}
 
 	mux := chi.NewRouter()
+
+	mux.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"}, 
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
 	sessionRepository := sessionRepository.NewSessionRepository()
 	sessionService := session.NewSessionService(sessionRepository, config.SessionConfig.SessionTTL)
 	userRepository := userRepository.NewUserRepository()
