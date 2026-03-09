@@ -143,7 +143,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	errs = authHandler.AuthService.Register(newRequestRegister)
+	session, errs := authHandler.AuthService.Register(newRequestRegister)
 	if len(errs) > 0 {
 		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
 		resp := dtoApi.ApiErrorResponse{
@@ -154,6 +154,15 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 		response.Send(w, http.StatusConflict, resp)
 		return
 	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    session.SessionID,
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  session.Expire,
+		SameSite: http.SameSiteLaxMode,
+	})
 
 	resp := dtoApi.ApiSucessResponse[dtoAuth.ResponseRegisterSuccess]{
 		Status: dtoApi.SUCCESS,

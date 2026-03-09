@@ -13,7 +13,7 @@ import (
 )
 
 type AuthServiceInterface interface {
-	Register(request *dtoAuth.RequestRegistrate) []validation.ValidationError
+	Register(request *dtoAuth.RequestRegistrate) (*modelsSession.SessionData, []validation.ValidationError)
 	Login(request *dtoAuth.RequestLogin) (*modelsSession.SessionData, error)
 	Logout(request *dtoAuth.RequestLogout) error
 }
@@ -30,7 +30,7 @@ func NewAuthService(userRepository userRepository.UserRepositoryInterface, sessi
 	}
 }
 
-func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) []validation.ValidationError {
+func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) (*modelsSession.SessionData, []validation.ValidationError) {
 	user := &modelsUser.User{
 		Login: request.Login,
 		Email: request.Email,
@@ -38,7 +38,7 @@ func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) []v
 
 	passwordHash, err := hash.HashPassword(request.Password)
 	if err != nil {
-		return []validation.ValidationError{
+		return nil, []validation.ValidationError{
 			{
 				Code:    "HASH_ERROR",
 				Message: "Failed to hash password",
@@ -51,7 +51,7 @@ func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) []v
 	err = authService.userRepository.Create(user)
 	if err != nil {
 		if errors.Is(err, userRepository.ErrEmailAlreadyRegister) {
-			return []validation.ValidationError{
+			return nil, []validation.ValidationError{
 				{
 					Code:    "EMAIL_ALREADY_REGISTERED",
 					Message: err.Error(),
@@ -59,7 +59,7 @@ func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) []v
 				},
 			}
 		} else if errors.Is(err, userRepository.ErrLoginAlreadyRegister) {
-			return []validation.ValidationError{
+			return nil, []validation.ValidationError{
 				{
 					Code:    "LOGIN_ALREADY_REGISTERED",
 					Message: err.Error(),
@@ -69,7 +69,17 @@ func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) []v
 		}
 	}
 
-	return nil
+	sessionData, err := authService.SessionService.CreateSession(user.Id)
+	if err != nil {
+		return nil, []validation.ValidationError{
+			{
+				Code:    "SESSION_ERROR",
+				Message: err.Error(),
+			},
+		}
+	}
+
+	return sessionData, nil
 }
 
 func (authService *AuthService) Login(request *dtoAuth.RequestLogin) (*modelsSession.SessionData, error) {
