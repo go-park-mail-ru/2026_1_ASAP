@@ -1,11 +1,14 @@
 package chat
 
 import (
-	"time"
 	"errors"
+	"time"
+
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
+	dtoUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/user"
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
+	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	"github.com/google/uuid"
 )
 
@@ -21,11 +24,13 @@ type ChatServiceInterface interface {
 
 type ChatService struct {
 	chatRepository chatRepository.ChatRepositoryInterface
+	userRepository userRepository.UserRepositoryInterface
 }
 
-func NewChatService(chatRepository chatRepository.ChatRepositoryInterface) *ChatService {
+func NewChatService(chatRepository chatRepository.ChatRepositoryInterface, userRepository userRepository.UserRepositoryInterface) *ChatService {
 	return &ChatService{
 		chatRepository: chatRepository,
+		userRepository: userRepository,
 	}
 }
 
@@ -42,8 +47,12 @@ func (s *ChatService) GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, e
 
 	result := make([]dto.ChatInformationDTO, 0, len(chats))
 	for i := range chats {
+		userLogin, err := s.userRepository.GetUserByID(lastMessages[i].UserID)
+		if err != nil {
+			return nil, err
+		}
 		message := dto.MessageDTO{
-			Sender:    lastMessages[i].UserID,
+			Sender:    dtoUser.UserDTO{Login: userLogin.Login},
 			Text:      lastMessages[i].Text,
 			CreatedAt: lastMessages[i].CreatedAt,
 		}
@@ -51,6 +60,7 @@ func (s *ChatService) GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, e
 			ID:          chats[i].ID,
 			Title:       chats[i].Title,
 			LastMessage: message,
+			ChatType:    dto.ChatType(chats[i].Type),
 		})
 	}
 
@@ -76,13 +86,14 @@ func (s *ChatService) CreateChat(chatDTO dto.ChatCreate) (*dto.ChatInformationDT
 		ID:          chat.ID,
 		Title:       chat.Title,
 		LastMessage: dto.MessageDTO{},
+		ChatType:    dto.ChatType(chat.Type),
 	}, nil
 }
 
 func (s *ChatService) GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error) {
 	chats, err := s.chatRepository.GetAllChatsByUserID(userID)
 	if err != nil {
-		return nil ,err
+		return nil, err
 	}
 
 	for _, chat := range chats {
@@ -91,16 +102,21 @@ func (s *ChatService) GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformatio
 			if err != nil {
 				return nil, err
 			}
+			userLogin, err := s.userRepository.GetUserByID(lasMessage.UserID)
+			if err != nil {
+				return nil, err
+			}
 			message := &dto.MessageDTO{
-				Sender: lasMessage.UserID,
-				Text: lasMessage.Text,
+				Sender:    dtoUser.UserDTO{Login: userLogin.Login},
+				Text:      lasMessage.Text,
 				CreatedAt: lasMessage.CreatedAt,
 			}
 
 			return &dto.ChatInformationDTO{
-				ID: chat.ID,
-				Title: chat.Title,
+				ID:          chat.ID,
+				Title:       chat.Title,
 				LastMessage: *message,
+				ChatType:    dto.ChatType(chat.Type),
 			}, nil
 		}
 	}

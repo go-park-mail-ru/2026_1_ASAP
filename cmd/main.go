@@ -52,10 +52,10 @@ func main() {
 
 	sessionRepository := sessionRepository.NewSessionRepository()
 	sessionService := session.NewSessionService(sessionRepository, config.SessionConfig.SessionTTL)
-	userRepository := userRepository.NewUserRepository()
-	chatRepository := chatRepository.NewChatRepository()
+	userRepository := userRepository.NewMockUserRepository()
+	chatRepository := chatRepository.NewMockRepository()
 	userService := authService.NewAuthService(userRepository, sessionService)
-	chatService := chatService.NewChatService(chatRepository)
+	chatService := chatService.NewChatService(chatRepository, userRepository)
 	auth := authHandlers.NewAuthHandler(userService)
 	chatsHandler := chatHandlers.NewChatHandler(chatService)
 	authMiddleware := middleware.AuthMiddleware(sessionService)
