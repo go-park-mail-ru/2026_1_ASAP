@@ -38,7 +38,10 @@ func main() {
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{
 			"http://pulseapp.space",
+			"http://pulseapp.space:8080",
 			"http://212.233.96.180",
+			"http://localhost",
+			"http://localhost:8080",
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},

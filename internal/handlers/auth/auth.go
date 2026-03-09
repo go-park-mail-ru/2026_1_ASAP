@@ -87,6 +87,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		Expires:  session.Expire,
+		SameSite: http.SameSiteLaxMode,
 	})
 	resp := dtoApi.ApiSucessResponse[dtoAuth.ResponseLoginSuccess]{
 		Status: dtoApi.SUCCESS,
