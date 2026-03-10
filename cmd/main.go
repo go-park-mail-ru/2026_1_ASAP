@@ -26,7 +26,6 @@ import (
 // @version 1.0
 // @description API веб-приложения Pulse
 // @host pulseapp.space:8080
-// @BasePath /api/v1
 func main() {
 	config, err := config.LoadConfigFromEnv()
 	if err != nil {
