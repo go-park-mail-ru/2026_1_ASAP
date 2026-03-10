@@ -25,7 +25,7 @@ import (
 // @title API Pulse App
 // @version 1.0
 // @description API веб-приложения Pulse
-// @host 212.233.96.180:8080
+// @host pulseapp.space:8080
 // @BasePath /api/v1
 func main() {
 	config, err := config.LoadConfigFromEnv()
@@ -77,6 +77,6 @@ func main() {
 	log.Printf("Server started at %s\n", config.ServerConfig.ServerInfo())
 	err = http.ListenAndServe(config.ServerConfig.ServerInfo(), mux)
 	if err != nil {
-		log.Fatalf("Server failed: %w", err)
+		log.Fatalf("Server failed: %v", err)
 	}
 }
