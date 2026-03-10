@@ -586,7 +586,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "pulseapp.space:8080",
-	BasePath:         "/api/v1",
+	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "API Pulse App",
 	Description:      "API веб-приложения Pulse",

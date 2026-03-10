@@ -1,4 +1,3 @@
-basePath: /api/v1
 definitions:
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiError:
     properties:
