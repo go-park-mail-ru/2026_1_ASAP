@@ -1,0 +1,372 @@
+definitions:
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiError:
+    properties:
+      code:
+        enum:
+        - INVALID_JSON
+        - INVALID_CREDENTIALS
+        - UNAUTHORIZED
+        - FAIL_LOGOUT
+        type: string
+      message:
+        example: Error message
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiError'
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: error
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateChatSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatByIDSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatsSuccessForSwagger:
+    properties:
+      body:
+        items:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO'
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLoginSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseLoginSuccess'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLogoutSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseLogoutSuccess'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseRegisterSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseRegisterSuccess'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus:
+    enum:
+    - success
+    - error
+    type: string
+    x-enum-varnames:
+    - SUCCESS
+    - ERROR
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestLogin:
+    properties:
+      login:
+        example: user1
+        type: string
+      password:
+        example: passWo1d&
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestRegistrate:
+    properties:
+      email:
+        example: testemail@dev.mail.ru
+        type: string
+      login:
+        example: user1
+        type: string
+      password:
+        example: passWo1d&
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseLoginSuccess:
+    properties:
+      login:
+        example: user1
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseLogoutSuccess:
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseRegisterSuccess:
+    properties:
+      email:
+        example: testemail@dev.mail.ru
+        type: string
+      login:
+        example: user1
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatCreate:
+    properties:
+      id:
+        example: 00000000-0000-0000-0000-000000000000
+        type: string
+      members_id:
+        example:
+        - 00000000-0000-0000-0000-00000000000
+        items:
+          type: string
+        type: array
+      title:
+        example: Chat Title
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatType'
+        example: Dialog
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO:
+    properties:
+      chat_type:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatType'
+        example: dialog
+      id:
+        example: 00000000-0000-0000-0000-000000000000
+        type: string
+      last_message:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.MessageDTO'
+      title:
+        example: Chat Title
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatType:
+    enum:
+    - dialog
+    - group
+    - channel
+    type: string
+    x-enum-varnames:
+    - ChatTypeDialog
+    - ChatTypeGroup
+    - ChatTypeChannel
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.MessageDTO:
+    properties:
+      created_at:
+        example: "2026-01-01T00:00:00+09:00"
+        type: string
+      sender:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_user.UserDTO'
+      text:
+        example: Hello, my name is Artem
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_user.UserDTO:
+    properties:
+      login:
+        example: alice
+        type: string
+    type: object
+host: pulseapp.space:8080
+info:
+  contact: {}
+  description: API веб-приложения Pulse
+  title: API Pulse App
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Аутентификация юзера с логином и паролем
+      parameters:
+      - description: Запрос на логин
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLoginSuccessForSwagger'
+        "400":
+          description: Неправильный запрос или ошибка формата полей
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Некорректные данные логины
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Логин пользователя
+      tags:
+      - auth
+  /api/v1/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Завершение сессии пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLogoutSuccessForSwagger'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Ошибка выхода
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Выход пользователя
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт нового пользователя с email и login
+      parameters:
+      - description: Запрос на регистрацию
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestRegistrate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseRegisterSuccessForSwagger'
+        "400":
+          description: Неправильный запрос или ошибка формата полей
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "409":
+          description: пользователь уже существует
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Регистрация пользователя
+      tags:
+      - auth
+  /api/v1/chats:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все чаты пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatsSuccessForSwagger'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Невозможно получить чаты
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получить список чатов
+      tags:
+      - chats
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новый чат
+      parameters:
+      - description: Запрос на создание чата
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateChatSuccessForSwagger'
+        "400":
+          description: Некорретный запрос или ошибка формата полей
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Ошибка создания чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Создать чат
+      tags:
+      - chats
+  /api/v1/chats/{chat_id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о чате
+      parameters:
+      - description: ID чата
+        in: path
+        name: chat_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatByIDSuccessForSwagger'
+        "400":
+          description: Некорректный ID чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутреняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получить чат по ID
+      tags:
+      - chats
+swagger: "2.0"
