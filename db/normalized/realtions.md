@@ -24,7 +24,7 @@
 
 **Функциональные зависимости:**
 ```
-{user_id, contact_user_id} -> created_at, updated_at
+{user_id, contact_user_id} -> contact_name, created_at, updated_at
 ```
 
 
@@ -168,6 +168,7 @@ erDiagram
 
     CONTACT {
         uuid user_id PK, FK
+        text contact_name
         uuid contact_user_id PK, FK
         timestamptz created_at
         timestamptz updated_at
