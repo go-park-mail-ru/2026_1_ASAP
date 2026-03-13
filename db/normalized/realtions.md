@@ -131,7 +131,7 @@
 {id} -> user_id, type, entity_id, is_read, created_at, updated_at
 ```
 
-#### Таблица `session (REDIS)`
+#### `session (REDIS)`
 **Описание:** Сессии пользователей для аутентификации. Хранятся в Redis в виде key-value, где ключ — session_id, значение — данные о пользователе и времени жизни сессии.
 
 **Первичный ключ:**  
@@ -141,7 +141,16 @@
 ```
 {session_id} -> user_id, created_at, expires_at
 ```
+#### `user_status (REDIS)`
+**Описание:** хранит текущий статус пользователя и время последней активности.
 
+**Первичный ключ:**  
+```{user_id}```
+
+**Функциональные зависимости:**
+```
+{user_id} -> status, last_active
+```
 
 ```mermaid
 erDiagram
@@ -152,6 +161,7 @@ erDiagram
         text password_hash
         text avatar_url
         text bio
+        timestamptz last_seen
         timestamptz created_at
         timestamptz updated_at
     }
@@ -255,9 +265,15 @@ erDiagram
         timestamptz expires_at
     }
 
+    USER_STATUS {
+        uuid user_id PK
+        text status
+        timestampz last_active 
+    }
+
     USER ||--o{ SESSION : has
 
-
+    USER ||--o{ USER_STATUS : has
     USER ||--o{ CONTACT : has
     USER ||--o{ CONTACT : added_contact
 
