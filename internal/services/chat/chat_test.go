@@ -46,7 +46,7 @@ func TestChatServiceCreateChat_Success(t *testing.T) {
 		MembersID: []uuid.UUID{userID1, userID2},
 	}
 
-	chatInfo, err := service.CreateChat(req)
+	chatInfo, err := service.CreateChat(req, userID1)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

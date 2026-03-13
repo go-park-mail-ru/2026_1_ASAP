@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"slices"
 	"errors"
 	"time"
 
@@ -18,7 +19,7 @@ var (
 
 type ChatServiceInterface interface {
 	GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, error)
-	CreateChat(chatDTO dto.ChatCreate) (*dto.ChatInformationDTO, error)
+	CreateChat(chatDTO dto.ChatCreate, ownerID uuid.UUID) (*dto.ChatInformationDTO, error)
 	GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error)
 }
 
@@ -67,7 +68,12 @@ func (s *ChatService) GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, e
 	return result, nil
 }
 
-func (s *ChatService) CreateChat(chatDTO dto.ChatCreate) (*dto.ChatInformationDTO, error) {
+func (s *ChatService) CreateChat(chatDTO dto.ChatCreate, ownerID uuid.UUID) (*dto.ChatInformationDTO, error) {
+	owner := slices.Contains(chatDTO.MembersID, ownerID)
+	if !owner {
+		chatDTO.MembersID = append(chatDTO.MembersID, ownerID)
+	}
+
 	chat := &models.Chat{
 		ID:        uuid.New(),
 		Type:      models.ChatType(chatDTO.Type),

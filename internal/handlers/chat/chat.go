@@ -132,19 +132,7 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	creater := false
-	for _, id := range req.MembersID {
-		if id == userID {
-			creater = true
-			break
-		}
-	}
-
-	if !creater {
-		req.MembersID = append(req.MembersID, userID)
-	}
-
-	createdChat, err := h.chatService.CreateChat(req)
+	createdChat, err := h.chatService.CreateChat(req, userID)
 	if err != nil {
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.ERROR,

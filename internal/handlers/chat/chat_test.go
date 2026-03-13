@@ -17,7 +17,7 @@ import (
 
 type stubChatService struct {
 	getAllFunc  func(userID uuid.UUID) ([]dto.ChatInformationDTO, error)
-	createFunc  func(dto.ChatCreate) (*dto.ChatInformationDTO, error)
+	createFunc  func(c dto.ChatCreate, ownerID uuid.UUID) (*dto.ChatInformationDTO, error)
 	getByIDFunc func(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error)
 }
 
@@ -28,9 +28,9 @@ func (s *stubChatService) GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDT
 	return []dto.ChatInformationDTO{}, nil
 }
 
-func (s *stubChatService) CreateChat(c dto.ChatCreate) (*dto.ChatInformationDTO, error) {
+func (s *stubChatService) CreateChat(c dto.ChatCreate, ownerID uuid.UUID) (*dto.ChatInformationDTO, error) {
 	if s.createFunc != nil {
-		return s.createFunc(c)
+		return s.createFunc(c, ownerID)
 	}
 	return &dto.ChatInformationDTO{ID: uuid.New(), Title: c.Title}, nil
 }
