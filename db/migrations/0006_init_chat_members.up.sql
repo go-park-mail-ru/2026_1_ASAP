@@ -1,6 +1,6 @@
 CREATE TABLE chat_members (
-    chat_id UUID NOT NULL,
-    user_id UUID NOT NULL,
+    chat_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
     role TEXT NOT NULL,
     last_read_message_id BIGINT,
     joined_at TIMESTAMPTZ DEFAULT now(),
