@@ -3,6 +3,7 @@ package user
 import (
 	"errors"
 	"sync"
+
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	"github.com/google/uuid"
 )
@@ -12,13 +13,6 @@ var (
 	ErrEmailAlreadyRegister = errors.New("Email already register")
 	ErrLoginAlreadyRegister = errors.New("Login already register")
 )
-
-type UserRepositoryInterface interface {
-	Create(*models.User) error
-	GetUserByEmail(string) (*models.User, error)
-	GetUserByLogin(string) (*models.User, error)
-	GetUserByID(uuid.UUID) (*models.User, error)
-}
 
 type UserRepository struct {
 	storage    map[uuid.UUID]*models.User
