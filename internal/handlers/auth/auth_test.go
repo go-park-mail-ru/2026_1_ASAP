@@ -10,29 +10,29 @@ import (
 	"time"
 
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
+	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
-	modelsSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 )
 
 type stubAuthService struct {
-	loginFunc    func(*dtoAuth.RequestLogin) (*modelsSession.SessionData, error)
-	registerFunc func(*dtoAuth.RequestRegistrate) (*modelsSession.SessionData, []validation.ValidationError)
+	loginFunc    func(*dtoAuth.RequestLogin) (*dtoSession.SessionDTO, error)
+	registerFunc func(*dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, []validation.ValidationError)
 	logoutFunc   func(*dtoAuth.RequestLogout) error
 }
 
-func (s *stubAuthService) Register(r *dtoAuth.RequestRegistrate) (*modelsSession.SessionData, []validation.ValidationError) {
+func (s *stubAuthService) Register(r *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, []validation.ValidationError) {
 	if s.registerFunc != nil {
 		return s.registerFunc(r)
 	}
-	return &modelsSession.SessionData{SessionID: "sid", Expire: time.Now().Add(time.Hour)}, nil
+	return &dtoSession.SessionDTO{SessionID: "sid", Expire: time.Now().Add(time.Hour)}, nil
 }
 
-func (s *stubAuthService) Login(r *dtoAuth.RequestLogin) (*modelsSession.SessionData, error) {
+func (s *stubAuthService) Login(r *dtoAuth.RequestLogin) (*dtoSession.SessionDTO, error) {
 	if s.loginFunc != nil {
 		return s.loginFunc(r)
 	}
-	return &modelsSession.SessionData{SessionID: "sid", Expire: time.Now().Add(time.Hour)}, nil
+	return &dtoSession.SessionDTO{SessionID: "sid", Expire: time.Now().Add(time.Hour)}, nil
 }
 
 func (s *stubAuthService) Logout(r *dtoAuth.RequestLogout) error {
