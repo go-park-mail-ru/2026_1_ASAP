@@ -16,7 +16,7 @@ import (
 
 type ChatService interface {
 	GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, error)
-	CreateChat(chatDTO dto.ChatCreate) (*dto.ChatInformationDTO, error)
+	CreateChat(chatDTO dto.ChatCreate, ownerID uuid.UUID) (*dto.ChatInformationDTO, error)
 	GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error)
 }
 
