@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"slices"
 	"errors"
 	"time"
 
@@ -15,19 +16,10 @@ var (
 	ErrAccessDenied = errors.New("You don't have access to this chat")
 )
 
-type UserRepository interface {
-	Create(*modelsUser.User) error
-	GetUserByEmail(string) (*modelsUser.User, error)
-	GetUserByLogin(string) (*modelsUser.User, error)
-	GetUserByID(uuid.UUID) (*modelsUser.User, error)
-}
-
-type ChatRepository interface {
-	GetAllChatsByUserID(userID uuid.UUID) ([]*models.Chat, error)
-	GetChatByID(chatID uuid.UUID) (*models.Chat, error)
-	CreateChat(chat *models.Chat) error
-	GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Message, error)
-	GetLastMessageOfChat(chatID uuid.UUID) (*models.Message, error)
+type ChatServiceInterface interface {
+	GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, error)
+	CreateChat(chatDTO dto.ChatCreate, ownerID uuid.UUID) (*dto.ChatInformationDTO, error)
+	GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error)
 }
 
 type ChatService struct {
@@ -75,7 +67,12 @@ func (s *ChatService) GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, e
 	return result, nil
 }
 
-func (s *ChatService) CreateChat(chatDTO dto.ChatCreate) (*dto.ChatInformationDTO, error) {
+func (s *ChatService) CreateChat(chatDTO dto.ChatCreate, ownerID uuid.UUID) (*dto.ChatInformationDTO, error) {
+	owner := slices.Contains(chatDTO.MembersID, ownerID)
+	if !owner {
+		chatDTO.MembersID = append(chatDTO.MembersID, ownerID)
+	}
+
 	chat := &models.Chat{
 		ID:        uuid.New(),
 		Type:      models.ChatType(chatDTO.Type),
