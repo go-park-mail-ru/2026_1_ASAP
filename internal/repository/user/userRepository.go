@@ -14,13 +14,6 @@ var (
 	ErrLoginAlreadyRegister = errors.New("Login already register")
 )
 
-type UserRepositoryInterface interface {
-	Create(*models.User) error
-	GetUserByEmail(string) (*models.User, error)
-	GetUserByLogin(string) (*models.User, error)
-	GetUserByID(uuid.UUID) (*models.User, error)
-}
-
 type UserRepository struct {
 	storage    map[uuid.UUID]*models.User
 	emailIndex map[string]uuid.UUID
