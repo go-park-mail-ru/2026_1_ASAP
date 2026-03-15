@@ -13,6 +13,14 @@ var (
 	ErrChatAlreadyExists = errors.New("Chat already exists")
 )
 
+type ChatRepositoryInterface interface{
+	GetAllChatsByUserID(userID uuid.UUID) ([]*models.Chat, error)
+	GetChatByID(chatID uuid.UUID) (*models.Chat, error)
+	CreateChat(chat *models.Chat) error
+	GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Message, error)
+	GetLastMessageOfChat(chatID uuid.UUID) (*models.Message, error)
+}
+
 type ChatRepository struct {
 	chats    map[uuid.UUID]*models.Chat
 	userInfo map[uuid.UUID][]uuid.UUID
