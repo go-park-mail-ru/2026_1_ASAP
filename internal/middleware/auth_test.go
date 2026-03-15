@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	sessionModel "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
+	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	"github.com/google/uuid"
 )
 
@@ -14,7 +14,7 @@ type stubSessionService struct {
 	getUserIDFunc func(sessionID string) (uuid.UUID, error)
 }
 
-func (s *stubSessionService) CreateSession(userID uuid.UUID) (*sessionModel.SessionData, error) {
+func (s *stubSessionService) CreateSession(userID uuid.UUID) (*dtoSession.SessionDTO, error) {
 	return nil, errors.New("not implemented")
 }
 

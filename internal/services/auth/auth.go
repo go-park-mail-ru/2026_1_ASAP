@@ -4,33 +4,40 @@ import (
 	"errors"
 
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
-	modelsSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
+	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
+	"github.com/google/uuid"
 )
 
-type AuthServiceInterface interface {
-	Register(request *dtoAuth.RequestRegistrate) (*modelsSession.SessionData, []validation.ValidationError)
-	Login(request *dtoAuth.RequestLogin) (*modelsSession.SessionData, error)
-	Logout(request *dtoAuth.RequestLogout) error
+type UserRepository interface {
+	Create(*modelsUser.User) error
+	GetUserByEmail(string) (*modelsUser.User, error)
+	GetUserByLogin(string) (*modelsUser.User, error)
+	GetUserByID(uuid.UUID) (*modelsUser.User, error)
+}
+
+type SessionService interface {
+	CreateSession(userID uuid.UUID) (*dtoSession.SessionDTO, error)
+	GetUserID(sessionID string) (uuid.UUID, error)
+	DeleteSession(sessionID string) error
 }
 
 type AuthService struct {
-	userRepository userRepository.UserRepositoryInterface
-	SessionService *session.SessionService
+	userRepository UserRepository
+	SessionService SessionService
 }
 
-func NewAuthService(userRepository userRepository.UserRepositoryInterface, sessionService *session.SessionService) *AuthService {
+func NewAuthService(userRepository UserRepository, sessionService SessionService) *AuthService {
 	return &AuthService{
 		userRepository: userRepository,
 		SessionService: sessionService,
 	}
 }
 
-func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) (*modelsSession.SessionData, []validation.ValidationError) {
+func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, []validation.ValidationError) {
 	user := &modelsUser.User{
 		Login: request.Login,
 		Email: request.Email,
@@ -82,7 +89,7 @@ func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) (*m
 	return sessionData, nil
 }
 
-func (authService *AuthService) Login(request *dtoAuth.RequestLogin) (*modelsSession.SessionData, error) {
+func (authService *AuthService) Login(request *dtoAuth.RequestLogin) (*dtoSession.SessionDTO, error) {
 	user, err := authService.userRepository.GetUserByLogin(request.Login)
 	if err != nil {
 		return nil, errors.New("Invalid credentials")

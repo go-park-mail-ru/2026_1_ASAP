@@ -8,8 +8,7 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	dtoUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/user"
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
-	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
-	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
+	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	"github.com/google/uuid"
 )
 
@@ -24,11 +23,11 @@ type ChatServiceInterface interface {
 }
 
 type ChatService struct {
-	chatRepository chatRepository.ChatRepositoryInterface
-	userRepository userRepository.UserRepositoryInterface
+	chatRepository ChatRepository
+	userRepository UserRepository
 }
 
-func NewChatService(chatRepository chatRepository.ChatRepositoryInterface, userRepository userRepository.UserRepositoryInterface) *ChatService {
+func NewChatService(chatRepository ChatRepository, userRepository UserRepository) *ChatService {
 	return &ChatService{
 		chatRepository: chatRepository,
 		userRepository: userRepository,
