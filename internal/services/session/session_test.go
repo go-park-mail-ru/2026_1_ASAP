@@ -36,7 +36,7 @@ func TestSessionServiceCreateAndGetUserID_Success(t *testing.T) {
 }
 
 type expiredSessionRepo struct {
-	sessions.SessionRepositoryInterface
+	SessionRepository
 }
 
 func (e *expiredSessionRepo) GetSession(_ string) (*sessionModel.Session, error) {
@@ -50,8 +50,8 @@ func (e *expiredSessionRepo) DeleteSession(_ string) error {
 	return nil
 }
 
-func (e *expiredSessionRepo) CreateSession(_ *sessionModel.Session) (*sessionModel.SessionData, error) {
-	return nil, errors.New("not implemented")
+func (e *expiredSessionRepo) CreateSession(_ *sessionModel.Session) (string, error) {
+	return "", errors.New("not implemented")
 }
 
 func TestSessionServiceGetUserID_ExpiredSession(t *testing.T) {

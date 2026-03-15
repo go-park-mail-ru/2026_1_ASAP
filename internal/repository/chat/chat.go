@@ -3,33 +3,26 @@ package chat
 import (
 	"errors"
 	"sync"
+
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
 	"github.com/google/uuid"
 )
 
 var (
-	ErrChatNotFound = errors.New("Chat not found")
+	ErrChatNotFound      = errors.New("Chat not found")
 	ErrChatAlreadyExists = errors.New("Chat already exists")
 )
 
-type ChatRepositoryInterface interface{
-	GetAllChatsByUserID(userID uuid.UUID) ([]*models.Chat, error)
-	GetChatByID(chatID uuid.UUID) (*models.Chat, error)
-	CreateChat(chat *models.Chat) error
-	GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Message, error)
-	GetLastMessageOfChat(chatID uuid.UUID) (*models.Message, error)
-}
-
 type ChatRepository struct {
-	chats map[uuid.UUID]*models.Chat
+	chats    map[uuid.UUID]*models.Chat
 	userInfo map[uuid.UUID][]uuid.UUID
 	messages map[uuid.UUID][]*models.Message
-	mu sync.RWMutex
+	mu       sync.RWMutex
 }
 
-func NewChatRepository() *ChatRepository{
+func NewChatRepository() *ChatRepository {
 	return &ChatRepository{
-		chats: make(map[uuid.UUID]*models.Chat),
+		chats:    make(map[uuid.UUID]*models.Chat),
 		userInfo: make(map[uuid.UUID][]uuid.UUID),
 		messages: make(map[uuid.UUID][]*models.Message),
 	}
@@ -60,7 +53,7 @@ func (c *ChatRepository) GetChatByID(chatID uuid.UUID) (*models.Chat, error) {
 	chat, ok := c.chats[chatID]
 	if !ok {
 		return nil, ErrChatNotFound
-	} 
+	}
 
 	return chat, nil
 }
@@ -70,7 +63,7 @@ func (c *ChatRepository) CreateChat(chat *models.Chat) error {
 	defer c.mu.Unlock()
 
 	if _, exists := c.chats[chat.ID]; exists {
-		return ErrChatAlreadyExists 
+		return ErrChatAlreadyExists
 	}
 
 	c.chats[chat.ID] = chat

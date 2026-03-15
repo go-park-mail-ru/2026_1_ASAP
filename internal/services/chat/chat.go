@@ -7,8 +7,7 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	dtoUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/user"
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
-	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
-	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
+	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	"github.com/google/uuid"
 )
 
@@ -16,18 +15,27 @@ var (
 	ErrAccessDenied = errors.New("You don't have access to this chat")
 )
 
-type ChatServiceInterface interface {
-	GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, error)
-	CreateChat(chatDTO dto.ChatCreate) (*dto.ChatInformationDTO, error)
-	GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error)
+type UserRepository interface {
+	Create(*modelsUser.User) error
+	GetUserByEmail(string) (*modelsUser.User, error)
+	GetUserByLogin(string) (*modelsUser.User, error)
+	GetUserByID(uuid.UUID) (*modelsUser.User, error)
+}
+
+type ChatRepository interface {
+	GetAllChatsByUserID(userID uuid.UUID) ([]*models.Chat, error)
+	GetChatByID(chatID uuid.UUID) (*models.Chat, error)
+	CreateChat(chat *models.Chat) error
+	GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Message, error)
+	GetLastMessageOfChat(chatID uuid.UUID) (*models.Message, error)
 }
 
 type ChatService struct {
-	chatRepository chatRepository.ChatRepositoryInterface
-	userRepository userRepository.UserRepositoryInterface
+	chatRepository ChatRepository
+	userRepository UserRepository
 }
 
-func NewChatService(chatRepository chatRepository.ChatRepositoryInterface, userRepository userRepository.UserRepositoryInterface) *ChatService {
+func NewChatService(chatRepository ChatRepository, userRepository UserRepository) *ChatService {
 	return &ChatService{
 		chatRepository: chatRepository,
 		userRepository: userRepository,

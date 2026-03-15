@@ -9,8 +9,8 @@ func MapValidationErrorsToApiErrors(errs []validation.ValidationError) []dtoApi.
 	apiErrors := make([]dtoApi.ApiError, len(errs))
 	for i, e := range errs {
 		apiErrors[i] = dtoApi.ApiError{
-			Code:    e.Code,
-			Message: e.Message,
+			Code:    dtoApi.ErrorCode(e.Code),
+			Message: dtoApi.ErrorMessage(e.Message),
 		}
 	}
 	return apiErrors

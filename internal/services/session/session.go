@@ -4,35 +4,43 @@ import (
 	"errors"
 	"time"
 
+	sessionDTO "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	sessionModel "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
 	"github.com/google/uuid"
 )
 
-type SessionServiceInterface interface {
-	CreateSession(userID uuid.UUID) (*sessionModel.SessionData, error)
-	GetUserID(sessionID string) (uuid.UUID, error)
+type SessionRepository interface {
+	CreateSession(session *sessionModel.Session) (string, error)
+	GetSession(sessionID string) (*sessionModel.Session, error)
 	DeleteSession(sessionID string) error
 }
 
 type SessionService struct {
-	sessionRepository sessions.SessionRepositoryInterface
+	sessionRepository SessionRepository
 	sessionTTL        time.Duration
 }
 
-func NewSessionService(repository sessions.SessionRepositoryInterface, sessionTTL time.Duration) *SessionService {
+func NewSessionService(repository SessionRepository, sessionTTL time.Duration) *SessionService {
 	return &SessionService{
 		sessionRepository: repository,
 		sessionTTL:        sessionTTL,
 	}
 }
 
-func (sessionService *SessionService) CreateSession(userID uuid.UUID) (*sessionModel.SessionData, error) {
+func (sessionService *SessionService) CreateSession(userID uuid.UUID) (*sessionDTO.SessionDTO, error) {
 	session := &sessionModel.Session{
 		UserID: userID,
 		Expire: time.Now().Add(sessionService.sessionTTL),
 	}
-	return sessionService.sessionRepository.CreateSession(session)
+	sessionID, err := sessionService.sessionRepository.CreateSession(session)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sessionDTO.SessionDTO{
+		SessionID: sessionID,
+		Expire:    session.Expire,
+	}, nil
 }
 
 func (sessionService *SessionService) GetUserID(sessionID string) (uuid.UUID, error) {
