@@ -4,9 +4,10 @@ import (
 	"regexp"
 	"unicode"
 
+	"github.com/google/uuid"
+
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
-	"github.com/google/uuid"
 )
 
 type ValidationError struct {

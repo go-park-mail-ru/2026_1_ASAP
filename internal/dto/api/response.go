@@ -40,8 +40,8 @@ const (
 )
 
 type ApiSucessResponse[T any] struct {
-	Status ResponseStatus `json:"status" example:"success"`
 	Body   T              `json:"body"`
+	Status ResponseStatus `json:"status" example:"success"`
 }
 
 type ApiErrorResponse struct {

@@ -4,10 +4,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
+
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
-	"github.com/google/uuid"
 )
 
 func newTestChatService(t *testing.T) *ChatService {

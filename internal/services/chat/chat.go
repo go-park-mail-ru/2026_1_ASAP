@@ -1,22 +1,23 @@
 package chat
 
 import (
-	"slices"
 	"errors"
+	"slices"
 	"time"
+
+	"github.com/google/uuid"
 
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	dtoUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/user"
-	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
-	"github.com/google/uuid"
+	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 )
 
 var (
 	ErrAccessDenied = errors.New("You don't have access to this chat")
 )
 
-type ChatRepositoryInterface interface{
+type ChatRepositoryInterface interface {
 	GetAllChatsByUserID(userID uuid.UUID) ([]*models.Chat, error)
 	GetChatByID(chatID uuid.UUID) (*models.Chat, error)
 	CreateChat(chat *models.Chat) error

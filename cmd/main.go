@@ -1,13 +1,15 @@
 package main
 
 import (
-	"net/http"
-
 	"log"
+	"net/http"
+	"time"
 
 	"github.com/go-chi/cors"
 
 	"github.com/go-chi/chi"
+	httpSwagger "github.com/swaggo/http-swagger"
+
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
 	_ "github.com/go-park-mail-ru/2026_1_ASAP/docs"
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
@@ -19,7 +21,6 @@ import (
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 	chatService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
-	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // @title API Pulse App
@@ -74,8 +75,16 @@ func main() {
 	mux.Get("/swagger/*", httpSwagger.Handler())
 
 	log.Printf("Server started at %s\n", config.ServerConfig.ServerInfo())
-	err = http.ListenAndServe(config.ServerConfig.ServerInfo(), mux)
-	if err != nil {
+
+	server := &http.Server{
+		Addr:         config.ServerConfig.ServerInfo(),
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+	err = server.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server failed: %v", err)
 	}
 }

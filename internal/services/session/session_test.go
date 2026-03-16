@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	sessionModel "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
-	"github.com/google/uuid"
 )
 
 func TestSessionServiceCreateAndGetUserID_Success(t *testing.T) {
