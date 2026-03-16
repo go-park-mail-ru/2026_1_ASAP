@@ -155,7 +155,7 @@
 ```mermaid
 erDiagram
     USER {
-        uuid id PK
+        bigint id PK
         text username
         text email
         text password_hash
@@ -167,9 +167,9 @@ erDiagram
     }
 
     CONTACT {
-        uuid user_id PK, FK
+        bigint user_id PK, FK
         text contact_name
-        uuid contact_user_id PK, FK
+        bigint contact_user_id PK, FK
         timestamptz created_at
         timestamptz updated_at
     }
@@ -179,11 +179,11 @@ erDiagram
     }
 
     CHAT {
-        uuid id PK
+        bigint id PK
         text type FK
         text title
         text description
-        uuid owner_id FK
+        bigint owner_id FK
         text avatar_url
         timestamptz created_at
         timestamptz updated_at
@@ -194,8 +194,8 @@ erDiagram
     }
 
     CHAT_MEMBER {
-        uuid chat_id PK
-        uuid user_id PK, FK
+        bigint chat_id PK
+        bigint user_id PK, FK
         text role FK
         bigint last_read_message_id FK
         timestamptz joined_at
@@ -205,10 +205,10 @@ erDiagram
 
     MESSAGE {
         bigint id PK
-        uuid chat_id FK
-        uuid sender_id FK
+        bigint chat_id FK
+        bigint sender_id FK
         text content
-        uuid sticker_id FK
+        bigint sticker_id FK
         boolean edited
         timestamptz created_at
         timestamptz updated_at
@@ -228,22 +228,22 @@ erDiagram
     REACTION {
         bigint id PK
         bigint message_id FK
-        uuid user_id FK
+        bigint user_id FK
         text emoji
         timestamptz created_at
         timestamptz updated_at
     }
 
     STICKER_PACK {
-        uuid id PK
+        bigint id PK
         text name
         timestamptz created_at
         timestamptz updated_at
     }
 
     STICKER {
-        uuid id PK
-        uuid pack_id FK
+        bigint id PK
+        bigint pack_id FK
         text file_url
         timestamptz created_at
         timestamptz updated_at
@@ -251,7 +251,7 @@ erDiagram
 
     NOTIFICATION {
         bigint id PK
-        uuid user_id FK
+        bigint user_id FK
         text type
         bigint entity_id
         boolean is_read
@@ -261,13 +261,13 @@ erDiagram
 
     SESSION {
         string session_id PK
-        uuid user_id
+        bigint user_id
         timestamptz created_at
         timestamptz expires_at
     }
 
     USER_STATUS {
-        uuid user_id PK
+        bigint user_id PK
         text status
         timestampz last_active 
     }
