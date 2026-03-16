@@ -6,8 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	"github.com/google/uuid"
+
+	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 )
 
 type stubSessionService struct {

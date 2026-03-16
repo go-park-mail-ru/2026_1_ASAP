@@ -4,8 +4,9 @@ import (
 	"errors"
 	"sync"
 
-	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	"github.com/google/uuid"
+
+	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 )
 
 var (

@@ -3,9 +3,10 @@ package user
 import (
 	"sync"
 
+	"github.com/google/uuid"
+
 	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
-	"github.com/google/uuid"
 )
 
 func NewMockUserRepository() *UserRepository {

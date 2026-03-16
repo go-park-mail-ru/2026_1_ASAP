@@ -4,10 +4,11 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
-	"github.com/google/uuid"
 )
 
 type ctxKey string

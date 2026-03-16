@@ -4,9 +4,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
+
 	sessionDTO "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	sessionModel "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
-	"github.com/google/uuid"
 )
 
 type SessionRepository interface {
@@ -51,7 +52,9 @@ func (sessionService *SessionService) GetUserID(sessionID string) (uuid.UUID, er
 	}
 
 	if time.Now().After(session.Expire) {
-		sessionService.sessionRepository.DeleteSession(sessionID)
+		if err := sessionService.sessionRepository.DeleteSession(sessionID); err != nil {
+			return uuid.Nil, errors.New("session expired and failed to delete session")
+		}
 		return uuid.Nil, errors.New("session expired")
 	}
 

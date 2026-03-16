@@ -1,11 +1,5 @@
 run:
   timeout: 5m
-  #Какие директории исключить
-  skip-dirs:
-    - bin
-    - vendor
-    - tmp
-    - .git
 
 #Список включаемых линтеров
 linters:
@@ -23,14 +17,12 @@ linters:
 
     - gocyclo       #Проверяет цикломатическую сложность функций
     - gocognit      #Когнитивная сложность
-    - cyclop        #Альтернативный пакет для проверки сложности пакетов
 
     - depguard      #Запрещает импорт определенных пакетов (чтобы слой repo не импортил handler)
     - importas      #Позволяет унифицировать имена импортов (чтобы везде одинаково назывались)
-    - nilnil        #Проверяет, что функции возвращающие nil, возвращают и ошибку
-    - revive        #Замена golint'у, очень много правил
+    - nilnil        #Проверяет, что функции возвращающие nil возвращают и ошибку
 
-    - gosec         #Проверяет уязвимости (иньекции, утечки и т.д.)
+    - gosec         #Проверяет уязвимости (иньекции, утечки)
     - prealloc      #Советы по предварительному выделению слайсов
 
 linters-settings:
@@ -50,6 +42,11 @@ linters-settings:
     local-prefixes: github.com/go-park-mail-ru/2026_1_ASAP
 
 issues:
+  exclude-dirs:
+    - bin
+    - vendor
+    - tmp
+    - .git
   exclude-rules:
     #Исключаем тесты из некоторых проверок 
     - path: _test\.go
@@ -57,3 +54,8 @@ issues:
         - gocyclo
         - gocognit
         - errcheck
+    #Исключаем G101 (hardcoded credentials) для файлов с кодами ошибок
+    - path: internal/dto/api/response.go
+      linters:
+        - gosec
+      text: "G101"

@@ -3,13 +3,14 @@ package auth
 import (
 	"errors"
 
+	"github.com/google/uuid"
+
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
-	"github.com/google/uuid"
 )
 
 type UserRepository interface {
