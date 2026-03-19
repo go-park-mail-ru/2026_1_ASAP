@@ -6,13 +6,13 @@ import (
 
 	"github.com/google/uuid"
 
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	sessionDTO "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
-	sessionModel "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
 )
 
 type SessionRepository interface {
-	CreateSession(session *sessionModel.Session) (string, error)
-	GetSession(sessionID string) (*sessionModel.Session, error)
+	CreateSession(session *domain.Session) (string, error)
+	GetSession(sessionID string) (*domain.Session, error)
 	DeleteSession(sessionID string) error
 }
 
@@ -29,7 +29,7 @@ func NewSessionService(repository SessionRepository, sessionTTL time.Duration) *
 }
 
 func (sessionService *SessionService) CreateSession(userID uuid.UUID) (*sessionDTO.SessionDTO, error) {
-	session := &sessionModel.Session{
+	session := &domain.Session{
 		UserID: userID,
 		Expire: time.Now().Add(sessionService.sessionTTL),
 	}

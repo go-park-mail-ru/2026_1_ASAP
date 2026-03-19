@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 )
 
 var (
@@ -15,30 +15,30 @@ var (
 )
 
 type ChatRepository struct {
-	chats    map[uuid.UUID]*models.Chat
+	chats    map[uuid.UUID]*domain.Chat
 	userInfo map[uuid.UUID][]uuid.UUID
-	messages map[uuid.UUID][]*models.Message
+	messages map[uuid.UUID][]*domain.Message
 	mu       sync.RWMutex
 }
 
 func NewChatRepository() *ChatRepository {
 	return &ChatRepository{
-		chats:    make(map[uuid.UUID]*models.Chat),
+		chats:    make(map[uuid.UUID]*domain.Chat),
 		userInfo: make(map[uuid.UUID][]uuid.UUID),
-		messages: make(map[uuid.UUID][]*models.Message),
+		messages: make(map[uuid.UUID][]*domain.Message),
 	}
 }
 
-func (c *ChatRepository) GetAllChatsByUserID(userID uuid.UUID) ([]*models.Chat, error) {
+func (c *ChatRepository) GetAllChatsByUserID(userID uuid.UUID) ([]*domain.Chat, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	userInfo, ok := c.userInfo[userID]
 	if !ok {
-		return make([]*models.Chat, 0), nil
+		return make([]*domain.Chat, 0), nil
 	}
 
-	result := make([]*models.Chat, 0, len(userInfo))
+	result := make([]*domain.Chat, 0, len(userInfo))
 
 	for id := range userInfo {
 		result = append(result, c.chats[userInfo[id]])
@@ -47,7 +47,7 @@ func (c *ChatRepository) GetAllChatsByUserID(userID uuid.UUID) ([]*models.Chat, 
 	return result, nil
 }
 
-func (c *ChatRepository) GetChatByID(chatID uuid.UUID) (*models.Chat, error) {
+func (c *ChatRepository) GetChatByID(chatID uuid.UUID) (*domain.Chat, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -59,7 +59,7 @@ func (c *ChatRepository) GetChatByID(chatID uuid.UUID) (*models.Chat, error) {
 	return chat, nil
 }
 
-func (c *ChatRepository) CreateChat(chat *models.Chat) error {
+func (c *ChatRepository) CreateChat(chat *domain.Chat) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -75,7 +75,7 @@ func (c *ChatRepository) CreateChat(chat *models.Chat) error {
 	return nil
 }
 
-func (c *ChatRepository) GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Message, error) {
+func (c *ChatRepository) GetLastMessagesOfChats(userID uuid.UUID) ([]*domain.Message, error) {
 	chats, err := c.GetAllChatsByUserID(userID)
 	if err != nil {
 		return nil, err
@@ -84,11 +84,11 @@ func (c *ChatRepository) GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Mes
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	lastMessages := make([]*models.Message, 0, len(chats))
+	lastMessages := make([]*domain.Message, 0, len(chats))
 	for _, chat := range chats {
 		chatMessages := c.messages[chat.ID]
 		if len(chatMessages) == 0 {
-			lastMessages = append(lastMessages, &models.Message{})
+			lastMessages = append(lastMessages, &domain.Message{})
 			continue
 		}
 		lastMessages = append(lastMessages, chatMessages[len(chatMessages)-1])
@@ -97,7 +97,7 @@ func (c *ChatRepository) GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Mes
 	return lastMessages, nil
 }
 
-func (c *ChatRepository) GetLastMessageOfChat(chatID uuid.UUID) (*models.Message, error) {
+func (c *ChatRepository) GetLastMessageOfChat(chatID uuid.UUID) (*domain.Message, error) {
 	chat, err := c.GetChatByID(chatID)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (c *ChatRepository) GetLastMessageOfChat(chatID uuid.UUID) (*models.Message
 
 	chatMessages := c.messages[chat.ID]
 	if len(chatMessages) == 0 {
-		return &models.Message{}, nil
+		return &domain.Message{}, nil
 	}
 
 	return chatMessages[len(chatMessages)-1], nil

@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
+	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	dtoUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/user"
-	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
-	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 )
 
 var (
@@ -18,18 +18,18 @@ var (
 )
 
 type ChatRepositoryInterface interface {
-	GetAllChatsByUserID(userID uuid.UUID) ([]*models.Chat, error)
-	GetChatByID(chatID uuid.UUID) (*models.Chat, error)
-	CreateChat(chat *models.Chat) error
-	GetLastMessagesOfChats(userID uuid.UUID) ([]*models.Message, error)
-	GetLastMessageOfChat(chatID uuid.UUID) (*models.Message, error)
+	GetAllChatsByUserID(userID uuid.UUID) ([]*domain.Chat, error)
+	GetChatByID(chatID uuid.UUID) (*domain.Chat, error)
+	CreateChat(chat *domain.Chat) error
+	GetLastMessagesOfChats(userID uuid.UUID) ([]*domain.Message, error)
+	GetLastMessageOfChat(chatID uuid.UUID) (*domain.Message, error)
 }
 
 type UserRepositoryInterface interface {
-	Create(*modelsUser.User) error
-	GetUserByEmail(string) (*modelsUser.User, error)
-	GetUserByLogin(string) (*modelsUser.User, error)
-	GetUserByID(uuid.UUID) (*modelsUser.User, error)
+	Create(*domainUser.User) error
+	GetUserByEmail(string) (*domainUser.User, error)
+	GetUserByLogin(string) (*domainUser.User, error)
+	GetUserByID(uuid.UUID) (*domainUser.User, error)
 }
 
 type ChatService struct {
@@ -83,9 +83,9 @@ func (s *ChatService) CreateChat(chatDTO dto.ChatCreate, ownerID uuid.UUID) (*dt
 		chatDTO.MembersID = append(chatDTO.MembersID, ownerID)
 	}
 
-	chat := &models.Chat{
+	chat := &domain.Chat{
 		ID:        uuid.New(),
-		Type:      models.ChatType(chatDTO.Type),
+		Type:      domain.ChatType(chatDTO.Type),
 		Title:     chatDTO.Title,
 		MembersID: chatDTO.MembersID,
 		CreatedAt: time.Now(),

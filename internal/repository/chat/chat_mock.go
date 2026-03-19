@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/chat"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 )
 
 func NewMockRepository() *ChatRepository {
@@ -22,27 +22,27 @@ func NewMockRepository() *ChatRepository {
 	chat2ID := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 	chat3ID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")
 
-	chat1 := &models.Chat{
+	chat1 := &domain.Chat{
 		ID:        chat1ID,
-		Type:      models.ChatTypeDialog,
+		Type:      domain.ChatTypeDialog,
 		Title:     "Dialog 1",
 		MembersID: []uuid.UUID{user1, user2},
 		CreatedAt: now.Add(-24 * time.Hour),
 		UpdatedAt: now.Add(-2 * time.Hour),
 	}
 
-	chat2 := &models.Chat{
+	chat2 := &domain.Chat{
 		ID:        chat2ID,
-		Type:      models.ChatTypeGroup,
+		Type:      domain.ChatTypeGroup,
 		Title:     "Backend Team",
 		MembersID: []uuid.UUID{user1, user2, user3},
 		CreatedAt: now.Add(-48 * time.Hour),
 		UpdatedAt: now.Add(-1 * time.Hour),
 	}
 
-	chat3 := &models.Chat{
+	chat3 := &domain.Chat{
 		ID:        chat3ID,
-		Type:      models.ChatTypeChannel,
+		Type:      domain.ChatTypeChannel,
 		Title:     "Announcements",
 		MembersID: []uuid.UUID{user1, user3},
 		CreatedAt: now.Add(-72 * time.Hour),
@@ -50,7 +50,7 @@ func NewMockRepository() *ChatRepository {
 	}
 
 	// сообщения
-	msg1 := &models.Message{
+	msg1 := &domain.Message{
 		ID:        uuid.New(),
 		ChatID:    chat1ID,
 		UserID:    user1,
@@ -58,7 +58,7 @@ func NewMockRepository() *ChatRepository {
 		CreatedAt: now.Add(-10 * time.Minute),
 	}
 
-	msg2 := &models.Message{
+	msg2 := &domain.Message{
 		ID:        uuid.New(),
 		ChatID:    chat1ID,
 		UserID:    user2,
@@ -66,7 +66,7 @@ func NewMockRepository() *ChatRepository {
 		CreatedAt: now.Add(-8 * time.Minute),
 	}
 
-	msg3 := &models.Message{
+	msg3 := &domain.Message{
 		ID:        uuid.New(),
 		ChatID:    chat2ID,
 		UserID:    user3,
@@ -74,7 +74,7 @@ func NewMockRepository() *ChatRepository {
 		CreatedAt: now.Add(-5 * time.Minute),
 	}
 
-	msg4 := &models.Message{
+	msg4 := &domain.Message{
 		ID:        uuid.New(),
 		ChatID:    chat2ID,
 		UserID:    user2,
@@ -82,7 +82,7 @@ func NewMockRepository() *ChatRepository {
 		CreatedAt: now.Add(-3 * time.Minute),
 	}
 
-	msg5 := &models.Message{
+	msg5 := &domain.Message{
 		ID:        uuid.New(),
 		ChatID:    chat3ID,
 		UserID:    user1,
@@ -91,7 +91,7 @@ func NewMockRepository() *ChatRepository {
 	}
 
 	return &ChatRepository{
-		chats: map[uuid.UUID]*models.Chat{
+		chats: map[uuid.UUID]*domain.Chat{
 			chat1ID: chat1,
 			chat2ID: chat2,
 			chat3ID: chat3,
@@ -103,7 +103,7 @@ func NewMockRepository() *ChatRepository {
 			user3: {chat2ID, chat3ID},
 		},
 
-		messages: map[uuid.UUID][]*models.Message{
+		messages: map[uuid.UUID][]*domain.Message{
 			chat1ID: {msg1, msg2},
 			chat2ID: {msg3, msg4},
 			chat3ID: {msg5},

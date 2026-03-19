@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 )
 
 type UserRepository struct {
-	storage    map[uuid.UUID]*models.User
+	storage    map[uuid.UUID]*domain.User
 	emailIndex map[string]uuid.UUID
 	loginIndex map[string]uuid.UUID
 	mu         sync.RWMutex
@@ -24,13 +24,13 @@ type UserRepository struct {
 
 func NewUserRepository() *UserRepository {
 	return &UserRepository{
-		storage:    make(map[uuid.UUID]*models.User),
+		storage:    make(map[uuid.UUID]*domain.User),
 		emailIndex: make(map[string]uuid.UUID),
 		loginIndex: make(map[string]uuid.UUID),
 	}
 }
 
-func (repo *UserRepository) Create(user *models.User) error {
+func (repo *UserRepository) Create(user *domain.User) error {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -48,7 +48,7 @@ func (repo *UserRepository) Create(user *models.User) error {
 	return nil
 }
 
-func (repo *UserRepository) GetUserByEmail(email string) (*models.User, error) {
+func (repo *UserRepository) GetUserByEmail(email string) (*domain.User, error) {
 	repo.mu.RLock()
 	defer repo.mu.RUnlock()
 
@@ -59,7 +59,7 @@ func (repo *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	return repo.storage[id], nil
 }
 
-func (repo *UserRepository) GetUserByLogin(login string) (*models.User, error) {
+func (repo *UserRepository) GetUserByLogin(login string) (*domain.User, error) {
 	repo.mu.RLock()
 	defer repo.mu.RUnlock()
 
@@ -70,7 +70,7 @@ func (repo *UserRepository) GetUserByLogin(login string) (*models.User, error) {
 	return repo.storage[id], nil
 }
 
-func (repo *UserRepository) GetUserByID(user_id uuid.UUID) (*models.User, error) {
+func (repo *UserRepository) GetUserByID(user_id uuid.UUID) (*domain.User, error) {
 	repo.mu.RLock()
 	defer repo.mu.RUnlock()
 

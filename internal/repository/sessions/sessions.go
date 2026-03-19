@@ -6,21 +6,21 @@ import (
 
 	"github.com/google/uuid"
 
-	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 )
 
 type SessionRpository struct {
-	sessions map[string]*models.Session
+	sessions map[string]*domain.Session
 	mu       sync.RWMutex
 }
 
 func NewSessionRepository() *SessionRpository {
 	return &SessionRpository{
-		sessions: make(map[string]*models.Session),
+		sessions: make(map[string]*domain.Session),
 	}
 }
 
-func (s *SessionRpository) CreateSession(session *models.Session) (string, error) {
+func (s *SessionRpository) CreateSession(session *domain.Session) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -31,7 +31,7 @@ func (s *SessionRpository) CreateSession(session *models.Session) (string, error
 
 }
 
-func (s *SessionRpository) GetSession(sessionID string) (*models.Session, error) {
+func (s *SessionRpository) GetSession(sessionID string) (*domain.Session, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

@@ -5,19 +5,19 @@ import (
 
 	"github.com/google/uuid"
 
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
-	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 )
 
 type UserRepository interface {
-	Create(*modelsUser.User) error
-	GetUserByEmail(string) (*modelsUser.User, error)
-	GetUserByLogin(string) (*modelsUser.User, error)
-	GetUserByID(uuid.UUID) (*modelsUser.User, error)
+	Create(*domain.User) error
+	GetUserByEmail(string) (*domain.User, error)
+	GetUserByLogin(string) (*domain.User, error)
+	GetUserByID(uuid.UUID) (*domain.User, error)
 }
 
 type SessionService interface {
@@ -39,7 +39,7 @@ func NewAuthService(userRepository UserRepository, sessionService SessionService
 }
 
 func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, []validation.ValidationError) {
-	user := &modelsUser.User{
+	user := &domain.User{
 		Login: request.Login,
 		Email: request.Email,
 	}

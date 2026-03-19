@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	models "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
 )
 
@@ -14,7 +14,7 @@ func NewMockUserRepository() *UserRepository {
 	user2ID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
 	user3ID := uuid.MustParse("33333333-3333-3333-3333-333333333333")
 	password, _ := hash.HashPassword("passWo1r&")
-	users := map[uuid.UUID]*models.User{
+	users := map[uuid.UUID]*domain.User{
 		user1ID: {Id: user1ID, Login: "alice", Email: "alice@example.com", PasswordHash: password},
 		user2ID: {Id: user2ID, Login: "bob", Email: "bob@example.com", PasswordHash: password},
 		user3ID: {Id: user3ID, Login: "charlie", Email: "charlie@example.com", PasswordHash: password},
