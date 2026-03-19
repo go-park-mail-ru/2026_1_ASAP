@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
@@ -92,7 +91,23 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			response.Send(w, http.StatusUnauthorized, resp)
 			return
 		}
-		log.Println(err)
+
+		switch {
+		case errors.Is(err, domainUser.ErrInvalidCredentials):
+
+		case errors.Is(err, domainUser.ErrNotFound):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InvalidCredentials,
+						Message: dtoApi.InvalidCredentialsMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusUnauthorized, resp)
+			return
+		}
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
