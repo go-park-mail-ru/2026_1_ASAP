@@ -72,7 +72,7 @@ func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := dtoApi.ApiSucessResponse[[]dto.ChatInformationDTO]{
+	resp := dtoApi.ApiSuccessResponse[[]dto.ChatInformationDTO]{
 		Status: dtoApi.Success,
 		Body:   chats,
 	}
@@ -153,7 +153,7 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := dtoApi.ApiSucessResponse[*dto.ChatInformationDTO]{
+	resp := dtoApi.ApiSuccessResponse[*dto.ChatInformationDTO]{
 		Status: dtoApi.Success,
 		Body:   createdChat,
 	}
@@ -220,7 +220,7 @@ func (h *ChatsHandler) GetChatByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := dtoApi.ApiSucessResponse[*dto.ChatInformationDTO]{
+	resp := dtoApi.ApiSuccessResponse[*dto.ChatInformationDTO]{
 		Status: dtoApi.Success,
 		Body:   chat,
 	}

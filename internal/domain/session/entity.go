@@ -7,6 +7,14 @@ import (
 )
 
 type Session struct {
-	Expire time.Time
-	UserID uuid.UUID
+	SessionID string    `json:"session_id"`
+	UserID    int64     `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+// Старье удалить
+type DepricatedSession struct {
+	Expire time.Time `json:"expire"`
+	UserID uuid.UUID `json:"user_id"`
 }

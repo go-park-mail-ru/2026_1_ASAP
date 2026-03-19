@@ -25,19 +25,19 @@ type ChatRepositoryInterface interface {
 	GetLastMessageOfChat(chatID uuid.UUID) (*domain.Message, error)
 }
 
-type UserRepositoryInterface interface {
-	Create(*domainUser.User) error
-	GetUserByEmail(string) (*domainUser.User, error)
-	GetUserByLogin(string) (*domainUser.User, error)
-	GetUserByID(uuid.UUID) (*domainUser.User, error)
+type DepricatedUserRepositoryInterface interface {
+	Create(*domainUser.DepricatedUser) error
+	GetUserByEmail(string) (*domainUser.DepricatedUser, error)
+	GetUserByLogin(string) (*domainUser.DepricatedUser, error)
+	GetUserByID(uuid uuid.UUID) (*domainUser.DepricatedUser, error)
 }
 
 type ChatService struct {
 	chatRepository ChatRepositoryInterface
-	userRepository UserRepositoryInterface
+	userRepository DepricatedUserRepositoryInterface
 }
 
-func NewChatService(chatRepository ChatRepositoryInterface, userRepository UserRepositoryInterface) *ChatService {
+func NewChatService(chatRepository ChatRepositoryInterface, userRepository DepricatedUserRepositoryInterface) *ChatService {
 	return &ChatService{
 		chatRepository: chatRepository,
 		userRepository: userRepository,

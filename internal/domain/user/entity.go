@@ -1,10 +1,27 @@
 package user
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type User struct {
-	Login        string
+	Id           int64
+	Username     string
 	Email        string
 	PasswordHash string
-	Id           uuid.UUID
+	AvatarUrl    *string
+	Bio          *string
+	LastSeenAt   *time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+// Удалить
+type DepricatedUser struct {
+	Login        string    `json:"login"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"-"`
+	Id           uuid.UUID `json:"id"`
 }

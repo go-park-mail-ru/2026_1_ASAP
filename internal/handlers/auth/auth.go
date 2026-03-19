@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
+	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
@@ -15,9 +18,9 @@ import (
 )
 
 type AuthService interface {
-	Register(request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, []validation.ValidationError)
-	Login(request *dtoAuth.RequestLogin) (*dtoSession.SessionDTO, error)
-	Logout(request *dtoAuth.RequestLogout) error
+	Register(ctx context.Context, request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, error)
+	Login(ctx context.Context, request *dtoAuth.RequestLogin) (*dtoSession.SessionDTO, error)
+	Logout(ctx context.Context, request *dtoAuth.RequestLogout) error
 }
 
 type AuthHandler struct {
@@ -41,6 +44,8 @@ func NewAuthHandler(authService AuthService) *AuthHandler {
 // @Router /api/v1/auth/login [post]
 func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	ctx := r.Context()
 
 	decoder := json.NewDecoder(r.Body)
 	newRequestLogin := new(dtoAuth.RequestLogin)
@@ -72,18 +77,32 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := authHandler.AuthService.Login(newRequestLogin)
+	session, err := authHandler.AuthService.Login(ctx, newRequestLogin)
 	if err != nil {
+		if errors.Is(err, domainUser.ErrInvalidCredentials) {
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InvalidCredentials,
+						Message: dtoApi.InvalidCredentialsMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusUnauthorized, resp)
+			return
+		}
+		log.Println(err)
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
 				{
-					Code:    dtoApi.InvalidCredentials,
-					Message: dtoApi.InvalidCredentialsMsg,
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
 				},
 			},
 		}
-		response.Send(w, http.StatusUnauthorized, resp)
+		response.Send(w, http.StatusInternalServerError, resp)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
@@ -94,7 +113,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Expires:  session.Expire,
 		SameSite: http.SameSiteLaxMode,
 	})
-	resp := dtoApi.ApiSucessResponse[dtoAuth.ResponseLoginSuccess]{
+	resp := dtoApi.ApiSuccessResponse[dtoAuth.ResponseLoginSuccess]{
 		Status: dtoApi.Success,
 		Body: dtoAuth.ResponseLoginSuccess{
 			Login: newRequestLogin.Login,
@@ -117,6 +136,8 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // @Router /api/v1/auth/register [post]
 func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	ctx := r.Context()
 
 	decoder := json.NewDecoder(r.Body)
 	newRequestRegister := new(dtoAuth.RequestRegistrate)
@@ -148,15 +169,44 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	session, errs := authHandler.AuthService.Register(newRequestRegister)
-	if len(errs) > 0 {
-		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
+	session, err := authHandler.AuthService.Register(ctx, newRequestRegister)
+	if err != nil {
+		switch {
+		case errors.Is(err, domainUser.ErrLoginAlreadyExists):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.LoginAlreadyRegistered,
+						Message: dtoApi.LoginAlreadyRegisteredMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusConflict, resp)
+			return
+		case errors.Is(err, domainUser.ErrEmailAlreadyExists):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.EmailAlreadyRegistered,
+						Message: dtoApi.EmailAlreadyRegisteredMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusConflict, resp)
+			return
+		}
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
-			Errors: apiErrors,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
 		}
-
-		response.Send(w, http.StatusConflict, resp)
+		response.Send(w, http.StatusInternalServerError, resp)
 		return
 	}
 
@@ -169,7 +219,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	resp := dtoApi.ApiSucessResponse[dtoAuth.ResponseRegisterSuccess]{
+	resp := dtoApi.ApiSuccessResponse[dtoAuth.ResponseRegisterSuccess]{
 		Status: dtoApi.Success,
 		Body: dtoAuth.ResponseRegisterSuccess{
 			Email: newRequestRegister.Email,
@@ -190,9 +240,9 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 // @Failure 500 {object} dtoApi.ApiErrorResponse "Ошибка выхода"
 // @Router /api/v1/auth/logout [post]
 func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	sessionID, ok := r.Context().Value(middleware.SessionID).(string)
 	if !ok {
-		log.Println("here")
 		response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Success,
 			Errors: []dtoApi.ApiError{
@@ -207,21 +257,33 @@ func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	newRequestLogout := &dtoAuth.RequestLogout{
 		SessionID: sessionID,
 	}
-	err := authHandler.AuthService.Logout(newRequestLogout)
+	err := authHandler.AuthService.Logout(ctx, newRequestLogout)
 	if err != nil {
+		if errors.Is(err, domainUser.ErrNotFound) {
+			response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.Unauthorized,
+						Message: dtoApi.UnauthorizedMsg,
+					},
+				},
+			})
+			return
+		}
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
 				{
-					Code:    dtoApi.FailLogout,
-					Message: dtoApi.FailLogoutMsg,
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
 				},
 			},
 		}
 		response.Send(w, http.StatusInternalServerError, resp)
 		return
 	}
-	resp := dtoApi.ApiSucessResponse[dtoAuth.ResponseLogoutSuccess]{
+	resp := dtoApi.ApiSuccessResponse[dtoAuth.ResponseLogoutSuccess]{
 		Status: dtoApi.Success,
 		Body:   dtoAuth.ResponseLogoutSuccess{},
 	}

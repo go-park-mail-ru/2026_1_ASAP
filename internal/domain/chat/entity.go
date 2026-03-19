@@ -15,18 +15,18 @@ const (
 )
 
 type Chat struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Type      ChatType
-	Title     string
-	MembersID []uuid.UUID
-	ID        uuid.UUID
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
+	Type      ChatType    `json:"type"`
+	Title     string      `json:"title"`
+	MembersID []uuid.UUID `json:"members_id"`
+	ID        uuid.UUID   `json:"id"`
 }
 
 type Message struct {
-	CreatedAt time.Time
-	Text      string
-	ID        uuid.UUID
-	ChatID    uuid.UUID
-	UserID    uuid.UUID
+	CreatedAt time.Time `json:"created_at"`
+	Text      string    `json:"text"`
+	ID        uuid.UUID `json:"-"`
+	ChatID    uuid.UUID `json:"-"`
+	UserID    uuid.UUID `json:"sender"`
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"time"
@@ -28,7 +29,7 @@ import (
 // @description API веб-приложения Pulse
 // @host pulseapp.space:8080
 func main() {
-	config, err := config.LoadConfigFromEnv()
+	cfg, err := config.LoadConfigFromEnv()
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -50,16 +51,23 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	sessionRepository := sessionRepository.NewSessionRepository()
-	sessionService := session.NewSessionService(sessionRepository, config.SessionConfig.SessionTTL)
-	userRepository := userRepository.NewMockUserRepository()
-	chatRepository := chatRepository.NewMockRepository()
-	userService := authService.NewAuthService(userRepository, sessionService)
-	chatService := chatService.NewChatService(chatRepository, userRepository)
-	auth := authHandlers.NewAuthHandler(userService)
-	chatsHandler := chatHandlers.NewChatHandler(chatService)
-	authMiddleware := middleware.AuthMiddleware(sessionService)
+	sessRepo := sessionRepository.NewSessionRepository(cfg.SessionConfig, cfg.RedisConfig)
+	depricatedSessRepo := sessionRepository.NewDepricatedSessionRepository()
+	sessionServ := session.NewSessionService(sessRepo, cfg.SessionConfig.SessionTTL)
+	depricatedSessionServ := session.NewDepricatedSessionService(depricatedSessRepo, cfg.SessionConfig.SessionTTL)
+	userRepo, err := userRepository.NewUserRepository(context.Background(), cfg.PostgresConfig)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	depricatedUserRepo := userRepository.NewDepricatedUserRepository()
 
+	chatRepo := chatRepository.NewMockRepository()
+	authServ := authService.NewAuthService(userRepo, sessionServ)
+	chatServ := chatService.NewChatService(chatRepo, depricatedUserRepo)
+	auth := authHandlers.NewAuthHandler(authServ)
+	chatsHandler := chatHandlers.NewChatHandler(chatServ)
+	authMiddleware := middleware.AuthMiddleware(sessionServ)
+	depricatedAuthMiddleware := middleware.DepricatedAuthMiddleware(depricatedSessionServ)
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
@@ -67,17 +75,17 @@ func main() {
 	})
 
 	mux.Route("/api/v1/chats", func(mux chi.Router) {
-		mux.With(authMiddleware).Get("/", chatsHandler.GetChats)
-		mux.With(authMiddleware).Post("/", chatsHandler.ChatCreate)
-		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
+		mux.With(depricatedAuthMiddleware).Get("/", chatsHandler.GetChats)
+		mux.With(depricatedAuthMiddleware).Post("/", chatsHandler.ChatCreate)
+		mux.With(depricatedAuthMiddleware).Get("/{id}", chatsHandler.GetChatByID)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
 
-	log.Printf("Server started at %s\n", config.ServerConfig.ServerInfo())
+	log.Printf("Server started at %s\n", cfg.ServerConfig.ServerInfo())
 
 	server := &http.Server{
-		Addr:         config.ServerConfig.ServerInfo(),
+		Addr:         cfg.ServerConfig.ServerInfo(),
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
