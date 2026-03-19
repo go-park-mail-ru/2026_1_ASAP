@@ -44,17 +44,7 @@ func NewChatHandler(chatService ChatService) *ChatsHandler {
 func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserID).(uuid.UUID)
 	if !ok {
-		resp := dtoApi.ApiErrorResponse{
-			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{
-				{
-					Code:    dtoApi.Unauthorized,
-					Message: dtoApi.UnauthorizedMsg,
-				},
-			},
-		}
-		response.Send(w, http.StatusUnauthorized, resp)
-		return
+
 	}
 
 	chats, err := h.chatService.GetAllChats(userID)
