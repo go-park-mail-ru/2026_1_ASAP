@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 
+	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
@@ -259,7 +260,7 @@ func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	sessionID, ok := r.Context().Value(middleware.SessionID).(string)
 	if !ok {
 		response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
-			Status: dtoApi.Success,
+			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
 				{
 					Code:    dtoApi.Unauthorized,
@@ -274,7 +275,7 @@ func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 	err := authHandler.AuthService.Logout(ctx, newRequestLogout)
 	if err != nil {
-		if errors.Is(err, domainUser.ErrNotFound) {
+		if errors.Is(err, domainSession.ErrNotFound) {
 			response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 				Status: dtoApi.Error,
 				Errors: []dtoApi.ApiError{
