@@ -1,6 +1,8 @@
 package chat
 
+
 import (
+	"database/sql"
 	"time"
 )
 
@@ -12,25 +14,25 @@ const (
 	ChatTypeChannel ChatType = "channel"
 )
 
-type Chat struct {
+type ChatModel struct {
 	Id int64
 	Type ChatType
 	Title string
-	Description *string
+	Description sql.NullString
 	OwnerId int64
-	AvatarUrl *string
+	AvatarUrl sql.NullString
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-type Message struct {
+type MessageModel struct {
 	Id int64
 	ChatId int64
 	SenderId int64
 	Content string
-	StickerId *int64
+	StickerId sql.NullInt64
 	Edited bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt *time.Time
+	DeletedAt sql.NullTime
 }

@@ -45,7 +45,7 @@
 
 **Функциональные зависимости:**
 ```
-{id} -> type, title, description, owner_id, avatar_url, created_at, updated_at
+{id} -> type, title, description, owner_id, avatar_url, last_message_id, created_at, updated_at
 ```
 
 #### Таблица `chat_member_role`
@@ -185,6 +185,7 @@ erDiagram
         text description
         bigint owner_id FK
         text avatar_url
+        bigint last_message_id FK
         timestamptz created_at
         timestamptz updated_at
     }
@@ -273,26 +274,24 @@ erDiagram
     }
 
     USER ||--o{ SESSION : has
-
     USER ||--o{ USER_STATUS : has
     USER ||--o{ CONTACT : has
     USER ||--o{ CONTACT : added_contact
-
     USER ||--o{ CHAT_MEMBER : participates
+    USER ||--o{ MESSAGE : sends
+    USER ||--o{ REACTION : reacts
+    USER ||--o{ NOTIFICATION : receives
+
     CHAT ||--o{ CHAT_MEMBER : contains
+    CHAT ||--o{ MESSAGE : has
+    CHAT }o--|| MESSAGE : references_last_message
+
     CHAT_TYPE ||--o{ CHAT : defines
     CHAT_MEMBER_ROLE ||--o{ CHAT_MEMBER : defines_role
-
-    CHAT ||--o{ MESSAGE : has
-    USER ||--o{ MESSAGE : sends
 
     MESSAGE ||--o{ ATTACHMENT : contains
     MESSAGE ||--o{ REACTION : receives
 
-    USER ||--o{ REACTION : reacts
-
-    STICKER ||--o{ MESSAGE : used_in
     STICKER_PACK ||--o{ STICKER : contains
-
-    USER ||--o{ NOTIFICATION : receives
+    STICKER ||--o{ MESSAGE : used_in
 ```

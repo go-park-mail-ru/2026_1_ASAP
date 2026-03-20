@@ -36,3 +36,19 @@ func TimePtrToNullTime(t *time.Time) sql.NullTime {
 	}
 	return sql.NullTime{}
 }
+
+// Маппит int64 БД, которое может быть Null в *int64
+func NullInt64ToPtrInt64(ni sql.NullInt64) *int64 {
+	if ni.Valid {
+		return &ni.Int64
+	}
+	return nil
+}
+
+// Маппит *int64 в число(int64) БД, которая может быть Null
+func PtrInt64ToNullInt64(i *int64) sql.NullInt64 {
+	if i != nil {
+		return sql.NullInt64{Int64: *i, Valid: true}
+	}
+	return sql.NullInt64{}
+}

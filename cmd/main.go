@@ -52,22 +52,26 @@ func main() {
 	}))
 
 	sessRepo := sessionRepository.NewSessionRepository(cfg.SessionConfig, cfg.RedisConfig)
-	depricatedSessRepo := sessionRepository.NewDepricatedSessionRepository()
+	//depricatedSessRepo := sessionRepository.NewDepricatedSessionRepository()
 	sessionServ := session.NewSessionService(sessRepo, cfg.SessionConfig.SessionTTL)
-	depricatedSessionServ := session.NewDepricatedSessionService(depricatedSessRepo, cfg.SessionConfig.SessionTTL)
+	//depricatedSessionServ := session.NewDepricatedSessionService(depricatedSessRepo, cfg.SessionConfig.SessionTTL)
 	userRepo, err := userRepository.NewUserRepository(context.Background(), cfg.PostgresConfig)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-	depricatedUserRepo := userRepository.NewDepricatedUserRepository()
+	//depricatedUserRepo := userRepository.NewDepricatedUserRepository()
 
-	chatRepo := chatRepository.NewMockRepository()
+
+	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig)
+	//depricatedchatRepo := chatRepository.NewDepricatedChatRepository()
 	authServ := authService.NewAuthService(userRepo, sessionServ)
-	chatServ := chatService.NewChatService(chatRepo, depricatedUserRepo)
+	chatServ := chatService.NewChatService(chatRepo, userRepo)
+	//depricatedchatServ := chatService.DepricatedNewChatService(depricatedchatRepo, depricatedUserRepo)
 	auth := authHandlers.NewAuthHandler(authServ)
+	//depricatedchatsHandler := chatHandlers.NewChatHandler(depricatedchatServ)
 	chatsHandler := chatHandlers.NewChatHandler(chatServ)
 	authMiddleware := middleware.AuthMiddleware(sessionServ)
-	depricatedAuthMiddleware := middleware.DepricatedAuthMiddleware(depricatedSessionServ)
+	//depricatedAuthMiddleware := middleware.DepricatedAuthMiddleware(depricatedSessionServ)
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
@@ -75,9 +79,9 @@ func main() {
 	})
 
 	mux.Route("/api/v1/chats", func(mux chi.Router) {
-		mux.With(depricatedAuthMiddleware).Get("/", chatsHandler.GetChats)
-		mux.With(depricatedAuthMiddleware).Post("/", chatsHandler.ChatCreate)
-		mux.With(depricatedAuthMiddleware).Get("/{id}", chatsHandler.GetChatByID)
+		mux.With(authMiddleware).Get("/", chatsHandler.GetChats)
+		mux.With(authMiddleware).Post("/", chatsHandler.ChatCreate)
+		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())

@@ -4,8 +4,6 @@ import (
 	"regexp"
 	"unicode"
 
-	"github.com/google/uuid"
-
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 )
@@ -221,7 +219,7 @@ func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
 	}
 
 	if len(req.MembersID) > 1 {
-		memb := make(map[uuid.UUID]bool)
+		memb := make(map[int64]bool)
 		for _, id := range req.MembersID {
 			if memb[id] {
 				errs = append(errs, ValidationError{
