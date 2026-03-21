@@ -4,6 +4,6 @@ CREATE TABLE chat_types (
 
 INSERT INTO chat_types(type)
 VALUES
-('private'),
+('dialog'),
 ('group'),
 ('channel');

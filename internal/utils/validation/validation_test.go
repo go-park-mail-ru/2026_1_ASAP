@@ -3,7 +3,6 @@ package validation
 import (
 	"testing"
 
-	"github.com/google/uuid"
 
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
@@ -86,13 +85,13 @@ func TestValidationRequestLogin(t *testing.T) {
 }
 
 func TestValidationChatCreate(t *testing.T) {
-	user1 := uuid.New()
-	user2 := uuid.New()
+	var user1 int64 = 10
+	var user2 int64 = 15
 
 	req := &dtoChat.ChatCreate{
 		Title:     "Test chat",
 		Type:      dtoChat.ChatTypeDialog,
-		MembersID: []uuid.UUID{user1, user2},
+		MembersID: []int64{user1, user2},
 	}
 
 	if errs := ValidationChatCreate(req); len(errs) != 0 {
