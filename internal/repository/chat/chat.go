@@ -202,11 +202,11 @@ func (r *ChatRepository) GetChatMembers(ctx context.Context, chatID int64) ([]in
 	return members, nil
 }
 
-func (r *ChatRepository) AddMember(ctx context.Context, chatID, userID int64) (error) {
+func (r *ChatRepository) AddMember(ctx context.Context, chatID, userID int64, role string) (error) {
 	_, err := r.db.Exec(ctx, 
 	`INSERT INTO chat_members
 	 (chat_id, user_id, role, joined_at)
-	 VALUES ($1, $2, $3, $4)`, chatID, userID, "member", time.Now())
+	 VALUES ($1, $2, $3, $4)`, chatID, userID, role, time.Now())
 	if err != nil {
 		return fmt.Errorf("failed to insert chat member: %w", err)
 	}

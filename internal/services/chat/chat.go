@@ -20,7 +20,7 @@ type ChatRepositoryInterface interface {
 	GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error)
 	GetLastMessagesOfChats(ctx context.Context, id int64) ([]*domain.Message, error)
 	GetChatMembers(ctx context.Context, chatID int64) ([]int64, error)
-	AddMember(ctx context.Context, chatID, userID int64) (error)
+	AddMember(ctx context.Context, chatID, userID int64, role string) (error)
 	IsMember(ctx context.Context, chatID, userID int64) (bool, error)
 	GetDialogBetweenUsers(ctx context.Context, user1ID, user2ID int64) (*domain.Chat, error)
 }
@@ -164,7 +164,11 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 	}
 
 	for _, member := range chatDTO.MembersID {
-		err := s.chatRepo.AddMember(ctx, createdChat.Id, member)
+		role := "member"
+		if member == ownerID {
+			role = "owner"
+		}
+		err := s.chatRepo.AddMember(ctx, createdChat.Id, member, role)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add member to chat: %w", err)
 		}
