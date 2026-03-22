@@ -13,6 +13,7 @@ type Config struct {
 	SessionConfig  SessionConfig
 	RedisConfig    RedisConfig
 	PostgresConfig PostgresConfig
+	S3Config       S3Config
 }
 
 type ServerConfig struct {
@@ -38,6 +39,17 @@ type PostgresConfig struct {
 	Database string
 }
 
+type S3Config struct {
+	Host       string
+	Port       string
+	Bucket     string
+	AccessKey  string
+	SecretKey  string
+	UseSSL     bool
+	PublicHost string
+	PublicPort string
+}
+
 func (postgresConfig PostgresConfig) ServerInfo() string {
 	return postgresConfig.Host + ":" + postgresConfig.Port
 }
@@ -50,11 +62,35 @@ func (serverConfig ServerConfig) ServerInfo() string {
 	return serverConfig.Host + ":" + serverConfig.Port
 }
 
+func (c S3Config) Endpoint() string {
+	return c.Host + ":" + c.Port
+}
+
+func (c S3Config) EndpointURL() string {
+	scheme := "http"
+	if c.UseSSL {
+		scheme = "https"
+	}
+	return scheme + "://" + c.Host + ":" + c.Port
+}
+
+func (c S3Config) PublicURL() string {
+	scheme := "http"
+	if c.UseSSL {
+		scheme = "https"
+	}
+	if c.PublicPort == "" || c.PublicPort == "80" || c.PublicPort == "443" {
+		return scheme + "://" + c.PublicHost
+	}
+	return scheme + "://" + c.PublicHost + ":" + c.PublicPort
+}
+
 func LoadConfigFromEnv() (*Config, error) {
 	var serverConfig ServerConfig
 	var sessionConfig SessionConfig
 	var redisConfig RedisConfig
 	var postgresConfig PostgresConfig
+	var s3Config S3Config
 
 	host, err := getEnvVariable("HOST", "localhost")
 	if err != nil {
@@ -126,7 +162,7 @@ func LoadConfigFromEnv() (*Config, error) {
 	}
 	postgresConfig.Username = usernamePostgres
 
-	passwordPostgres, err := getEnvVariable("POSTGRES_PASSWORD", "postgres")
+	passwordPostgres, err := getEnvVariable("POSTGRES_PASSWORD", "")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
@@ -138,11 +174,60 @@ func LoadConfigFromEnv() (*Config, error) {
 	}
 	postgresConfig.Database = databasePostgres
 
+	s3Host, err := getEnvVariable("S3_HOST", "minio")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.Host = s3Host
+
+	s3Port, err := getEnvVariable("S3_PORT", "9000")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.Port = s3Port
+
+	s3AccessKey, err := getEnvVariable("S3_ACCESS_KEY", "minioadmin")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.AccessKey = s3AccessKey
+
+	s3SecretKey, err := getEnvVariable("S3_SECRET_KEY", "minioadmin")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.SecretKey = s3SecretKey
+
+	s3Bucket, err := getEnvVariable("S3_BUCKET", "media")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.Bucket = s3Bucket
+
+	s3UseSSL, err := getEnvVariable("S3_USE_SSL", "false")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.UseSSL = s3UseSSL == "true" || s3UseSSL == "1"
+
+	s3PublicHost, err := getEnvVariable("S3_PUBLIC_HOST", "localhost")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.PublicHost = s3PublicHost
+
+	s3PublicPort, err := getEnvVariable("S3_PUBLIC_PORT", "9000")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.PublicPort = s3PublicPort
+
 	config := &Config{
 		ServerConfig:   serverConfig,
 		SessionConfig:  sessionConfig,
 		RedisConfig:    redisConfig,
 		PostgresConfig: postgresConfig,
+		S3Config:       s3Config,
 	}
 
 	return config, nil

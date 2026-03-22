@@ -17,6 +17,7 @@ import (
 	profileHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
+	mediaRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/media"
 	sessionRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
@@ -71,7 +72,11 @@ func main() {
 	depricatedAuthMiddleware := middleware.DepricatedAuthMiddleware(depricatedSessionServ)
 
 	// Profile
-	profileServ := profileService.NewProfileService(userRepo)
+	mediaRepo, err := mediaRepository.NewMediaRepository(context.Background(), cfg.S3Config)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	profileServ := profileService.NewProfileService(userRepo, mediaRepo)
 	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
@@ -87,6 +92,8 @@ func main() {
 
 	mux.Route("/api/v1/profiles", func(mux chi.Router) {
 		mux.With(authMiddleware).Get("/me", profileHandlers.GetMyProfile)
+		mux.With(authMiddleware).Patch("/me/bio", profileHandlers.UpdateUserBio)
+		mux.With(authMiddleware).Patch("/me/avatar", profileHandlers.UpdateUserAvatar)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
