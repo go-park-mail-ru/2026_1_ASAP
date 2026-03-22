@@ -6,21 +6,23 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/cors"
-
 	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
 	_ "github.com/go-park-mail-ru/2026_1_ASAP/docs"
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
+	profileHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
+	mediaRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/media"
 	sessionRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 	chatService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat"
+	profileService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
 )
 
@@ -65,6 +67,13 @@ func main() {
 	auth := authHandlers.NewAuthHandler(authServ)
 	chatsHandler := chatHandlers.NewChatHandler(chatServ)
 	authMiddleware := middleware.AuthMiddleware(sessionServ)
+	// Profile
+	mediaRepo, err := mediaRepository.NewMediaRepository(context.Background(), cfg.S3Config)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	profileServ := profileService.NewProfileService(userRepo, mediaRepo)
+	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
@@ -75,6 +84,13 @@ func main() {
 		mux.With(authMiddleware).Get("/", chatsHandler.GetChats)
 		mux.With(authMiddleware).Post("/", chatsHandler.ChatCreate)
 		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
+	})
+
+	mux.Route("/api/v1/profiles", func(mux chi.Router) {
+		mux.With(authMiddleware).Get("/me", profileHandlers.GetMyProfile)
+		mux.With(authMiddleware).Patch("/me/bio", profileHandlers.UpdateUserBio)
+		mux.With(authMiddleware).Patch("/me/avatar", profileHandlers.UpdateUserAvatar)
+		mux.With(authMiddleware).Patch("/{id}", profileHandlers.GetUserProfile)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())

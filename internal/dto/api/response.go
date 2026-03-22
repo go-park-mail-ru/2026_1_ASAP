@@ -14,6 +14,12 @@ const (
 	CreateFailed           = "CREATE_FAILED"
 	AccessDenied           = "ACCESS_DENIED"
 	InvalidID              = "INVALID_ID"
+	FileNotFound           = "FILE_NOT_FOUND"
+	EmptyFile              = "EMPTY_FILE"
+	InvalidFileFormat      = "INVALID_FILE_FORMAT"
+	FileTooLarge           = "FILE_TOO_LARGE"
+	EmptyBIO               = "EMPTY_BIO"
+	NotFound               = "NOT_FOUND"
 )
 
 const (
@@ -27,6 +33,12 @@ const (
 	CreateFailedMsg           = "Create failed"
 	AccessDeniedMsg           = "Access denied"
 	InvalidIDMsg              = "Invalid ID"
+	FileNotFoundMsg           = "File not found"
+	EmptyFileMsg              = "empty file"
+	InvalidFileFormatMsg      = "Invalid file format"
+	FileTooLargeMsg           = "File too large"
+	EmptyBIOMsg               = "Empty BIO"
+	NotFoundMsg               = "Not found"
 )
 
 type ApiError struct {

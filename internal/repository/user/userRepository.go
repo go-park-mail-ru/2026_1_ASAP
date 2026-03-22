@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -112,6 +113,61 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id int64) (*domain.Use
 		return nil, fmt.Errorf("userRepository failed get user by id: %w", err)
 	}
 	return toDomain(u), nil
+}
+
+func (r *UserRepository) GetProfileById(ctx context.Context, profileId int64) (*profile.Profile, error) {
+	row := r.db.QueryRow(ctx,
+		`SELECT id, username, avatar_url, bio, last_seen
+         FROM users WHERE id=$1`, profileId)
+
+	p := &ProfileModel{}
+	if err := row.Scan(
+		&p.UserId, &p.Username, &p.Avatar, &p.Bio, &p.LastSeen,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, profile.ErrNotFound
+		}
+		return nil, fmt.Errorf("userRepository failed get profile by id: %w", err)
+	}
+	return toDomainProfile(p), nil
+}
+
+func (r *UserRepository) UploadBio(ctx context.Context, userId int64, bio string) (*profile.Profile, error) {
+	row := r.db.QueryRow(ctx,
+		`UPDATE users SET bio = $2, updated_at = now()
+		 WHERE id = $1
+		 RETURNING id, username, avatar_url, bio, last_seen`,
+		userId, bio)
+
+	p := &ProfileModel{}
+	if err := row.Scan(
+		&p.UserId, &p.Username, &p.Avatar, &p.Bio, &p.LastSeen,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, profile.ErrNotFound
+		}
+		return nil, fmt.Errorf("userRepository failed upload bio: %w", err)
+	}
+	return toDomainProfile(p), nil
+}
+
+func (r *UserRepository) UploadAvatarUrl(ctx context.Context, userId int64, avatarURL string) (*profile.Profile, error) {
+	row := r.db.QueryRow(ctx,
+		`UPDATE users SET avatar_url = $2, updated_at = now()
+		 WHERE id = $1
+		 RETURNING id, username, avatar_url, bio, last_seen`,
+		userId, avatarURL)
+
+	p := &ProfileModel{}
+	if err := row.Scan(
+		&p.UserId, &p.Username, &p.Avatar, &p.Bio, &p.LastSeen,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, profile.ErrNotFound
+		}
+		return nil, fmt.Errorf("userRepository failed upload avatar url: %w", err)
+	}
+	return toDomainProfile(p), nil
 }
 
 // Устаревшая часть для чатов
