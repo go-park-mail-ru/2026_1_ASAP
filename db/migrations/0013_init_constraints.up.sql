@@ -13,6 +13,8 @@ ALTER TABLE chats
 ADD CONSTRAINT fk_chats_type FOREIGN KEY (type) REFERENCES chat_types(type);
 ALTER TABLE chats
 ADD CONSTRAINT fk_chats_owner FOREIGN KEY (owner_id) REFERENCES users(id);
+ALTER TABLE chats
+ADD CONSTRAINT fk_chats_last_message FOREIGN KEY (last_message_id) REFERENCES messages(id) ON DELETE SET NULL;
 
 -- CHAT_MEMBERS
 ALTER TABLE chat_members

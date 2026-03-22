@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/google/uuid"
 
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
@@ -16,9 +19,11 @@ import (
 )
 
 type ChatService interface {
-	GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, error)
-	CreateChat(chatDTO dto.ChatCreate, ownerID uuid.UUID) (*dto.ChatInformationDTO, error)
-	GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error)
+	GetDialogName(ctx context.Context, chatID int64, userID int64) (string, error)
+	GetAllChats(ctx context.Context, id int64) ([]dto.ChatInformationDTO, error)
+	CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ownerID int64) (*dto.ChatInformationDTO, error)
+	GetChatByID(ctx context.Context, chatID, userID int64) (*dto.ChatInformationDTO, error)
+
 }
 
 type ChatsHandler struct {
@@ -42,12 +47,13 @@ func NewChatHandler(chatService ChatService) *ChatsHandler {
 // @Failure 500 {object} dtoApi.ApiErrorResponse "Невозможно получить чаты"
 // @Router /api/v1/chats [get]
 func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(middleware.UserID).(uuid.UUID)
+	ctx := r.Context()
+	userID, ok := r.Context().Value(middleware.UserID).(int64)
 	if !ok {
 
 	}
 
-	chats, err := h.chatService.GetAllChats(userID)
+	chats, err := h.chatService.GetAllChats(ctx, userID)
 	if err != nil {
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
@@ -83,8 +89,8 @@ func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 // @Router /api/v1/chats [post]
 func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
-	userID, ok := r.Context().Value(middleware.UserID).(uuid.UUID)
+	ctx := r.Context()
+	userID, ok := r.Context().Value(middleware.UserID).(int64)
 	if !ok {
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
@@ -128,8 +134,21 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdChat, err := h.chatService.CreateChat(req, userID)
+	createdChat, err := h.chatService.CreateChat(ctx, req, userID)
 	if err != nil {
+		if errors.Is(err, domain.ErrChatAlreadyExists) {
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.DialogAlreadyExists,
+						Message: dtoApi.DialogAlreadyExistsMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusConflict, resp)
+			return
+		}
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -164,7 +183,8 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} dtoApi.ApiErrorResponse "Внутреняя ошибка"
 // @Router /api/v1/chats/{chat_id} [get]
 func (h *ChatsHandler) GetChatByID(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(middleware.UserID).(uuid.UUID)
+	ctx := r.Context()
+	userID, ok := r.Context().Value(middleware.UserID).(int64)
 	if !ok {
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
@@ -180,8 +200,8 @@ func (h *ChatsHandler) GetChatByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chatIDurl := chi.URLParam(r, "id")
-	chatID, err := uuid.Parse(chatIDurl)
-	if err != nil {
+	chatID, err := strconv.ParseInt(chatIDurl, 10, 64)
+	if err != nil || chatID < 1 {
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -191,22 +211,35 @@ func (h *ChatsHandler) GetChatByID(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		}
-		response.Send(w, http.StatusUnauthorized, resp)
+		response.Send(w, http.StatusBadRequest, resp)
 		return
 	}
 
-	chat, err := h.chatService.GetChatByID(chatID, userID)
+	chat, err := h.chatService.GetChatByID(ctx, chatID, userID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotMember) {
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.AccessDenied,
+						Message: dtoApi.AccessDeniedMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusForbidden, resp)
+			return
+		}
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
 				{
-					Code:    dtoApi.AccessDenied,
-					Message: dtoApi.AccessDeniedMsg,
+					Code: dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
 				},
 			},
 		}
-		response.Send(w, http.StatusForbidden, resp)
+		response.Send(w, http.StatusInternalServerError, resp)
 		return
 	}
 

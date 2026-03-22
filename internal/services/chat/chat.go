@@ -1,140 +1,237 @@
 package chat
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
-
-	"github.com/google/uuid"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
-	dtoUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/user"
 )
 
-var (
-	ErrAccessDenied = errors.New("You don't have access to this chat")
-)
 
 type ChatRepositoryInterface interface {
-	GetAllChatsByUserID(userID uuid.UUID) ([]*domain.Chat, error)
-	GetChatByID(chatID uuid.UUID) (*domain.Chat, error)
-	CreateChat(chat *domain.Chat) error
-	GetLastMessagesOfChats(userID uuid.UUID) ([]*domain.Message, error)
-	GetLastMessageOfChat(chatID uuid.UUID) (*domain.Message, error)
+	GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error)
+	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
+	CreateChat(ctx context.Context, chat *domain.Chat) (*domain.Chat, error)
+	GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error)
+	GetLastMessagesOfChats(ctx context.Context, id int64) ([]*domain.Message, error)
+	GetChatMembers(ctx context.Context, chatID int64) ([]int64, error)
+	AddMember(ctx context.Context, chatID, userID int64, role string) (error)
+	IsMember(ctx context.Context, chatID, userID int64) (bool, error)
+	GetDialogBetweenUsers(ctx context.Context, user1ID, user2ID int64) (*domain.Chat, error)
 }
 
-type DepricatedUserRepositoryInterface interface {
-	Create(*domainUser.DepricatedUser) error
-	GetUserByEmail(string) (*domainUser.DepricatedUser, error)
-	GetUserByLogin(string) (*domainUser.DepricatedUser, error)
-	GetUserByID(uuid uuid.UUID) (*domainUser.DepricatedUser, error)
+type UserRepositoryInterface interface {
+	Create(ctx context.Context, user *domainUser.User) (*domainUser.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*domainUser.User, error)
+	GetUserByLogin(ctx context.Context, login string) (*domainUser.User, error)
+	GetUserByID(ctx context.Context, id int64) (*domainUser.User, error)
 }
 
 type ChatService struct {
-	chatRepository ChatRepositoryInterface
-	userRepository DepricatedUserRepositoryInterface
+	chatRepo ChatRepositoryInterface
+	userRepo UserRepositoryInterface
 }
 
-func NewChatService(chatRepository ChatRepositoryInterface, userRepository DepricatedUserRepositoryInterface) *ChatService {
+func NewChatService(chatRepo ChatRepositoryInterface, userRepo UserRepositoryInterface) *ChatService {
 	return &ChatService{
-		chatRepository: chatRepository,
-		userRepository: userRepository,
+		chatRepo: chatRepo,
+		userRepo: userRepo,
 	}
 }
 
-func (s *ChatService) GetAllChats(userID uuid.UUID) ([]dto.ChatInformationDTO, error) {
-	chats, err := s.chatRepository.GetAllChatsByUserID(userID)
+func (s *ChatService) GetDialogName(ctx context.Context, chatID int64, userID int64) (string, error) {
+	members, err := s.chatRepo.GetChatMembers(ctx, chatID)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("failed to get members: %w", err)
 	}
 
-	lastMessages, err := s.chatRepository.GetLastMessagesOfChats(userID)
+	var friendUserID int64
+	for _, member := range members {
+		if member != userID {
+			friendUserID = member
+			break
+		}
+	}
+
+	if friendUserID == 0 {
+		return "", errors.New("no other user found in chat")
+	}
+
+	friendUser, err := s.userRepo.GetUserByID(ctx, friendUserID)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("failed to get userID: %w", err)
+	}
+
+	return friendUser.Username, nil
+}
+
+func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInformationDTO, error) {
+	chats, err := s.chatRepo.GetAllChatsByUserID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chats: %w", err)
+	}
+
+	lastMessages, err := s.chatRepo.GetLastMessagesOfChats(ctx, id)
+	if err != nil {
+		lastMessages = []*domain.Message{}
+	}
+
+	lastMsgMap := make(map[int64]*domain.Message)
+	for _, msg := range lastMessages {
+		lastMsgMap[msg.ChatId] = msg
 	}
 
 	result := make([]dto.ChatInformationDTO, 0, len(chats))
-	for i := range chats {
-		userLogin, err := s.userRepository.GetUserByID(lastMessages[i].UserID)
-		if err != nil {
-			return nil, err
+	for _, chat := range chats {
+		lastMsg, ok := lastMsgMap[chat.Id]
+		messageDTO := dto.MessageDTO{}
+		if ok && lastMsg != nil {
+			messageDTO = dto.MessageDTO{
+				SenderId: lastMsg.SenderId,
+				Text: lastMsg.Content,
+				CreatedAt: lastMsg.CreatedAt,
+			}
 		}
-		message := dto.MessageDTO{
-			Sender:    dtoUser.UserDTO{Login: userLogin.Login},
-			Text:      lastMessages[i].Text,
-			CreatedAt: lastMessages[i].CreatedAt,
+		displayTitle := chat.Title
+		if chat.Type == domain.ChatTypeDialog {
+			dialogName, err := s.GetDialogName(ctx, chat.Id, id)
+			if err == nil && dialogName != "" {
+				displayTitle = dialogName
+			}
 		}
+
 		result = append(result, dto.ChatInformationDTO{
-			ID:          chats[i].ID,
-			Title:       chats[i].Title,
-			LastMessage: message,
-			ChatType:    dto.ChatType(chats[i].Type),
+			ID: chat.Id,
+			Title: displayTitle,
+			ChatType: dto.ChatType(chat.Type),
+			LastMessage: messageDTO,
 		})
 	}
 
 	return result, nil
 }
 
-func (s *ChatService) CreateChat(chatDTO dto.ChatCreate, ownerID uuid.UUID) (*dto.ChatInformationDTO, error) {
-	owner := slices.Contains(chatDTO.MembersID, ownerID)
-	if !owner {
+func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ownerID int64) (*dto.ChatInformationDTO, error) {
+	if !slices.Contains(chatDTO.MembersID, ownerID) {
 		chatDTO.MembersID = append(chatDTO.MembersID, ownerID)
 	}
 
+	if chatDTO.Type == dto.ChatTypeDialog && len(chatDTO.MembersID) != 2 {
+		return nil, domain.ErrDialogMustHave2Users
+	}
+
+	if chatDTO.Type == dto.ChatTypeDialog && len(chatDTO.MembersID) == 2 {
+		user1 := chatDTO.MembersID[0]
+		user2 := chatDTO.MembersID[1]
+
+		if user1 == user2 {
+        	return nil, domain.ErrCantCreateDialogWithYourself
+    	}
+
+		existingDialog, err := s.chatRepo.GetDialogBetweenUsers(ctx, user1, user2)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check dialog between users: %w", err)
+		}
+
+		if existingDialog != nil {
+			return nil, domain.ErrDialogAlreadyExists
+		}
+	}
+
+	title := chatDTO.Title
+	if chatDTO.Type == dto.ChatTypeDialog {
+		title = ""
+	}
+
 	chat := &domain.Chat{
-		ID:        uuid.New(),
-		Type:      domain.ChatType(chatDTO.Type),
-		Title:     chatDTO.Title,
-		MembersID: chatDTO.MembersID,
+		Type: domain.ChatType(chatDTO.Type),
+		Title: title,
+		Description: nil,
+		OwnerId: ownerID,
+		AvatarUrl: nil,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 
-	err := s.chatRepository.CreateChat(chat)
+	createdChat, err := s.chatRepo.CreateChat(ctx, chat)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create chat: %w", err)
 	}
 
-	return &dto.ChatInformationDTO{
-		ID:          chat.ID,
-		Title:       chat.Title,
-		LastMessage: dto.MessageDTO{},
-		ChatType:    dto.ChatType(chat.Type),
-	}, nil
-}
-
-func (s *ChatService) GetChatByID(chatID, userID uuid.UUID) (*dto.ChatInformationDTO, error) {
-	chats, err := s.chatRepository.GetAllChatsByUserID(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, chat := range chats {
-		if chat.ID == chatID {
-			lasMessage, err := s.chatRepository.GetLastMessageOfChat(chat.ID)
-			if err != nil {
-				return nil, err
-			}
-			userLogin, err := s.userRepository.GetUserByID(lasMessage.UserID)
-			if err != nil {
-				return nil, err
-			}
-			message := &dto.MessageDTO{
-				Sender:    dtoUser.UserDTO{Login: userLogin.Login},
-				Text:      lasMessage.Text,
-				CreatedAt: lasMessage.CreatedAt,
-			}
-
-			return &dto.ChatInformationDTO{
-				ID:          chat.ID,
-				Title:       chat.Title,
-				LastMessage: *message,
-				ChatType:    dto.ChatType(chat.Type),
-			}, nil
+	for _, member := range chatDTO.MembersID {
+		role := "member"
+		if member == ownerID {
+			role = "owner"
+		}
+		err := s.chatRepo.AddMember(ctx, createdChat.Id, member, role)
+		if err != nil {
+			return nil, fmt.Errorf("failed to add member to chat: %w", err)
 		}
 	}
 
-	return nil, ErrAccessDenied
+	displayTitle := createdChat.Title
+	if createdChat.Type == domain.ChatTypeDialog {
+		dialogName, err := s.GetDialogName(ctx, createdChat.Id, ownerID)
+		if err == nil && dialogName != "" {
+			displayTitle = dialogName
+		}
+	}
+
+	return &dto.ChatInformationDTO{
+		ID: createdChat.Id,
+		ChatType: dto.ChatType(createdChat.Type),
+		Title: displayTitle,
+		LastMessage: dto.MessageDTO{},
+	}, nil
+}
+
+func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*dto.ChatInformationDTO, error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	if !isMember {
+		return nil, domain.ErrNotMember
+	}
+	
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return nil, domain.ErrChatNotFound
+		}
+		return nil, fmt.Errorf("failed to get chat by id: %w", err)
+	}
+
+	lastMsg, err := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
+	if err != nil && !errors.Is(err, domain.ErrNoMessage) {
+		return nil, fmt.Errorf("failed to get last message: %w", err)
+	}
+
+	messageDTO := dto.MessageDTO{
+		SenderId: lastMsg.SenderId,
+		Text: lastMsg.Content,
+		CreatedAt: lastMsg.CreatedAt,
+	}
+
+	displayTitle := chat.Title
+	if chat.Type == domain.ChatTypeDialog {
+		dialogName, err := s.GetDialogName(ctx, chat.Id, userID)
+		if err == nil && dialogName != "" {
+			displayTitle = dialogName
+		}
+	}
+
+	return &dto.ChatInformationDTO{
+		ID: chat.Id,
+		ChatType: dto.ChatType(chat.Type),
+		Title: displayTitle,
+		LastMessage: messageDTO,
+	}, nil
+
 }
