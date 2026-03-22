@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
+	"github.com/go-chi/chi"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
@@ -84,7 +86,74 @@ func (h *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	ctx := r.Context()
+	_, ok := ctx.Value(middleware.UserID).(int64)
+	if !ok {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.Unauthorized,
+					Message: dtoApi.UnauthorizedMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+
+	profileIDString := chi.URLParam(r, "id") // "42"
+	profileID, err := strconv.ParseInt(profileIDString, 10, 64)
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidID,
+					Message: dtoApi.InvalidIDMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+	request := &dto.RequestGetProfile{
+		UserID: profileID,
+	}
+
+	profile, err := h.profileService.GetUserProfile(ctx, request)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.NotFound,
+						Message: dtoApi.NotFoundMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusNotFound, resp)
+			return
+		}
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusInternalServerError, resp)
+		return
+	}
+
+	resp := dtoApi.ApiSuccessResponse[dto.ResponseGetProfile]{
+		Status: dtoApi.Success,
+		Body:   *profile,
+	}
+	response.Send(w, http.StatusOK, resp)
 }
 
 func (h *ProfileHandler) UpdateUserAvatar(w http.ResponseWriter, r *http.Request) {
@@ -227,7 +296,30 @@ func (h *ProfileHandler) UpdateUserBio(w http.ResponseWriter, r *http.Request) {
 
 	responseUpdate, err := h.profileService.UpdateProfileBio(ctx, request)
 	if err != nil {
-		// TODO
+		if errors.Is(err, domain.ErrEmptyBio) {
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.EmptyBIO,
+						Message: dtoApi.EmptyBIOMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+			return
+		}
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
 	}
 
 	resp := dtoApi.ApiSuccessResponse[dto.ResponseUpdateProfile]{

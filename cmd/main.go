@@ -94,6 +94,7 @@ func main() {
 		mux.With(authMiddleware).Get("/me", profileHandlers.GetMyProfile)
 		mux.With(authMiddleware).Patch("/me/bio", profileHandlers.UpdateUserBio)
 		mux.With(authMiddleware).Patch("/me/avatar", profileHandlers.UpdateUserAvatar)
+		mux.With(authMiddleware).Patch("/{id}", profileHandlers.GetUserProfile)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
