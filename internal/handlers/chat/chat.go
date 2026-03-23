@@ -23,7 +23,6 @@ type ChatService interface {
 	GetAllChats(ctx context.Context, id int64) ([]dto.ChatInformationDTO, error)
 	CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ownerID int64) (*dto.ChatInformationDTO, error)
 	GetChatByID(ctx context.Context, chatID, userID int64) (*dto.ChatInformationDTO, error)
-
 }
 
 type ChatsHandler struct {

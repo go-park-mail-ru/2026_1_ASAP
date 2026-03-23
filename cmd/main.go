@@ -15,12 +15,15 @@ import (
 	_ "github.com/go-park-mail-ru/2026_1_ASAP/docs"
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
+	contactHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/contacts"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
+	contactRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts"
 	sessionRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 	chatService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat"
+	contactService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/contacts"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
 )
 
@@ -60,11 +63,14 @@ func main() {
 
 
 	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig)
+	contactRepo, err := contactRepository.NewContactsRepository(context.Background(), cfg.PostgresConfig)
 	authServ := authService.NewAuthService(userRepo, sessionServ)
 	chatServ := chatService.NewChatService(chatRepo, userRepo)
+	contactServ := contactService.NewContactService(contactRepo, userRepo)
 	auth := authHandlers.NewAuthHandler(authServ)
 	chatsHandler := chatHandlers.NewChatHandler(chatServ)
 	authMiddleware := middleware.AuthMiddleware(sessionServ)
+	contactsHandler := contactHandlers.NewContactHandler(contactServ)
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
@@ -75,6 +81,12 @@ func main() {
 		mux.With(authMiddleware).Get("/", chatsHandler.GetChats)
 		mux.With(authMiddleware).Post("/", chatsHandler.ChatCreate)
 		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
+	})
+
+	mux.Route("/api/v1/contacts", func(mux chi.Router) {
+		mux.With(authMiddleware).Get("/", contactsHandler.GetContacts)
+		mux.With(authMiddleware).Post("/", contactsHandler.CreateContact)
+		mux.With(authMiddleware).Delete("/{contact_user_id}", contactsHandler.DeleteContact)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
