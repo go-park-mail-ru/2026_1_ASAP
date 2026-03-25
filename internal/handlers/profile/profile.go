@@ -17,9 +17,9 @@ import (
 )
 
 type ProfileServiceInterface interface {
-	GetUserProfile(ctx context.Context, request *dto.RequestGetProfile) (response *dto.ResponseGetProfile, err error)
-	UpdateProfileBio(ctx context.Context, request *dto.RequestUpdateBio) (response *dto.ResponseUpdateProfile, err error)
-	UpdateProfileAvatar(ctx context.Context, request *dto.RequestUpdateAvatar) (response *dto.ResponseUpdateProfile, err error)
+	GetUserProfile(ctx context.Context, userID int64) (response *dto.ResponseGetProfile, err error)
+	UpdateProfileBio(ctx context.Context, userID int64, request *dto.RequestUpdateBio) (response *dto.ResponseUpdateProfile, err error)
+	UpdateProfileAvatar(ctx context.Context, userID int64, request *dto.RequestUpdateAvatar) (response *dto.ResponseUpdateProfile, err error)
 }
 
 type ProfileHandler struct {
@@ -30,6 +30,16 @@ func NewProfileHandler(profileService ProfileServiceInterface) *ProfileHandler {
 	return &ProfileHandler{profileService: profileService}
 }
 
+// GetMyProfile godoc
+// @Summary Получение профиля пользователя
+// @Description Получение собственного профиля пользователя
+// @Tags profile
+// @Accept json
+// @Produce json
+// @Success 200 {object} dtoApi.ResponseGetProfileSuccessForSwagger
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Неавторизован"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутреняя ошибка"
+// @Router /api/v1/profile/me [get]
 func (h *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userId, ok := ctx.Value(middleware.UserID).(int64)
@@ -46,11 +56,8 @@ func (h *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 		response.Send(w, http.StatusUnauthorized, resp)
 		return
 	}
-	request := &dto.RequestGetProfile{
-		UserID: userId,
-	}
 
-	profile, err := h.profileService.GetUserProfile(ctx, request)
+	profile, err := h.profileService.GetUserProfile(ctx, userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			resp := dtoApi.ApiErrorResponse{
@@ -85,6 +92,17 @@ func (h *ProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, resp)
 }
 
+// GetProfile godoc
+// @Summary Получение собственного профиля пользователя
+// @Description Получение собственного профиля пользователя
+// @Tags profile
+// @Accept json
+// @Produce json
+// @Success 200 {object} dtoApi.ResponseGetProfileSuccessForSwagger
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Невалидный формат json"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Неавторизован"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутреняя ошибка"
+// @Router /api/v1/profile/{id} [get]
 func (h *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	_, ok := ctx.Value(middleware.UserID).(int64)
@@ -102,7 +120,7 @@ func (h *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	profileIDString := chi.URLParam(r, "id") // "42"
+	profileIDString := chi.URLParam(r, "id")
 	profileID, err := strconv.ParseInt(profileIDString, 10, 64)
 	if err != nil {
 		resp := dtoApi.ApiErrorResponse{
@@ -117,11 +135,8 @@ func (h *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) 
 		response.Send(w, http.StatusBadRequest, resp)
 		return
 	}
-	request := &dto.RequestGetProfile{
-		UserID: profileID,
-	}
 
-	profile, err := h.profileService.GetUserProfile(ctx, request)
+	profile, err := h.profileService.GetUserProfile(ctx, profileID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			resp := dtoApi.ApiErrorResponse{
@@ -156,6 +171,18 @@ func (h *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) 
 	response.Send(w, http.StatusOK, resp)
 }
 
+// UpdateUserAvatar godoc
+// @Summary Обновление аватара пользователя
+// @Description Загружает новый аватар текущего пользователя
+// @Tags profile
+// @Accept multipart/form-data
+// @Produce application/json
+// @Param avatar formData file true "Файл аватара (image/jpeg|image/jpg|image/png|image/webp|image/gif), до 5MB"
+// @Success 200 {object} dtoApi.ResponseUpdateProfileForSwagger
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Некорректный файл аватара"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Неавторизован"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутреняя ошибка"
+// @Router /api/v1/profiles/me/avatar [patch]
 func (h *ProfileHandler) UpdateUserAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userId, ok := ctx.Value(middleware.UserID).(int64)
@@ -188,7 +215,7 @@ func (h *ProfileHandler) UpdateUserAvatar(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	request := &dto.RequestUpdateAvatar{UserID: userId}
+	request := &dto.RequestUpdateAvatar{}
 	fileInput := &media.FileInput{
 		Body:        file,
 		ContentType: header.Header.Get("Content-Type"),
@@ -196,7 +223,7 @@ func (h *ProfileHandler) UpdateUserAvatar(w http.ResponseWriter, r *http.Request
 	}
 	request.File = fileInput
 
-	responseUpdate, err := h.profileService.UpdateProfileAvatar(ctx, request)
+	responseUpdate, err := h.profileService.UpdateProfileAvatar(ctx, userId, request)
 	if err != nil {
 		switch err {
 		case domain.ErrEmptyAvatar:
@@ -258,6 +285,17 @@ func (h *ProfileHandler) UpdateUserAvatar(w http.ResponseWriter, r *http.Request
 	response.Send(w, http.StatusOK, resp)
 }
 
+// UpdateUserBio godoc
+// @Summary Обновление bio пользователя
+// @Description Обновляет bio текущего авторизованного пользователя
+// @Tags profile
+// @Accept json
+// @Produce application/json
+// @Param request body dto.RequestUpdateBio true "Запрос на обновление био (поле bio)"
+// @Success 200 {object} dtoApi.ResponseUpdateProfileForSwagger
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Невалидный json или bio не может быть пустым"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Неавторизован"
+// @Router /api/v1/profiles/me/bio [patch]
 func (h *ProfileHandler) UpdateUserBio(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -277,7 +315,7 @@ func (h *ProfileHandler) UpdateUserBio(w http.ResponseWriter, r *http.Request) {
 	}
 	decoder := json.NewDecoder(r.Body)
 
-	request := &dto.RequestUpdateBio{UserID: userId}
+	request := &dto.RequestUpdateBio{}
 
 	err := decoder.Decode(request)
 	if err != nil {
@@ -294,7 +332,7 @@ func (h *ProfileHandler) UpdateUserBio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseUpdate, err := h.profileService.UpdateProfileBio(ctx, request)
+	responseUpdate, err := h.profileService.UpdateProfileBio(ctx, userId, request)
 	if err != nil {
 		if errors.Is(err, domain.ErrEmptyBio) {
 			resp := dtoApi.ApiErrorResponse{
