@@ -42,7 +42,7 @@ const (
 )
 
 type ApiError struct {
-	Code    ErrorCode    `json:"code" enums:"INVALID_JSON,INVALID_CREDENTIALS,UNAUTHORIZED,FAIL_LOGOUT"`
+	Code    ErrorCode    `json:"code" example:"ERROR_CODE"`
 	Message ErrorMessage `json:"message" example:"Error message"`
 }
 

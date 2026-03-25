@@ -25,12 +25,12 @@ type ProfileService struct {
 	mediaRepository   MediaRepositoryInterface
 }
 
-func (p ProfileService) UpdateProfileBio(ctx context.Context, request *dto.RequestUpdateBio) (response *dto.ResponseUpdateProfile, err error) {
+func (p ProfileService) UpdateProfileBio(ctx context.Context, userID int64, request *dto.RequestUpdateBio) (response *dto.ResponseUpdateProfile, err error) {
 	if request.Bio == nil {
 		return nil, domain.ErrEmptyBio
 	}
 
-	profile, err := p.profileRepository.UploadBio(ctx, request.UserID, *request.Bio)
+	profile, err := p.profileRepository.UploadBio(ctx, userID, *request.Bio)
 	if err != nil {
 		return nil, fmt.Errorf("upload bio: %w", err)
 	}
@@ -44,7 +44,7 @@ func (p ProfileService) UpdateProfileBio(ctx context.Context, request *dto.Reque
 	}, nil
 }
 
-func (p ProfileService) UpdateProfileAvatar(ctx context.Context, request *dto.RequestUpdateAvatar) (response *dto.ResponseUpdateProfile, err error) {
+func (p ProfileService) UpdateProfileAvatar(ctx context.Context, userID int64, request *dto.RequestUpdateAvatar) (response *dto.ResponseUpdateProfile, err error) {
 	err = checkAvatar(request.File)
 	if err != nil {
 		switch {
@@ -59,12 +59,12 @@ func (p ProfileService) UpdateProfileAvatar(ctx context.Context, request *dto.Re
 		return nil, fmt.Errorf("invalid avatar: %w", err)
 	}
 
-	avatarURL, err := p.mediaRepository.UploadAvatar(ctx, request.UserID, request.File)
+	avatarURL, err := p.mediaRepository.UploadAvatar(ctx, userID, request.File)
 	if err != nil {
 		return nil, fmt.Errorf("upload avatar: %w", err)
 	}
 
-	profile, err := p.profileRepository.UploadAvatarUrl(ctx, request.UserID, avatarURL)
+	profile, err := p.profileRepository.UploadAvatarUrl(ctx, userID, avatarURL)
 	if err != nil {
 		return nil, fmt.Errorf("upload avatar url: %w", err)
 	}
@@ -82,8 +82,8 @@ func NewProfileService(profileRepository ProfileRepositoryInterface, mediaReposi
 		mediaRepository: mediaRepositoryInterface}
 }
 
-func (p ProfileService) GetUserProfile(ctx context.Context, request *dto.RequestGetProfile) (response *dto.ResponseGetProfile, err error) {
-	profile, err := p.profileRepository.GetProfileById(ctx, request.UserID)
+func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (response *dto.ResponseGetProfile, err error) {
+	profile, err := p.profileRepository.GetProfileById(ctx, userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			return nil, domain.ErrNotFound

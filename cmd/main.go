@@ -60,7 +60,6 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-
 	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig)
 	authServ := authService.NewAuthService(userRepo, sessionServ)
 	chatServ := chatService.NewChatService(chatRepo, userRepo)
@@ -90,7 +89,7 @@ func main() {
 		mux.With(authMiddleware).Get("/me", profileHandlers.GetMyProfile)
 		mux.With(authMiddleware).Patch("/me/bio", profileHandlers.UpdateUserBio)
 		mux.With(authMiddleware).Patch("/me/avatar", profileHandlers.UpdateUserAvatar)
-		mux.With(authMiddleware).Patch("/{id}", profileHandlers.GetUserProfile)
+		mux.With(authMiddleware).Get("/{id}", profileHandlers.GetUserProfile)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
