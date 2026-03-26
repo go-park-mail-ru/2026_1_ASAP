@@ -282,6 +282,159 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/contacts": {
+            "get": {
+                "description": "Возвращает все контакты текущего пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "contacts"
+                ],
+                "summary": "Получить список контактов",
+                "responses": {
+                    "200": {
+                        "description": "Успешное получение списка контактов",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetContactsSuccessForSwagger"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Добавляет нового контакта в список контактов текущего пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "contacts"
+                ],
+                "summary": "Создать контакт",
+                "parameters": [
+                    {
+                        "description": "Запрос на создание контакта",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.AddContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Контакт успешно создан",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateContactSuccessForSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный запрос или ошибка валидации",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Контакт уже существует",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/contacts/{contact_user_id}": {
+            "delete": {
+                "description": "Удаляет контакт из списка контактов текущего пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "contacts"
+                ],
+                "summary": "Удалить контакт",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя, которого нужно удалить из контактов",
+                        "name": "contact_user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Контакт успешно удален",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseDeleteContactSuccessForSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный ID контакта",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Контакт не найден",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -338,6 +491,38 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateContactSuccessForSwagger": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseDeleteContactSuccessForSwagger": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
+                }
+            }
+        },
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatByIDSuccessForSwagger": {
             "type": "object",
             "properties": {
@@ -361,6 +546,25 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO"
+                    }
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetContactsSuccessForSwagger": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse"
                     }
                 },
                 "status": {
@@ -428,8 +632,8 @@ const docTemplate = `{
                 "error"
             ],
             "x-enum-varnames": [
-                "SUCCESS",
-                "ERROR"
+                "Success",
+                "Error"
             ]
         },
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestLogin": {
@@ -491,17 +695,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "string",
-                    "example": "00000000-0000-0000-0000-000000000000"
+                    "type": "integer"
                 },
                 "members_id": {
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "00000000-0000-0000-0000-00000000000"
-                    ]
+                        "type": "integer"
+                    }
                 },
                 "title": {
                     "type": "string",
@@ -529,8 +729,7 @@ const docTemplate = `{
                     "example": "dialog"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "00000000-0000-0000-0000-000000000000"
+                    "type": "integer"
                 },
                 "last_message": {
                     "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.MessageDTO"
@@ -561,8 +760,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2026-01-01T00:00:00+09:00"
                 },
-                "sender": {
-                    "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_user.UserDTO"
+                "sender_id": {
+                    "type": "integer"
                 },
                 "text": {
                     "type": "string",
@@ -570,12 +769,31 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_user.UserDTO": {
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.AddContactRequest": {
             "type": "object",
             "properties": {
-                "login": {
-                    "type": "string",
-                    "example": "alice"
+                "contact_name": {
+                    "type": "string"
+                },
+                "contact_user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse": {
+            "type": "object",
+            "properties": {
+                "contact_name": {
+                    "type": "string"
+                },
+                "contact_user_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         }

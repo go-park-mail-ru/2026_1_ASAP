@@ -63,7 +63,13 @@ func main() {
 
 
 	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
 	contactRepo, err := contactRepository.NewContactsRepository(context.Background(), cfg.PostgresConfig)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
 	authServ := authService.NewAuthService(userRepo, sessionServ)
 	chatServ := chatService.NewChatService(chatRepo, userRepo)
 	contactServ := contactService.NewContactService(contactRepo, userRepo)

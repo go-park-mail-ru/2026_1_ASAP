@@ -1,4 +1,4 @@
-package hadlers
+package handlers
 
 import (
 	"context"
@@ -35,14 +35,16 @@ func NewContactHandler(contactService ContactService) *ContactHandler {
 	}
 }
 
-
-
-
-
-
-
-
-
+// GetContacts godoc
+// @Summary Получить список контактов
+// @Description Возвращает все контакты текущего пользователя
+// @Tags contacts
+// @Accept json
+// @Produce json
+// @Success 200 {object} dtoApi.ResponseGetContactsSuccessForSwagger "Успешное получение списка контактов"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/contacts [get]
 func (h *ContactHandler) GetContacts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID, ok := r.Context().Value(middleware.UserID).(int64)
@@ -82,6 +84,20 @@ func (h *ContactHandler) GetContacts(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, resp)
 }
 
+// CreateContact godoc
+// @Summary Создать контакт
+// @Description Добавляет нового контакта в список контактов текущего пользователя
+// @Tags contacts
+// @Accept json
+// @Produce json
+// @Param request body dto.AddContactRequest true "Запрос на создание контакта"
+// @Success 200 {object} dtoApi.ResponseCreateContactSuccessForSwagger "Контакт успешно создан"
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Некорректный запрос или ошибка валидации"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
+// @Failure 404 {object} dtoApi.ApiErrorResponse "Пользователь не найден"
+// @Failure 409 {object} dtoApi.ApiErrorResponse "Контакт уже существует"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/contacts [post]
 func (h *ContactHandler) CreateContact(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ctx := r.Context()
@@ -142,27 +158,27 @@ func (h *ContactHandler) CreateContact(w http.ResponseWriter, r *http.Request) {
 					},
 				},
 			}
-			response.Send(w, http.StatusUnauthorized, resp)
+			response.Send(w, http.StatusNotFound, resp)
 			return
 		case errors.Is(err, domain.ErrContactExists):
 			resp := dtoApi.ApiErrorResponse{
 				Status: dtoApi.Error,
 				Errors: []dtoApi.ApiError{
 					{
-						Code: "CONTACT_ALREADY_EXISTS",
-						Message: "contact already exists",
+						Code: dtoApi.ContactAlreadyExists,
+						Message: dtoApi.ContactAlreadyExistsMsg,
 					},
 				},
 			}
-			response.Send(w, http.StatusUnauthorized, resp)
+			response.Send(w, http.StatusConflict, resp)
 			return
 		case errors.Is(err, domain.ErrCantCreateContactWithYourself):
 			resp := dtoApi.ApiErrorResponse{
 				Status: dtoApi.Error,
 				Errors: []dtoApi.ApiError{
 					{
-						Code: "CANT_CREATE_CONTACT_WITH_YOURSELF",
-						Message: "cant create contact with yourself",
+						Code: dtoApi.ContactWithYourself,
+						Message: dtoApi.ContactWithYourselfMsg,
 					},
 				},
 			}
@@ -186,9 +202,22 @@ func (h *ContactHandler) CreateContact(w http.ResponseWriter, r *http.Request) {
 			Status: dtoApi.Success,
 			Body: createdContact,
 		}
-	response.Send(w, http.StatusOK, resp)
+	response.Send(w, http.StatusCreated, resp)
 }
 
+// DeleteContact godoc
+// @Summary Удалить контакт
+// @Description Удаляет контакт из списка контактов текущего пользователя
+// @Tags contacts
+// @Accept json
+// @Produce json
+// @Param contact_user_id path int true "ID пользователя, которого нужно удалить из контактов"
+// @Success 200 {object} dtoApi.ResponseDeleteContactSuccessForSwagger "Контакт успешно удален"
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Некорректный ID контакта"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
+// @Failure 404 {object} dtoApi.ApiErrorResponse "Контакт не найден"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/contacts/{contact_user_id} [delete]
 func(h *ContactHandler) DeleteContact(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID, ok := r.Context().Value(middleware.UserID).(int64)
@@ -238,19 +267,19 @@ func(h *ContactHandler) DeleteContact(w http.ResponseWriter, r *http.Request) {
 					},
 				},
 			}
-			response.Send(w, http.StatusUnauthorized, resp)
+			response.Send(w, http.StatusNotFound, resp)
 			return
 		case errors.Is(err, domain.ErrContactNotFound):
 			resp := dtoApi.ApiErrorResponse{
 				Status: dtoApi.Error,
 				Errors: []dtoApi.ApiError{
 					{
-						Code: "CONTACT_NOT_FOUND",
-						Message: "contact not found",
+						Code: dtoApi.ContactNotFound,
+						Message: dtoApi.ContactNotFoundMsg,
 					},
 				},
 			}
-			response.Send(w, http.StatusUnauthorized, resp)
+			response.Send(w, http.StatusNotFound, resp)
 			return
 		}
 		resp := dtoApi.ApiErrorResponse{
@@ -267,7 +296,7 @@ func(h *ContactHandler) DeleteContact(w http.ResponseWriter, r *http.Request) {
 	}
 	resp := dtoApi.ApiSuccessResponse[any]{
 			Status: dtoApi.Success,
-			Body: string("User successful delete"),
+			Body: string("Contact successful delete"),
 		}
 	response.Send(w, http.StatusOK, resp)
 }
