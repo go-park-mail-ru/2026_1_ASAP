@@ -282,6 +282,178 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/profile/me": {
+            "get": {
+                "description": "Получение собственного профиля пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Получение профиля пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetProfileSuccessForSwagger"
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутреняя ошибка",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profile/{id}": {
+            "get": {
+                "description": "Получение собственного профиля пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Получение собственного профиля пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetProfileSuccessForSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный формат json",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутреняя ошибка",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profiles/me/avatar": {
+            "patch": {
+                "description": "Загружает новый аватар текущего пользователя",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Обновление аватара пользователя",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Файл аватара (image/jpeg|image/jpg|image/png|image/webp|image/gif), до 5MB",
+                        "name": "avatar",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный файл аватара",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутреняя ошибка",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profiles/me/bio": {
+            "patch": {
+                "description": "Обновляет bio текущего авторизованного пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Обновление bio пользователя",
+                "parameters": [
+                    {
+                        "description": "Запрос на обновление био (поле bio)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBio"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный json или bio не может быть пустым",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -290,12 +462,7 @@ const docTemplate = `{
             "properties": {
                 "code": {
                     "type": "string",
-                    "enum": [
-                        "INVALID_JSON",
-                        "INVALID_CREDENTIALS",
-                        "UNAUTHORIZED",
-                        "FAIL_LOGOUT"
-                    ]
+                    "example": "ERROR_CODE"
                 },
                 "message": {
                     "type": "string",
@@ -373,6 +540,22 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetProfileSuccessForSwagger": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseGetProfile"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
+                }
+            }
+        },
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLoginSuccessForSwagger": {
             "type": "object",
             "properties": {
@@ -431,6 +614,22 @@ const docTemplate = `{
                 "Success",
                 "Error"
             ]
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseUpdateProfile"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
+                }
+            }
         },
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestLogin": {
             "type": "object",
@@ -562,6 +761,54 @@ const docTemplate = `{
                 "text": {
                     "type": "string",
                     "example": "Hello, my name is Artem"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBio": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseGetProfile": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "last_seen": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseUpdateProfile": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "last_seen": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         }

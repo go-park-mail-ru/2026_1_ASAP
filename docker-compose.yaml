@@ -22,10 +22,21 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
 
+      # MinIO / S3-compatible storage
+      S3_HOST: ${S3_HOST:-minio}
+      S3_PORT: ${S3_PORT:-9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-media}
+      S3_USE_SSL: ${S3_USE_SSL:-false}
+      S3_PUBLIC_HOST: ${S3_PUBLIC_HOST:-localhost}
+      S3_PUBLIC_PORT: ${S3_PUBLIC_PORT:-9000}
+
     depends_on:
       - redis
       - db
       - migrate
+      - minio
     restart: always
 
   redis:
@@ -63,3 +74,19 @@ services:
     depends_on:
       - db
     restart: "no"
+
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    restart: always
+
+volumes:
+  minio_data:

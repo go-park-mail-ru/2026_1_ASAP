@@ -2,11 +2,7 @@ definitions:
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiError:
     properties:
       code:
-        enum:
-        - INVALID_JSON
-        - INVALID_CREDENTIALS
-        - UNAUTHORIZED
-        - FAIL_LOGOUT
+        example: ERROR_CODE
         type: string
       message:
         example: Error message
@@ -52,6 +48,15 @@ definitions:
         - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
         example: success
     type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetProfileSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseGetProfile'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLoginSuccessForSwagger:
     properties:
       body:
@@ -87,6 +92,15 @@ definitions:
     x-enum-varnames:
     - Success
     - Error
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseUpdateProfile'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestLogin:
     properties:
       login:
@@ -174,6 +188,37 @@ definitions:
         type: integer
       text:
         example: Hello, my name is Artem
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBio:
+    properties:
+      bio:
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseGetProfile:
+    properties:
+      avatar:
+        type: string
+      bio:
+        type: string
+      last_seen:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseUpdateProfile:
+    properties:
+      avatar:
+        type: string
+      bio:
+        type: string
+      last_seen:
+        type: string
+      user_id:
+        type: integer
+      username:
         type: string
     type: object
 host: pulseapp.space:8080
@@ -359,4 +404,118 @@ paths:
       summary: Получить чат по ID
       tags:
       - chats
+  /api/v1/profile/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Получение собственного профиля пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetProfileSuccessForSwagger'
+        "400":
+          description: Невалидный формат json
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутреняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получение собственного профиля пользователя
+      tags:
+      - profile
+  /api/v1/profile/me:
+    get:
+      consumes:
+      - application/json
+      description: Получение собственного профиля пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetProfileSuccessForSwagger'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутреняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получение профиля пользователя
+      tags:
+      - profile
+  /api/v1/profiles/me/avatar:
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Загружает новый аватар текущего пользователя
+      parameters:
+      - description: Файл аватара (image/jpeg|image/jpg|image/png|image/webp|image/gif),
+          до 5MB
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger'
+        "400":
+          description: Некорректный файл аватара
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутреняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Обновление аватара пользователя
+      tags:
+      - profile
+  /api/v1/profiles/me/bio:
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет bio текущего авторизованного пользователя
+      parameters:
+      - description: Запрос на обновление био (поле bio)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBio'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger'
+        "400":
+          description: Невалидный json или bio не может быть пустым
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Обновление bio пользователя
+      tags:
+      - profile
 swagger: "2.0"

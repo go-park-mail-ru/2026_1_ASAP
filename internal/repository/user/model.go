@@ -16,3 +16,11 @@ type UserModel struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
+
+type ProfileModel struct {
+	UserId   int64
+	Username string
+	Avatar   sql.NullString
+	Bio      sql.NullString
+	LastSeen sql.NullTime
+}

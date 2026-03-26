@@ -4,6 +4,7 @@ import (
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"
+	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/profile"
 )
 
 // типы ответов для swagger
@@ -16,3 +17,5 @@ type ResponseGetChatByIDSuccessForSwagger = ApiSuccessResponse[*dtoChat.ChatInfo
 type ResponseGetContactsSuccessForSwagger = ApiSuccessResponse[[]dtoContact.ContactResponse]
 type ResponseCreateContactSuccessForSwagger = ApiSuccessResponse[*dtoContact.ContactResponse]
 type ResponseDeleteContactSuccessForSwagger = ApiSuccessResponse[string]
+type ResponseGetProfileSuccessForSwagger = ApiSuccessResponse[*dto.ResponseGetProfile]
+type ResponseUpdateProfileForSwagger = ApiSuccessResponse[*dto.ResponseUpdateProfile]

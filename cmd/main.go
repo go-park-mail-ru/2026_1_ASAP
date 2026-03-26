@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/cors"
-
 	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
@@ -17,13 +16,17 @@ import (
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
 	contactHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/contacts"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
-	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
 	contactRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts"
+	profileHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/profile"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
+	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
+	mediaRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/media"
 	sessionRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 	chatService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat"
 	contactService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/contacts"
+	profileService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
 )
 
@@ -61,7 +64,6 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-
 	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig)
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -77,6 +79,13 @@ func main() {
 	chatsHandler := chatHandlers.NewChatHandler(chatServ)
 	authMiddleware := middleware.AuthMiddleware(sessionServ)
 	contactsHandler := contactHandlers.NewContactHandler(contactServ)
+	// Profile
+	mediaRepo, err := mediaRepository.NewMediaRepository(context.Background(), cfg.S3Config)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	profileServ := profileService.NewProfileService(userRepo, mediaRepo)
+	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
@@ -93,6 +102,13 @@ func main() {
 		mux.With(authMiddleware).Get("/", contactsHandler.GetContacts)
 		mux.With(authMiddleware).Post("/", contactsHandler.CreateContact)
 		mux.With(authMiddleware).Delete("/{contact_user_id}", contactsHandler.DeleteContact)
+  })
+  
+	mux.Route("/api/v1/profiles", func(mux chi.Router) {
+		mux.With(authMiddleware).Get("/me", profileHandlers.GetMyProfile)
+		mux.With(authMiddleware).Patch("/me/bio", profileHandlers.UpdateUserBio)
+		mux.With(authMiddleware).Patch("/me/avatar", profileHandlers.UpdateUserAvatar)
+		mux.With(authMiddleware).Get("/{id}", profileHandlers.GetUserProfile)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
