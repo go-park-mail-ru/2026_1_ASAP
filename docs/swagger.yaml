@@ -28,6 +28,24 @@ definitions:
         - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
         example: success
     type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateContactSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseDeleteContactSuccessForSwagger:
+    properties:
+      body:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatByIDSuccessForSwagger:
     properties:
       body:
@@ -42,6 +60,17 @@ definitions:
       body:
         items:
           $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO'
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetContactsSuccessForSwagger:
+    properties:
+      body:
+        items:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse'
         type: array
       status:
         allOf:
@@ -189,6 +218,24 @@ definitions:
       text:
         example: Hello, my name is Artem
         type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.AddContactRequest:
+    properties:
+      contact_name:
+        type: string
+      contact_user_id:
+        type: integer
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse:
+    properties:
+      contact_name:
+        type: string
+      contact_user_id:
+        type: integer
+      created_at:
+        type: string
+      user_id:
+        type: integer
     type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBio:
     properties:
@@ -404,6 +451,107 @@ paths:
       summary: Получить чат по ID
       tags:
       - chats
+  /api/v1/contacts:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все контакты текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное получение списка контактов
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetContactsSuccessForSwagger'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получить список контактов
+      tags:
+      - contacts
+    post:
+      consumes:
+      - application/json
+      description: Добавляет нового контакта в список контактов текущего пользователя
+      parameters:
+      - description: Запрос на создание контакта
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.AddContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Контакт успешно создан
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateContactSuccessForSwagger'
+        "400":
+          description: Некорректный запрос или ошибка валидации
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "409":
+          description: Контакт уже существует
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Создать контакт
+      tags:
+      - contacts
+  /api/v1/contacts/{contact_user_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет контакт из списка контактов текущего пользователя
+      parameters:
+      - description: ID пользователя, которого нужно удалить из контактов
+        in: path
+        name: contact_user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Контакт успешно удален
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseDeleteContactSuccessForSwagger'
+        "400":
+          description: Некорректный ID контакта
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Контакт не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Удалить контакт
+      tags:
+      - contacts
   /api/v1/profile/{id}:
     get:
       consumes:
