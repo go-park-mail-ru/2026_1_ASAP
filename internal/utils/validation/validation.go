@@ -6,6 +6,7 @@ import (
 
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
+	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"
 )
 
 type ValidationError struct {
@@ -232,5 +233,19 @@ func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
 			memb[id] = true
 		}
 	}
+	return errs
+}
+
+func ValidationContactCreate(req *dtoContact.AddContactRequest) []ValidationError {
+	var errs []ValidationError
+
+	if req.ContactName != "" && len(req.ContactName) > 100{
+		errs = append(errs, ValidationError{
+			Field: "contact_name",
+			Message: "contact name must be less than 100 caracters",
+			Code: "CONTACT_NAME_MUST_LESS_100_CHARACTERS",
+		})
+	}
+
 	return errs
 }

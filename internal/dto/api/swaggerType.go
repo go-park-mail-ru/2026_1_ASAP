@@ -3,6 +3,7 @@ package api
 import (
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
+	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/profile"
 )
 
@@ -13,5 +14,8 @@ type ResponseLogoutSuccessForSwagger = ApiSuccessResponse[dtoAuth.ResponseLogout
 type ResponseGetChatsSuccessForSwagger = ApiSuccessResponse[[]dtoChat.ChatInformationDTO]
 type ResponseCreateChatSuccessForSwagger = ApiSuccessResponse[*dtoChat.ChatInformationDTO]
 type ResponseGetChatByIDSuccessForSwagger = ApiSuccessResponse[*dtoChat.ChatInformationDTO]
+type ResponseGetContactsSuccessForSwagger = ApiSuccessResponse[[]dtoContact.ContactResponse]
+type ResponseCreateContactSuccessForSwagger = ApiSuccessResponse[*dtoContact.ContactResponse]
+type ResponseDeleteContactSuccessForSwagger = ApiSuccessResponse[string]
 type ResponseGetProfileSuccessForSwagger = ApiSuccessResponse[*dto.ResponseGetProfile]
 type ResponseUpdateProfileForSwagger = ApiSuccessResponse[*dto.ResponseUpdateProfile]

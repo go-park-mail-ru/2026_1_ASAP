@@ -14,6 +14,9 @@ import (
 	_ "github.com/go-park-mail-ru/2026_1_ASAP/docs"
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
+	contactHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/contacts"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
+	contactRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts"
 	profileHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
@@ -22,6 +25,7 @@ import (
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 	chatService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat"
+	contactService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/contacts"
 	profileService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
 )
@@ -61,11 +65,20 @@ func main() {
 	}
 
 	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	contactRepo, err := contactRepository.NewContactsRepository(context.Background(), cfg.PostgresConfig)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
 	authServ := authService.NewAuthService(userRepo, sessionServ)
 	chatServ := chatService.NewChatService(chatRepo, userRepo)
+	contactServ := contactService.NewContactService(contactRepo, userRepo)
 	auth := authHandlers.NewAuthHandler(authServ)
 	chatsHandler := chatHandlers.NewChatHandler(chatServ)
 	authMiddleware := middleware.AuthMiddleware(sessionServ)
+	contactsHandler := contactHandlers.NewContactHandler(contactServ)
 	// Profile
 	mediaRepo, err := mediaRepository.NewMediaRepository(context.Background(), cfg.S3Config)
 	if err != nil {
@@ -85,6 +98,12 @@ func main() {
 		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
 	})
 
+	mux.Route("/api/v1/contacts", func(mux chi.Router) {
+		mux.With(authMiddleware).Get("/", contactsHandler.GetContacts)
+		mux.With(authMiddleware).Post("/", contactsHandler.CreateContact)
+		mux.With(authMiddleware).Delete("/{contact_user_id}", contactsHandler.DeleteContact)
+  })
+  
 	mux.Route("/api/v1/profiles", func(mux chi.Router) {
 		mux.With(authMiddleware).Get("/me", profileHandlers.GetMyProfile)
 		mux.With(authMiddleware).Patch("/me/bio", profileHandlers.UpdateUserBio)
