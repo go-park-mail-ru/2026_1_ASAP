@@ -23,6 +23,8 @@ const (
 	FileTooLarge           = "FILE_TOO_LARGE"
 	EmptyBIO               = "EMPTY_BIO"
 	NotFound               = "NOT_FOUND"
+	CantDeleteChat         = "CANT_DELETE_CHAT"
+	NotMemberOfChat        = "NOT_MEMBER_OF_CHAT"
 )
 
 const (
@@ -45,6 +47,8 @@ const (
 	FileTooLargeMsg           = "File too large"
 	EmptyBIOMsg               = "Empty BIO"
 	NotFoundMsg               = "Not found"
+	CantDeleteChatMsg         = "You cant delete this chat"
+	NotMemberOfChatMsg        = "You are not member of this chat"
 )
 
 type ApiError struct {
