@@ -276,6 +276,62 @@
                 }
             }
         },
+        "/api/v1/chats/{id}": {
+            "delete": {
+                "description": "Удаляет чат. Только владелец чата может выполнить это действие. Чат удаляется полностью для всех участников вместе со всеми сообщениями.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Удалить чат",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID чата",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Чат успешно удален",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный ID чата",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав на удаление чата (не владелец или не участник)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/contacts": {
             "get": {
                 "description": "Возвращает все контакты текущего пользователя",
@@ -632,6 +688,22 @@
                         }
                     ],
                     "example": "error"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
                 }
             }
         },
