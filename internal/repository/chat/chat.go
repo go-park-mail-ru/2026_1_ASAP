@@ -257,3 +257,48 @@ func (r *ChatRepository) GetDialogBetweenUsers(ctx context.Context, user1ID, use
 
 	return toDomainChat(chatModel), nil
 }
+
+func (r *ChatRepository) DeleteChat(ctx context.Context, chatID int64) (error) {
+	trx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create transaction: %w", err)
+	}
+	defer trx.Rollback(ctx)
+
+	_, err = trx.Exec(ctx, 
+	`DELETE FROM messages WHERE chat_id=$1`, chatID)
+	if err != nil {
+		return fmt.Errorf("failed to delete messages from chat: %w", err)
+	}
+
+	_, err = trx.Exec(ctx,
+	`DELETE FROM chat_members WHERE chat_id=$1`, chatID)
+	if err != nil {
+		return fmt.Errorf("failed to delete members from chat: %w", err)
+	}
+
+	_, err = trx.Exec(ctx, 
+	`DELETE FROM chats WHERE id=$1`, chatID)
+	if err != nil {
+		return fmt.Errorf("failed to delete chat: %w", err)
+	}
+
+	return trx.Commit(ctx)
+}
+
+func (r *ChatRepository) GetMemberRole(ctx context.Context, userID, chatID int64) (string, error) {
+	var role string
+	err := r.db.QueryRow(ctx,
+	`SELECT role
+	 FROM chat_members
+	 WHERE chat_id=$1 AND user_id=$2`, chatID, userID).Scan(&role)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get user role: %w", err)
+	}
+
+	return role, nil
+}
