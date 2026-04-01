@@ -10,6 +10,7 @@ type ContactModel struct {
 	ContactName string `json:"contact_name"`
 	ContactUserID int64 `json:"contact_user_id"`
 	CreatedAt time.Time `json:"created_at"`
+	ContactAvatarUrl sql.NullString `json:"contact_avatar_url"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
