@@ -607,6 +607,58 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/profiles/me/birth": {
+            "post": {
+                "description": "Устанавливает дату рождения текущего авторизованного пользователя. Ожидается строка в формате YYYY-MM-DD (RFC 3339, только дата), не в будущем.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Обновление даты рождения пользователя",
+                "parameters": [
+                    {
+                        "description": "Тело запроса: birth_date — дата в формате YYYY-MM-DD",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBirthDate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный JSON, отсутствует birth_date, неверный формат даты или дата в будущем",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1004,6 +1056,14 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBirthDate": {
+            "type": "object",
+            "properties": {
+                "birth_date": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseGetProfile": {
             "type": "object",
             "properties": {
@@ -1013,14 +1073,26 @@ const docTemplate = `{
                 "bio": {
                     "type": "string"
                 },
+                "birth_date": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
                 "last_seen": {
+                    "type": "string"
+                },
+                "login": {
                     "type": "string"
                 },
                 "user_id": {
                     "type": "integer"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },
@@ -1033,14 +1105,23 @@ const docTemplate = `{
                 "bio": {
                     "type": "string"
                 },
+                "birth_date": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
                 "last_seen": {
+                    "type": "string"
+                },
+                "login": {
                     "type": "string"
                 },
                 "user_id": {
                     "type": "integer"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         }

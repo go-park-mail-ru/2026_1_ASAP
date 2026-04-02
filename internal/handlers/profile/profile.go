@@ -370,6 +370,18 @@ func (h *ProfileHandler) UpdateUserBio(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, resp)
 }
 
+// UpdateProfileBirthDate godoc
+// @Summary Обновление даты рождения пользователя
+// @Description Устанавливает дату рождения текущего авторизованного пользователя. Ожидается строка в формате YYYY-MM-DD (RFC 3339, только дата), не в будущем.
+// @Tags profile
+// @Accept json
+// @Produce application/json
+// @Param request body dto.RequestUpdateBirthDate true "Тело запроса: birth_date — дата в формате YYYY-MM-DD"
+// @Success 200 {object} dtoApi.ResponseUpdateProfileForSwagger
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Невалидный JSON, отсутствует birth_date, неверный формат даты или дата в будущем"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Неавторизован"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка"
+// @Router /api/v1/profiles/me/birth [post]
 func (h *ProfileHandler) UpdateProfileBirthDate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

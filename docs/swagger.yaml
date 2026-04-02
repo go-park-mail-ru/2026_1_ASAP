@@ -242,18 +242,31 @@ definitions:
       bio:
         type: string
     type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBirthDate:
+    properties:
+      birth_date:
+        type: string
+    type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseGetProfile:
     properties:
       avatar:
         type: string
       bio:
         type: string
+      birth_date:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
       last_seen:
+        type: string
+      login:
         type: string
       user_id:
         type: integer
-      username:
-        type: string
     type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseUpdateProfile:
     properties:
@@ -261,12 +274,18 @@ definitions:
         type: string
       bio:
         type: string
+      birth_date:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
       last_seen:
+        type: string
+      login:
         type: string
       user_id:
         type: integer
-      username:
-        type: string
     type: object
 host: pulseapp.space:8080
 info:
@@ -664,6 +683,42 @@ paths:
           schema:
             $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
       summary: Обновление bio пользователя
+      tags:
+      - profile
+  /api/v1/profiles/me/birth:
+    post:
+      consumes:
+      - application/json
+      description: Устанавливает дату рождения текущего авторизованного пользователя.
+        Ожидается строка в формате YYYY-MM-DD (RFC 3339, только дата), не в будущем.
+      parameters:
+      - description: 'Тело запроса: birth_date — дата в формате YYYY-MM-DD'
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBirthDate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger'
+        "400":
+          description: Невалидный JSON, отсутствует birth_date, неверный формат даты
+            или дата в будущем
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Обновление даты рождения пользователя
       tags:
       - profile
 swagger: "2.0"
