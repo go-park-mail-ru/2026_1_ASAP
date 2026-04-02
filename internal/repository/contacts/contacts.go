@@ -2,8 +2,10 @@ package contacts
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
@@ -27,9 +29,10 @@ func NewContactsRepository(ctx context.Context, cfg config.PostgresConfig) (*Con
 
 func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID int64) ([]*domain.Contact, error) {
 	rows, err := r.db.Query(ctx, 
-	`SELECT user_id, contact_name, contact_user_id, created_at, updated_at
-	 FROM contacts
-	 WHERE user_id=$1
+	`SELECT c.user_id, c.contact_name, c.contact_user_id, u.avatar_url, c.created_at, c.updated_at
+	 FROM contacts c
+	 JOIN users u ON c.contact_user_id=u.id
+	 WHERE c.user_id=$1
 	 ORDER BY contact_name ASC`, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all contacts: %w", err)
@@ -43,6 +46,7 @@ func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID 
 			&contact.UserID,
 			&contact.ContactName,
 			&contact.ContactUserID,
+			&contact.ContactAvatarUrl,
 			&contact.CreatedAt,
 			&contact.UpdatedAt,
 		)
@@ -66,6 +70,17 @@ func (r *ContactsRepository) CreateContact(ctx context.Context, contact *domain.
 	if err != nil {
 		return nil, fmt.Errorf("failed to creaye contact: %w", err)
 	}
+
+	var contactAvatarUrl sql.NullString
+	errr := r.db.QueryRow(ctx,
+	`SELECT avatar_url
+	 FROM users
+	 WHERE id=$1`, contactModel.ContactUserID).Scan(&contactAvatarUrl)
+	
+	if errr != nil && errr != pgx.ErrNoRows {
+		return nil, fmt.Errorf("failed to get user avatar: %w", err)
+	}
+	contactModel.ContactAvatarUrl = contactAvatarUrl
 
 	return toDomainContact(contactModel), nil
 }

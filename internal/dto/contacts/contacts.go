@@ -15,6 +15,7 @@ type ContactResponse struct {
 	UserID int64 `json:"user_id"` 
 	ContactUserID int64 `json:"contact_user_id"`
 	ContactName string `json:"contact_name"`
+	ContactAvatarUrl  *string `json:"contact_avatar_url"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
