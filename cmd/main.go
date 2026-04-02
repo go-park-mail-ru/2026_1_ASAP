@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
