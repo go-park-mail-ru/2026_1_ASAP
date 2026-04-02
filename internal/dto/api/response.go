@@ -23,6 +23,8 @@ const (
 	FileTooLarge           = "FILE_TOO_LARGE"
 	EmptyBIO               = "EMPTY_BIO"
 	NotFound               = "NOT_FOUND"
+	InvalidDateFormat      = "INVALID_DATE_FORMAT"
+	InvalidDate            = "INVALID_DATE"
 	CantDeleteChat         = "CANT_DELETE_CHAT"
 	NotMemberOfChat        = "NOT_MEMBER_OF_CHAT"
 )
@@ -47,6 +49,8 @@ const (
 	FileTooLargeMsg           = "File too large"
 	EmptyBIOMsg               = "Empty BIO"
 	NotFoundMsg               = "Not found"
+	InvalidDateFormatMsg      = "Invalid date format"
+	InvalidDateMsg            = "Invalid date"
 	CantDeleteChatMsg         = "You cant delete this chat"
 	NotMemberOfChatMsg        = "You are not member of this chat"
 )

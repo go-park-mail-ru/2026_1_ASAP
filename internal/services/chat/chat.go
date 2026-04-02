@@ -12,7 +12,6 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 )
 
-
 type ChatRepositoryInterface interface {
 	GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error)
 	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
@@ -20,7 +19,7 @@ type ChatRepositoryInterface interface {
 	GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error)
 	GetLastMessagesOfChats(ctx context.Context, id int64) ([]*domain.Message, error)
 	GetChatMembers(ctx context.Context, chatID int64) ([]int64, error)
-	AddMember(ctx context.Context, chatID, userID int64, role string) (error)
+	AddMember(ctx context.Context, chatID, userID int64, role string) error
 	IsMember(ctx context.Context, chatID, userID int64) (bool, error)
 	GetDialogBetweenUsers(ctx context.Context, user1ID, user2ID int64) (*domain.Chat, error)
 	DeleteChat(ctx context.Context, chatID int64) (error)
@@ -69,7 +68,7 @@ func (s *ChatService) GetDialogName(ctx context.Context, chatID int64, userID in
 		return "", fmt.Errorf("failed to get userID: %w", err)
 	}
 
-	return friendUser.Username, nil
+	return friendUser.Username(), nil
 }
 
 func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInformationDTO, error) {
@@ -94,8 +93,8 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 		messageDTO := dto.MessageDTO{}
 		if ok && lastMsg != nil {
 			messageDTO = dto.MessageDTO{
-				SenderId: lastMsg.SenderId,
-				Text: lastMsg.Content,
+				SenderId:  lastMsg.SenderId,
+				Text:      lastMsg.Content,
 				CreatedAt: lastMsg.CreatedAt,
 			}
 		}
@@ -108,9 +107,9 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 		}
 
 		result = append(result, dto.ChatInformationDTO{
-			ID: chat.Id,
-			Title: displayTitle,
-			ChatType: dto.ChatType(chat.Type),
+			ID:          chat.Id,
+			Title:       displayTitle,
+			ChatType:    dto.ChatType(chat.Type),
 			LastMessage: messageDTO,
 		})
 	}
@@ -132,8 +131,8 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 		user2 := chatDTO.MembersID[1]
 
 		if user1 == user2 {
-        	return nil, domain.ErrCantCreateDialogWithYourself
-    	}
+			return nil, domain.ErrCantCreateDialogWithYourself
+		}
 
 		existingDialog, err := s.chatRepo.GetDialogBetweenUsers(ctx, user1, user2)
 		if err != nil {
@@ -151,13 +150,13 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 	}
 
 	chat := &domain.Chat{
-		Type: domain.ChatType(chatDTO.Type),
-		Title: title,
+		Type:        domain.ChatType(chatDTO.Type),
+		Title:       title,
 		Description: nil,
-		OwnerId: ownerID,
-		AvatarUrl: nil,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		OwnerId:     ownerID,
+		AvatarUrl:   nil,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	createdChat, err := s.chatRepo.CreateChat(ctx, chat)
@@ -185,9 +184,9 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 	}
 
 	return &dto.ChatInformationDTO{
-		ID: createdChat.Id,
-		ChatType: dto.ChatType(createdChat.Type),
-		Title: displayTitle,
+		ID:          createdChat.Id,
+		ChatType:    dto.ChatType(createdChat.Type),
+		Title:       displayTitle,
 		LastMessage: dto.MessageDTO{},
 	}, nil
 }
@@ -200,7 +199,6 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 	if !isMember {
 		return nil, domain.ErrNotMember
 	}
-	
 
 	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
 	if err != nil {
@@ -216,8 +214,8 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 	}
 
 	messageDTO := dto.MessageDTO{
-		SenderId: lastMsg.SenderId,
-		Text: lastMsg.Content,
+		SenderId:  lastMsg.SenderId,
+		Text:      lastMsg.Content,
 		CreatedAt: lastMsg.CreatedAt,
 	}
 
@@ -230,12 +228,11 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 	}
 
 	return &dto.ChatInformationDTO{
-		ID: chat.Id,
-		ChatType: dto.ChatType(chat.Type),
-		Title: displayTitle,
+		ID:          chat.Id,
+		ChatType:    dto.ChatType(chat.Type),
+		Title:       displayTitle,
 		LastMessage: messageDTO,
 	}, nil
-
 }
 
 func (s *ChatService) DeleteChat(ctx context.Context, userID, chatID int64) error {

@@ -9,3 +9,7 @@ type RequestUpdateBio struct {
 type RequestUpdateAvatar struct {
 	File *media.FileInput
 }
+
+type RequestUpdateBirthDate struct {
+	BirthDate *string `json:"birth_date,omitempty"`
+}

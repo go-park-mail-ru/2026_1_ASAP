@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
@@ -118,6 +119,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		}
+		log.Println(err.Error())
 		response.Send(w, http.StatusInternalServerError, resp)
 		return
 	}
@@ -222,6 +224,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 				},
 			},
 		}
+		log.Println(err.Error())
 		response.Send(w, http.StatusInternalServerError, resp)
 		return
 	}
