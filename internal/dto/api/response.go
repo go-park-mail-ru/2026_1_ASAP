@@ -23,6 +23,8 @@ const (
 	FileTooLarge           = "FILE_TOO_LARGE"
 	EmptyBIO               = "EMPTY_BIO"
 	NotFound               = "NOT_FOUND"
+	InvalidDateFormat      = "INVALID_DATE_FORMAT"
+	InvalidDate            = "INVALID_DATE"
 )
 
 const (
@@ -45,6 +47,8 @@ const (
 	FileTooLargeMsg           = "File too large"
 	EmptyBIOMsg               = "Empty BIO"
 	NotFoundMsg               = "Not found"
+	InvalidDateFormatMsg      = "Invalid date format"
+	InvalidDateMsg            = "Invalid date"
 )
 
 type ApiError struct {

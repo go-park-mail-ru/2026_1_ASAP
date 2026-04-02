@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -20,6 +21,7 @@ type ProfileServiceInterface interface {
 	GetUserProfile(ctx context.Context, userID int64) (response *dto.ResponseGetProfile, err error)
 	UpdateProfileBio(ctx context.Context, userID int64, request *dto.RequestUpdateBio) (response *dto.ResponseUpdateProfile, err error)
 	UpdateProfileAvatar(ctx context.Context, userID int64, request *dto.RequestUpdateAvatar) (response *dto.ResponseUpdateProfile, err error)
+	UpdateProfileBirthDate(ctx context.Context, userID int64, request *dto.RequestUpdateBirthDate) (response *dto.ResponseUpdateProfile, err error)
 }
 
 type ProfileHandler struct {
@@ -273,7 +275,8 @@ func (h *ProfileHandler) UpdateUserAvatar(w http.ResponseWriter, r *http.Request
 					},
 				},
 			}
-			response.Send(w, http.StatusBadRequest, resp)
+			log.Println(err.Error())
+			response.Send(w, http.StatusInternalServerError, resp)
 			return
 		}
 	}
@@ -356,8 +359,92 @@ func (h *ProfileHandler) UpdateUserBio(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		}
+		response.Send(w, http.StatusInternalServerError, resp)
+		return
+	}
+
+	resp := dtoApi.ApiSuccessResponse[dto.ResponseUpdateProfile]{
+		Status: dtoApi.Success,
+		Body:   *responseUpdate,
+	}
+	response.Send(w, http.StatusOK, resp)
+}
+
+func (h *ProfileHandler) UpdateProfileBirthDate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userId, ok := ctx.Value(middleware.UserID).(int64)
+	if !ok {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.Unauthorized,
+					Message: dtoApi.UnauthorizedMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+
+	request := &dto.RequestUpdateBirthDate{}
+	err := decoder.Decode(request)
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidJson,
+					Message: dtoApi.InvalidJsonMsg,
+				},
+			},
+		}
 		response.Send(w, http.StatusBadRequest, resp)
 		return
+	}
+
+	responseUpdate, err := h.profileService.UpdateProfileBirthDate(ctx, userId, request)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrInvalidBirthDateFormat):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InvalidDateFormat,
+						Message: dtoApi.InvalidDateFormatMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+			return
+		case errors.Is(err, domain.ErrInvalidBirthDate):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InvalidDate,
+						Message: dtoApi.InvalidDateMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+			return
+		default:
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InternalError,
+						Message: dtoApi.InternalErrorMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusInternalServerError, resp)
+			return
+		}
 	}
 
 	resp := dtoApi.ApiSuccessResponse[dto.ResponseUpdateProfile]{

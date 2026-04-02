@@ -40,8 +40,9 @@ func NewAuthService(userRepository UserRepository, sessionService SessionService
 
 func (authService *AuthService) Register(ctx context.Context, request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, error) {
 	user := &domain.User{
-		Username: request.Login,
-		Email:    request.Email,
+		Login:     request.Login,
+		Email:     request.Email,
+		FirstName: request.Login,
 	}
 
 	passwordHash, err := hash.HashPassword(request.Password)

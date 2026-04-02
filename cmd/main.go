@@ -15,11 +15,10 @@ import (
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
 	contactHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/contacts"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
-	contactRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts"
 	profileHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
+	contactRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts"
 	mediaRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/media"
 	sessionRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
@@ -102,13 +101,14 @@ func main() {
 		mux.With(authMiddleware).Get("/", contactsHandler.GetContacts)
 		mux.With(authMiddleware).Post("/", contactsHandler.CreateContact)
 		mux.With(authMiddleware).Delete("/{contact_user_id}", contactsHandler.DeleteContact)
-  })
-  
+	})
+
 	mux.Route("/api/v1/profiles", func(mux chi.Router) {
 		mux.With(authMiddleware).Get("/me", profileHandlers.GetMyProfile)
-		mux.With(authMiddleware).Patch("/me/bio", profileHandlers.UpdateUserBio)
-		mux.With(authMiddleware).Patch("/me/avatar", profileHandlers.UpdateUserAvatar)
+		mux.With(authMiddleware).Post("/me/bio", profileHandlers.UpdateUserBio)
+		mux.With(authMiddleware).Post("/me/avatar", profileHandlers.UpdateUserAvatar)
 		mux.With(authMiddleware).Get("/{id}", profileHandlers.GetUserProfile)
+		mux.With(authMiddleware).Post("/me/birth", profileHandlers.UpdateProfileBirthDate)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())

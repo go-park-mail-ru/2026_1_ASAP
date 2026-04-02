@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
@@ -18,6 +19,7 @@ type ProfileRepositoryInterface interface {
 	GetProfileById(ctx context.Context, profileId int64) (*domain.Profile, error)
 	UploadBio(ctx context.Context, userId int64, bio string) (*domain.Profile, error)
 	UploadAvatarUrl(ctx context.Context, userId int64, avatarUrl string) (*domain.Profile, error)
+	UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*domain.Profile, error)
 }
 
 type ProfileService struct {
@@ -25,7 +27,51 @@ type ProfileService struct {
 	mediaRepository   MediaRepositoryInterface
 }
 
+func (p ProfileService) UpdateProfileBirthDate(ctx context.Context, userID int64, request *dto.RequestUpdateBirthDate) (response *dto.ResponseUpdateProfile, err error) {
+	if request == nil {
+		return nil, errors.New("update profile bio nil request")
+	}
+	if request.BirthDate == nil {
+		return nil, domain.ErrInvalidBirthDate
+	}
+
+	date, err := time.Parse(time.DateOnly, *request.BirthDate)
+	if err != nil {
+		return nil, domain.ErrInvalidBirthDateFormat
+	}
+	if date.After(time.Now()) {
+		return nil, domain.ErrInvalidBirthDate
+	}
+
+	profile, err := p.profileRepository.UploadBirthDate(ctx, userID, &date)
+	if err != nil {
+		if errors.Is(err, domain.ErrInvalidBirthDate) {
+			return nil, domain.ErrInvalidBirthDate
+		}
+		return nil, fmt.Errorf("upload birth date: %w", err)
+	}
+
+	var birthDate *string
+	if profile.BirthDate != nil {
+		date := profile.BirthDate.UTC().Format(time.DateOnly)
+		birthDate = &date
+	}
+	return &dto.ResponseUpdateProfile{
+		UserId:    profile.UserId,
+		Login:     profile.Login,
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
+		Avatar:    profile.Avatar,
+		Bio:       profile.Bio,
+		LastSeen:  profile.LastSeen,
+		BirthDate: birthDate,
+	}, nil
+}
+
 func (p ProfileService) UpdateProfileBio(ctx context.Context, userID int64, request *dto.RequestUpdateBio) (response *dto.ResponseUpdateProfile, err error) {
+	if request == nil {
+		return nil, errors.New("update profile bio nil request")
+	}
 	if request.Bio == nil {
 		return nil, domain.ErrEmptyBio
 	}
@@ -35,16 +81,27 @@ func (p ProfileService) UpdateProfileBio(ctx context.Context, userID int64, requ
 		return nil, fmt.Errorf("upload bio: %w", err)
 	}
 
+	var birthDate *string
+	if profile.BirthDate != nil {
+		date := profile.BirthDate.UTC().Format(time.DateOnly)
+		birthDate = &date
+	}
 	return &dto.ResponseUpdateProfile{
-		UserId:   profile.UserId,
-		Username: profile.Username,
-		Avatar:   profile.Avatar,
-		Bio:      profile.Bio,
-		LastSeen: profile.LastSeen,
+		UserId:    profile.UserId,
+		Login:     profile.Login,
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
+		Avatar:    profile.Avatar,
+		Bio:       profile.Bio,
+		LastSeen:  profile.LastSeen,
+		BirthDate: birthDate,
 	}, nil
 }
 
 func (p ProfileService) UpdateProfileAvatar(ctx context.Context, userID int64, request *dto.RequestUpdateAvatar) (response *dto.ResponseUpdateProfile, err error) {
+	if request == nil {
+		return nil, errors.New("update profile avatar nil request")
+	}
 	err = checkAvatar(request.File)
 	if err != nil {
 		switch {
@@ -69,11 +126,21 @@ func (p ProfileService) UpdateProfileAvatar(ctx context.Context, userID int64, r
 		return nil, fmt.Errorf("upload avatar url: %w", err)
 	}
 
+	var birthDate *string
+	if profile.BirthDate != nil {
+		date := profile.BirthDate.UTC().Format(time.DateOnly)
+		birthDate = &date
+	}
+
 	return &dto.ResponseUpdateProfile{
-		UserId:   profile.UserId,
-		Username: profile.Username,
-		Avatar:   profile.Avatar,
-		Bio:      profile.Bio,
+		UserId:    profile.UserId,
+		Login:     profile.Login,
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
+		Avatar:    profile.Avatar,
+		BirthDate: birthDate,
+		Bio:       profile.Bio,
+		LastSeen:  profile.LastSeen,
 	}, nil
 }
 
@@ -91,11 +158,21 @@ func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (respo
 		return nil, fmt.Errorf("failed to get profile: %w", err)
 	}
 
+	var birthDate *string
+	if profile.BirthDate != nil {
+		date := profile.BirthDate.UTC().Format(time.DateOnly)
+		birthDate = &date
+	}
+
 	return &dto.ResponseGetProfile{
-		UserId:   profile.UserId,
-		Username: profile.Username,
-		Avatar:   profile.Avatar,
-		Bio:      profile.Bio,
+		UserId:    profile.UserId,
+		Login:     profile.Login,
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
+		Avatar:    profile.Avatar,
+		BirthDate: birthDate,
+		Bio:       profile.Bio,
+		LastSeen:  profile.LastSeen,
 	}, nil
 }
 
