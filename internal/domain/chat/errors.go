@@ -12,4 +12,5 @@ var (
 	ErrDialogAlreadyExists          = errors.New("dialog already exists between these users")
 	ErrCantCreateDialogWithYourself = errors.New("you cant create dialog with yourself")
 	ErrDialogMustHave2Users         = errors.New("dialog must have only 2 users")
+	ErrOnlyOwnerCanDeleteChat       = errors.New("Only owner of the chat can delete chat")
 )

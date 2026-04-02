@@ -16,7 +16,6 @@ import (
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
 	contactHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/contacts"
 	profileHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/profile"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
 	contactRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts"
 	mediaRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/media"
@@ -95,6 +94,7 @@ func main() {
 		mux.With(authMiddleware).Get("/", chatsHandler.GetChats)
 		mux.With(authMiddleware).Post("/", chatsHandler.ChatCreate)
 		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
+		mux.With(authMiddleware).Delete("/{id}", chatsHandler.DeleteChat)
 	})
 
 	mux.Route("/api/v1/contacts", func(mux chi.Router) {

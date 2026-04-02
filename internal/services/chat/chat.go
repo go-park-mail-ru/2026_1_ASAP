@@ -22,6 +22,8 @@ type ChatRepositoryInterface interface {
 	AddMember(ctx context.Context, chatID, userID int64, role string) error
 	IsMember(ctx context.Context, chatID, userID int64) (bool, error)
 	GetDialogBetweenUsers(ctx context.Context, user1ID, user2ID int64) (*domain.Chat, error)
+	DeleteChat(ctx context.Context, chatID int64) (error)
+	GetMemberRole(ctx context.Context, userID, chatID int64) (string, error)
 }
 
 type UserRepositoryInterface interface {
@@ -231,4 +233,32 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 		Title:       displayTitle,
 		LastMessage: messageDTO,
 	}, nil
+}
+
+func (s *ChatService) DeleteChat(ctx context.Context, userID, chatID int64) error {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	if !isMember {
+		return domain.ErrNotMember
+	}
+
+	userRole, err := s.chatRepo.GetMemberRole(ctx, userID, chatID)
+	if err != nil {
+		return fmt.Errorf("failed to check user role: %w", err)
+	}
+	if userRole == "" {
+		return domain.ErrNotMember
+	}
+	if userRole != "owner" {
+		return domain.ErrOnlyOwnerCanDeleteChat
+	}
+
+	err = s.chatRepo.DeleteChat(ctx, chatID)
+	if err != nil {
+		return fmt.Errorf("failed to delete chat: %w", err)
+	}
+
+	return nil
 }

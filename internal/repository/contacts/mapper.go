@@ -10,6 +10,7 @@ func toDomainContact(contactModel *ContactModel) *domain.Contact {
 		UserID: contactModel.UserID,
 		ContactName: contactModel.ContactName,
 		ContactUserID: contactModel.ContactUserID,
+		ContactAvatarUrl: null.NullStringToPtrString(contactModel.ContactAvatarUrl),
 		CreatedAt: contactModel.CreatedAt,
 		UpdatedAt: contactModel.UpdatedAt,
 	}
@@ -20,12 +21,13 @@ func toModelContact(contactDomain *domain.Contact) *ContactModel {
 		UserID: contactDomain.UserID,
 		ContactName: contactDomain.ContactName,
 		ContactUserID: contactDomain.ContactUserID,
+		ContactAvatarUrl: null.StringPtrToNullString(contactDomain.ContactAvatarUrl),
 		CreatedAt: contactDomain.CreatedAt,
 		UpdatedAt: contactDomain.UpdatedAt,
 	}
 }
 
-func toDomainContactUserInfo(contactUserInfoModel *ContactUserInfoModel) *domain.ContactUserInfo {
+/*func toDomainContactUserInfo(contactUserInfoModel *ContactUserInfoModel) *domain.ContactUserInfo {
 	return &domain.ContactUserInfo{
 		Contact: domain.Contact(contactUserInfoModel.ContactModel),
 		Username: contactUserInfoModel.Username,
@@ -34,4 +36,4 @@ func toDomainContactUserInfo(contactUserInfoModel *ContactUserInfoModel) *domain
 		Bio: null.NullStringToPtrString(contactUserInfoModel.Bio),
 		LastSeen: null.NullTimeToPtrTime(contactUserInfoModel.LastSeen),
 	}
-}
+}*/

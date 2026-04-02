@@ -19,6 +19,15 @@ definitions:
         - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
         example: error
     type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string:
+    properties:
+      body:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateChatSuccessForSwagger:
     properties:
       body:
@@ -468,6 +477,44 @@ paths:
           schema:
             $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
       summary: Получить чат по ID
+      tags:
+      - chats
+  /api/v1/chats/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет чат. Только владелец чата может выполнить это действие.
+        Чат удаляется полностью для всех участников вместе со всеми сообщениями.
+      parameters:
+      - description: ID чата
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Чат успешно удален
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string'
+        "400":
+          description: Некорректный ID чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Нет прав на удаление чата (не владелец или не участник)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Удалить чат
       tags:
       - chats
   /api/v1/contacts:

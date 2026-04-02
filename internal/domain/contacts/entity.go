@@ -6,6 +6,7 @@ type Contact struct {
 	UserID int64 `json:"user_id"`
 	ContactName string `json:"contact_name"`
 	ContactUserID int64 `json:"contact_user_id"`
+	ContactAvatarUrl *string `json:"contact_avatar_url"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
