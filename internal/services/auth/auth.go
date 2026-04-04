@@ -14,7 +14,7 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, user *domain.User) (*domain.User, error)
+	Create(ctx context.Context, u *domain.User) (*domain.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*domain.User, error)
 	GetUserByID(ctx context.Context, id int64) (*domain.User, error)

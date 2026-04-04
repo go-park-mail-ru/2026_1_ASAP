@@ -1,4 +1,4 @@
-.PHONY: test coverage install-linter lint lint-fix install-mockgen mocks mocks-profile
+.PHONY: test coverage install-linter lint lint-fix install-mockgen mocks mocks-profile mocks-auth mocks-session
 
 test:
 	go test ./...
@@ -30,7 +30,7 @@ $(MOCKGEN):
 	@$(MAKE) install-mockgen
 
 
-mocks: mocks-profile
+mocks: mocks-profile mocks-auth mocks-session
 
 
 mocks-profile: internal/services/profile/mock/profile_mock.go
@@ -39,3 +39,17 @@ internal/services/profile/mock/profile_mock.go: internal/services/profile/profil
 	@echo "Generating mocks for profile..."
 	@mkdir -p $(dir $@)
 	$(MOCKGEN) -source=$< -destination=$@ -package=mock_profile
+
+mocks-auth: internal/services/auth/mock/auth_mock.go
+
+internal/services/auth/mock/auth_mock.go: internal/services/auth/auth.go | $(MOCKGEN)
+	@echo "Generating mocks for auth..."
+	@mkdir -p $(dir $@)
+	$(MOCKGEN) -source=$< -destination=$@ -package=mock_auth
+
+mocks-session: internal/services/session/mock/session_mock.go
+
+internal/services/session/mock/session_mock.go: internal/services/session/session.go | $(MOCKGEN)
+	@echo "Generating mocks for session..."
+	@mkdir -p $(dir $@)
+	$(MOCKGEN) -source=$< -destination=$@ -package=mock_session
