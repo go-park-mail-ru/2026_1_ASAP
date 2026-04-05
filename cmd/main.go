@@ -27,6 +27,7 @@ import (
 	contactService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/contacts"
 	profileService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
+	"go.uber.org/zap"
 )
 
 // @title API Pulse App
@@ -39,8 +40,15 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
 	mux := chi.NewRouter()
 
+	mux.Use(middleware.RequestIDMiddleware())
+	mux.Use(middleware.AccessMiddleware(logger.Named("access")))
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{
 			"http://pulseapp.space",
