@@ -77,6 +77,10 @@ func (m MediaRepository) UploadAvatar(ctx context.Context, userId int64, input *
 	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucket, objectName), nil
 }
 
+func (m *MediaRepository) Close() {
+
+}
+
 func getExtensionFromContentType(contentType string) string {
 	switch contentType {
 	case "image/jpeg", "image/jpg":

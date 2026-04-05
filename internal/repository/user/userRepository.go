@@ -187,3 +187,7 @@ func (r *UserRepository) UploadAvatarUrl(ctx context.Context, userId int64, avat
 	}
 	return toDomainProfile(p), nil
 }
+
+func (r *UserRepository) Close() {
+	r.db.Close()
+}

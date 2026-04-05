@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	"github.com/gomodule/redigo/redis"
-	"github.com/google/uuid"
 )
 
 type SessionRepository struct {
@@ -103,45 +101,6 @@ func (s SessionRepository) DeleteSession(ctx context.Context, sessionID string) 
 	return nil
 }
 
-// Cтарье
-type DepricatedSessionRpository struct {
-	sessions map[string]*domain.DepricatedSession
-	mu       sync.RWMutex
-}
-
-func NewDepricatedSessionRepository() *DepricatedSessionRpository {
-	return &DepricatedSessionRpository{
-		sessions: make(map[string]*domain.DepricatedSession),
-	}
-}
-
-func (s *DepricatedSessionRpository) GetSession(sessionID string) (*domain.DepricatedSession, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	session, ok := s.sessions[sessionID]
-	if !ok {
-		return nil, errors.New("Session not found")
-	}
-
-	return session, nil
-}
-
-func (s *DepricatedSessionRpository) CreateSession(session *domain.DepricatedSession) (string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	sessionID := uuid.New().String()
-	s.sessions[sessionID] = session
-
-	return sessionID, nil
-
-}
-
-func (s *DepricatedSessionRpository) DeleteSession(sessionID string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	delete(s.sessions, sessionID)
-	return nil
+func (s *SessionRepository) Close() {
+	s.pool.Close()
 }

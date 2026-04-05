@@ -25,11 +25,11 @@ func NewContactsRepository(ctx context.Context, cfg config.PostgresConfig) (*Con
 		return nil, err
 	}
 	return &ContactsRepository{db: pool}, nil
-} 
+}
 
 func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID int64) ([]*domain.Contact, error) {
-	rows, err := r.db.Query(ctx, 
-	`SELECT c.user_id, c.contact_name, c.contact_user_id, u.avatar_url, c.created_at, c.updated_at
+	rows, err := r.db.Query(ctx,
+		`SELECT c.user_id, c.contact_name, c.contact_user_id, u.avatar_url, c.created_at, c.updated_at
 	 FROM contacts c
 	 JOIN users u ON c.contact_user_id=u.id
 	 WHERE c.user_id=$1
@@ -51,7 +51,7 @@ func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID 
 			&contact.UpdatedAt,
 		)
 		if err != nil {
-			return nil ,fmt.Errorf("failed to scan rows: %w", err)
+			return nil, fmt.Errorf("failed to scan rows: %w", err)
 		}
 		contacts = append(contacts, toDomainContact(contact))
 	}
@@ -61,11 +61,11 @@ func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID 
 
 func (r *ContactsRepository) CreateContact(ctx context.Context, contact *domain.Contact) (*domain.Contact, error) {
 	contactModel := toModelContact(contact)
-	err := r.db.QueryRow(ctx, 
-	`INSERT INTO contacts
+	err := r.db.QueryRow(ctx,
+		`INSERT INTO contacts
 	 (user_id, contact_user_id, contact_name, created_at, updated_at)
 	 VALUES ($1, $2, $3, $4, $5)
-	 RETURNING user_id, contact_user_id, contact_name`, contactModel.UserID, contactModel.ContactUserID, contactModel.ContactName, contactModel.CreatedAt, contactModel.UpdatedAt).Scan(&contactModel.UserID, &contactModel.ContactUserID, &contactModel.ContactName,)
+	 RETURNING user_id, contact_user_id, contact_name`, contactModel.UserID, contactModel.ContactUserID, contactModel.ContactName, contactModel.CreatedAt, contactModel.UpdatedAt).Scan(&contactModel.UserID, &contactModel.ContactUserID, &contactModel.ContactName)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to creaye contact: %w", err)
@@ -73,10 +73,10 @@ func (r *ContactsRepository) CreateContact(ctx context.Context, contact *domain.
 
 	var contactAvatarUrl sql.NullString
 	errr := r.db.QueryRow(ctx,
-	`SELECT avatar_url
+		`SELECT avatar_url
 	 FROM users
 	 WHERE id=$1`, contactModel.ContactUserID).Scan(&contactAvatarUrl)
-	
+
 	if errr != nil && errr != pgx.ErrNoRows {
 		return nil, fmt.Errorf("failed to get user avatar: %w", err)
 	}
@@ -85,9 +85,9 @@ func (r *ContactsRepository) CreateContact(ctx context.Context, contact *domain.
 	return toDomainContact(contactModel), nil
 }
 
-func (r *ContactsRepository) DeleteContact(ctx context.Context, userID, contactUserID int64) (error) {
-	result, err := r.db.Exec(ctx, 
-	`DELETE FROM contacts
+func (r *ContactsRepository) DeleteContact(ctx context.Context, userID, contactUserID int64) error {
+	result, err := r.db.Exec(ctx,
+		`DELETE FROM contacts
 	 WHERE user_id=$1 AND contact_user_id=$2`, userID, contactUserID)
 	if err != nil {
 		return fmt.Errorf("failed to delete contact: %w", err)
@@ -103,8 +103,12 @@ func (r *ContactsRepository) DeleteContact(ctx context.Context, userID, contactU
 func (r *ContactsRepository) IsContact(ctx context.Context, userID, contactUserID int64) (bool, error) {
 	var exists bool
 
-	err := r.db.QueryRow(ctx, 
-	`SELECT EXISTS(SELECT 1 FROM contacts WHERE user_id=$1 AND contact_user_id=$2)`, userID, contactUserID).Scan(&exists)
+	err := r.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM contacts WHERE user_id=$1 AND contact_user_id=$2)`, userID, contactUserID).Scan(&exists)
 
 	return exists, err
+}
+
+func (r *ContactsRepository) Close() {
+	r.db.Close()
 }
