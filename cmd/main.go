@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -35,20 +38,62 @@ import (
 // @description API веб-приложения Pulse
 // @host pulseapp.space:8080
 func main() {
-	cfg, err := config.LoadConfigFromEnv()
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-
 	logger, err := zap.NewProduction()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("zap: %v", err)
 	}
+	defer func() { _ = logger.Sync() }()
+
+	appLogger := logger.Named("app")
+
+	cfg, err := config.LoadConfigFromEnv(appLogger)
+	if err != nil {
+		appLogger.Fatal("load config", zap.Error(err))
+	}
+
+	// Repositories
+	sessRepo := sessionRepository.NewSessionRepository(cfg.SessionConfig, cfg.RedisConfig)
+	userRepo, err := userRepository.NewUserRepository(context.Background(), cfg.PostgresConfig)
+	if err != nil {
+		appLogger.Fatal(err.Error())
+	}
+
+	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig)
+	if err != nil {
+		appLogger.Fatal(err.Error())
+	}
+	contactRepo, err := contactRepository.NewContactsRepository(context.Background(), cfg.PostgresConfig)
+	if err != nil {
+		appLogger.Fatal(err.Error())
+	}
+
+	mediaRepo, err := mediaRepository.NewMediaRepository(context.Background(), cfg.S3Config)
+	if err != nil {
+		appLogger.Fatal(err.Error())
+	}
+
+	// Services
+	sessionServ := session.NewSessionService(sessRepo, cfg.SessionConfig.SessionTTL)
+	authServ := authService.NewAuthService(userRepo, sessionServ)
+	chatServ := chatService.NewChatService(chatRepo, userRepo)
+	contactServ := contactService.NewContactService(contactRepo, userRepo)
+	profileServ := profileService.NewProfileService(userRepo, mediaRepo)
+
+	// Handlers
+	chatsHandler := chatHandlers.NewChatHandler(chatServ)
+	contactsHandler := contactHandlers.NewContactHandler(contactServ)
+	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
+	auth := authHandlers.NewAuthHandler(authServ)
+
+	//Middleware
+	requestIDMiddleware := middleware.RequestIDMiddleware()
+	accessMiddleware := middleware.AccessMiddleware(logger.Named("access"))
+	authMiddleware := middleware.AuthMiddleware(sessionServ)
 
 	mux := chi.NewRouter()
 
-	mux.Use(middleware.RequestIDMiddleware())
-	mux.Use(middleware.AccessMiddleware(logger.Named("access")))
+	mux.Use(requestIDMiddleware)
+	mux.Use(accessMiddleware)
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{
 			"http://pulseapp.space",
@@ -64,35 +109,6 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	sessRepo := sessionRepository.NewSessionRepository(cfg.SessionConfig, cfg.RedisConfig)
-	sessionServ := session.NewSessionService(sessRepo, cfg.SessionConfig.SessionTTL)
-	userRepo, err := userRepository.NewUserRepository(context.Background(), cfg.PostgresConfig)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	contactRepo, err := contactRepository.NewContactsRepository(context.Background(), cfg.PostgresConfig)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	authServ := authService.NewAuthService(userRepo, sessionServ)
-	chatServ := chatService.NewChatService(chatRepo, userRepo)
-	contactServ := contactService.NewContactService(contactRepo, userRepo)
-	auth := authHandlers.NewAuthHandler(authServ)
-	chatsHandler := chatHandlers.NewChatHandler(chatServ)
-	authMiddleware := middleware.AuthMiddleware(sessionServ)
-	contactsHandler := contactHandlers.NewContactHandler(contactServ)
-	// Profile
-	mediaRepo, err := mediaRepository.NewMediaRepository(context.Background(), cfg.S3Config)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	profileServ := profileService.NewProfileService(userRepo, mediaRepo)
-	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
@@ -122,8 +138,6 @@ func main() {
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
 
-	log.Printf("Server started at %s\n", cfg.ServerConfig.ServerInfo())
-
 	server := &http.Server{
 		Addr:         cfg.ServerConfig.ServerInfo(),
 		Handler:      mux,
@@ -131,8 +145,28 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-	err = server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		log.Fatalf("Server failed: %v", err)
+
+	appContext, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer done()
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			appLogger.Fatal("listen", zap.Error(err))
+		}
+	}()
+
+	<-appContext.Done()
+
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.AppConfig.ShutdownTime)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		appLogger.Error("HTTP shutdown", zap.Error(err))
 	}
+
+	sessRepo.Close()
+	userRepo.Close()
+	chatRepo.Close()
+	contactRepo.Close()
+	mediaRepo.Close()
+	appLogger.Info("Graceful shutdown complete")
 }

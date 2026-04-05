@@ -13,7 +13,6 @@ import (
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 )
 
-
 type ChatRepository struct {
 	db *pgxpool.Pool
 }
@@ -27,16 +26,16 @@ func NewChatRepository(ctx context.Context, cfg config.PostgresConfig) (*ChatRep
 		return nil, err
 	}
 	return &ChatRepository{db: pool}, nil
-} 
+}
 
 func (r *ChatRepository) GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error) {
-	rows, err := r.db.Query(ctx, 
-	`SELECT c.id, c.type, c.title, c.description, c.owner_id, c.avatar_url, c.created_at, c.updated_at
+	rows, err := r.db.Query(ctx,
+		`SELECT c.id, c.type, c.title, c.description, c.owner_id, c.avatar_url, c.created_at, c.updated_at
 	 FROM chats c
 	 INNER JOIN chat_members cm ON c.id = cm.chat_id
 	 WHERE cm.user_id=$1`, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all chats by userID: %w", err) 
+		return nil, fmt.Errorf("failed to get all chats by userID: %w", err)
 	}
 	defer rows.Close()
 
@@ -61,18 +60,18 @@ func (r *ChatRepository) GetAllChatsByUserID(ctx context.Context, id int64) ([]*
 		chats = append(chats, chat)
 	}
 	if err = rows.Err(); err != nil {
-        return nil, fmt.Errorf("error during rows iteration: %w", err)
-    }
+		return nil, fmt.Errorf("error during rows iteration: %w", err)
+	}
 
 	return chats, nil
 }
 
 func (r *ChatRepository) GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error) {
-	row := r.db.QueryRow(ctx, 
-	`SELECT id, type, title, description, owner_id, avatar_url, created_at, updated_at
+	row := r.db.QueryRow(ctx,
+		`SELECT id, type, title, description, owner_id, avatar_url, created_at, updated_at
 	 FROM chats
 	 WHERE id=$1`, chatID)
-	
+
 	chatModel := &ChatModel{}
 	if err := row.Scan(
 		&chatModel.Id,
@@ -96,26 +95,26 @@ func (r *ChatRepository) GetChatByID(ctx context.Context, chatID int64) (*domain
 
 func (r *ChatRepository) CreateChat(ctx context.Context, chat *domain.Chat) (*domain.Chat, error) {
 	chatModel := toModelChat(chat)
-	err := r.db.QueryRow(ctx, 
-	`INSERT INTO chats
+	err := r.db.QueryRow(ctx,
+		`INSERT INTO chats
 	 (type, title, description, owner_id, avatar_url, created_at, updated_at)
 	 VALUES ($1, $2, $3, $4, $5, $6, $7)
 	 RETURNING id`,
-	chatModel.Type, chatModel.Title, chatModel.Description, chatModel.OwnerId, chatModel.AvatarUrl, chatModel.CreatedAt, chatModel.UpdatedAt).Scan(&chatModel.Id)
+		chatModel.Type, chatModel.Title, chatModel.Description, chatModel.OwnerId, chatModel.AvatarUrl, chatModel.CreatedAt, chatModel.UpdatedAt).Scan(&chatModel.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat: %w", err)
 	}
-	
+
 	return toDomainChat(chatModel), nil
 }
 
 func (r *ChatRepository) GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error) {
-	row := r.db.QueryRow(ctx, 
-	`SELECT m.id, m.chat_id, m.sender_id, m.content, m.sticker_id, m.edited, m.created_at, m.updated_at, m.deleted_at
+	row := r.db.QueryRow(ctx,
+		`SELECT m.id, m.chat_id, m.sender_id, m.content, m.sticker_id, m.edited, m.created_at, m.updated_at, m.deleted_at
 	 FROM messages m
 	 JOIN chats c ON m.id = c.last_message_id
 	 WHERE c.id=$1`, chatID)
-	
+
 	msg := &MessageModel{}
 	err := row.Scan(
 		&msg.Id,
@@ -139,8 +138,8 @@ func (r *ChatRepository) GetLastMessageOfChat(ctx context.Context, chatID int64)
 }
 
 func (r *ChatRepository) GetLastMessagesOfChats(ctx context.Context, id int64) ([]*domain.Message, error) {
-	rows, err := r.db.Query(ctx, 
-	`SELECT m.id, m.chat_id, m.sender_id, m.content, m.sticker_id, m.edited, m.created_at, m.updated_at, m.deleted_at
+	rows, err := r.db.Query(ctx,
+		`SELECT m.id, m.chat_id, m.sender_id, m.content, m.sticker_id, m.edited, m.created_at, m.updated_at, m.deleted_at
 	 FROM messages m
 	 JOIN chats c ON m.id = c.last_message_id
 	 JOIN chat_members cm ON c.id = cm.chat_id
@@ -172,15 +171,15 @@ func (r *ChatRepository) GetLastMessagesOfChats(ctx context.Context, id int64) (
 		lastMessages = append(lastMessages, lastMessage)
 	}
 	if err = rows.Err(); err != nil {
-        return nil, fmt.Errorf("error during rows iteration: %w", err)
-    }
+		return nil, fmt.Errorf("error during rows iteration: %w", err)
+	}
 
 	return lastMessages, nil
 }
 
 func (r *ChatRepository) GetChatMembers(ctx context.Context, chatID int64) ([]int64, error) {
-	rows, err := r.db.Query(ctx, 
-	`SELECT user_id
+	rows, err := r.db.Query(ctx,
+		`SELECT user_id
 	 FROM chat_members
 	 WHERE chat_id=$1`, chatID)
 	if err != nil {
@@ -202,9 +201,9 @@ func (r *ChatRepository) GetChatMembers(ctx context.Context, chatID int64) ([]in
 	return members, nil
 }
 
-func (r *ChatRepository) AddMember(ctx context.Context, chatID, userID int64, role string) (error) {
-	_, err := r.db.Exec(ctx, 
-	`INSERT INTO chat_members
+func (r *ChatRepository) AddMember(ctx context.Context, chatID, userID int64, role string) error {
+	_, err := r.db.Exec(ctx,
+		`INSERT INTO chat_members
 	 (chat_id, user_id, role, joined_at)
 	 VALUES ($1, $2, $3, $4)`, chatID, userID, role, time.Now())
 	if err != nil {
@@ -216,8 +215,8 @@ func (r *ChatRepository) AddMember(ctx context.Context, chatID, userID int64, ro
 
 func (r *ChatRepository) IsMember(ctx context.Context, chatID, userID int64) (bool, error) {
 	var exists bool
-	err := r.db.QueryRow(ctx, 
-	`SELECT EXISTS(SELECT 1 FROM chat_members WHERE chat_id=$1 AND user_id=$2)`, chatID, userID).Scan(&exists)
+	err := r.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM chat_members WHERE chat_id=$1 AND user_id=$2)`, chatID, userID).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check if member exists: %w", err)
 	}
@@ -226,8 +225,8 @@ func (r *ChatRepository) IsMember(ctx context.Context, chatID, userID int64) (bo
 }
 
 func (r *ChatRepository) GetDialogBetweenUsers(ctx context.Context, user1ID, user2ID int64) (*domain.Chat, error) {
-	row := r.db.QueryRow(ctx, 
-	`SELECT c.id, c.type, c.title, c.description, c.owner_id, c.avatar_url, c.created_at, c.updated_at
+	row := r.db.QueryRow(ctx,
+		`SELECT c.id, c.type, c.title, c.description, c.owner_id, c.avatar_url, c.created_at, c.updated_at
 	 FROM chats c
 	 JOIN chat_members cm1 ON c.id = cm1.chat_id
 	 JOIN chat_members cm2 ON c.id = cm2.chat_id
@@ -258,27 +257,27 @@ func (r *ChatRepository) GetDialogBetweenUsers(ctx context.Context, user1ID, use
 	return toDomainChat(chatModel), nil
 }
 
-func (r *ChatRepository) DeleteChat(ctx context.Context, chatID int64) (error) {
+func (r *ChatRepository) DeleteChat(ctx context.Context, chatID int64) error {
 	trx, err := r.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 	defer trx.Rollback(ctx)
 
-	_, err = trx.Exec(ctx, 
-	`DELETE FROM messages WHERE chat_id=$1`, chatID)
+	_, err = trx.Exec(ctx,
+		`DELETE FROM messages WHERE chat_id=$1`, chatID)
 	if err != nil {
 		return fmt.Errorf("failed to delete messages from chat: %w", err)
 	}
 
 	_, err = trx.Exec(ctx,
-	`DELETE FROM chat_members WHERE chat_id=$1`, chatID)
+		`DELETE FROM chat_members WHERE chat_id=$1`, chatID)
 	if err != nil {
 		return fmt.Errorf("failed to delete members from chat: %w", err)
 	}
 
-	_, err = trx.Exec(ctx, 
-	`DELETE FROM chats WHERE id=$1`, chatID)
+	_, err = trx.Exec(ctx,
+		`DELETE FROM chats WHERE id=$1`, chatID)
 	if err != nil {
 		return fmt.Errorf("failed to delete chat: %w", err)
 	}
@@ -289,7 +288,7 @@ func (r *ChatRepository) DeleteChat(ctx context.Context, chatID int64) (error) {
 func (r *ChatRepository) GetMemberRole(ctx context.Context, userID, chatID int64) (string, error) {
 	var role string
 	err := r.db.QueryRow(ctx,
-	`SELECT role
+		`SELECT role
 	 FROM chat_members
 	 WHERE chat_id=$1 AND user_id=$2`, chatID, userID).Scan(&role)
 
@@ -301,4 +300,8 @@ func (r *ChatRepository) GetMemberRole(ctx context.Context, userID, chatID int64
 	}
 
 	return role, nil
+}
+
+func (r *ChatRepository) Close() {
+	r.db.Close()
 }

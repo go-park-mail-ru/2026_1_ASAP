@@ -5,7 +5,10 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type Config struct {
@@ -14,6 +17,7 @@ type Config struct {
 	RedisConfig    RedisConfig
 	PostgresConfig PostgresConfig
 	S3Config       S3Config
+	AppConfig      AppConfig
 }
 
 type ServerConfig struct {
@@ -48,6 +52,10 @@ type S3Config struct {
 	UseSSL     bool
 	PublicHost string
 	PublicPort string
+}
+
+type AppConfig struct {
+	ShutdownTime time.Duration
 }
 
 func (postgresConfig PostgresConfig) ServerInfo() string {
@@ -85,26 +93,31 @@ func (c S3Config) PublicURL() string {
 	return scheme + "://" + c.PublicHost + ":" + c.PublicPort
 }
 
-func LoadConfigFromEnv() (*Config, error) {
+func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
+	if logger == nil {
+		log.Fatalln("logger is nil")
+	}
+
 	var serverConfig ServerConfig
 	var sessionConfig SessionConfig
 	var redisConfig RedisConfig
 	var postgresConfig PostgresConfig
 	var s3Config S3Config
+	var appConfig AppConfig
 
-	host, err := getEnvVariable("HOST", "localhost")
+	host, err := getEnvVariable(logger, "HOST", "localhost")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	serverConfig.Host = host
 
-	port, err := getEnvVariable("PORT", "8080")
+	port, err := getEnvVariable(logger, "PORT", "8080")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	serverConfig.Port = port
 
-	sessionTTLString, err := getEnvVariable("TTL", "3600")
+	sessionTTLString, err := getEnvVariable(logger, "TTL", "3600")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
@@ -115,25 +128,25 @@ func LoadConfigFromEnv() (*Config, error) {
 	}
 	sessionConfig.SessionTTL = time.Duration(sessionTTL) * time.Second
 
-	hostRedis, err := getEnvVariable("REDIS_HOST", "localhost")
+	hostRedis, err := getEnvVariable(logger, "REDIS_HOST", "localhost")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	redisConfig.Host = hostRedis
 
-	portRedis, err := getEnvVariable("REDIS_PORT", "6379")
+	portRedis, err := getEnvVariable(logger, "REDIS_PORT", "6379")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	redisConfig.Port = portRedis
 
-	passwordRedis, err := getEnvVariable("REDIS_PASSWORD", "")
+	passwordRedis, err := getEnvVariable(logger, "REDIS_PASSWORD", "")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	redisConfig.Password = passwordRedis
 
-	databaseRedisString, err := getEnvVariable("REDIS_DATABASE", "0")
+	databaseRedisString, err := getEnvVariable(logger, "REDIS_DATABASE", "0")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
@@ -144,83 +157,94 @@ func LoadConfigFromEnv() (*Config, error) {
 	}
 	redisConfig.Database = databaseRedis
 
-	hostPostgres, err := getEnvVariable("POSTGRES_HOST", "localhost")
+	hostPostgres, err := getEnvVariable(logger, "POSTGRES_HOST", "localhost")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	postgresConfig.Host = hostPostgres
 
-	portPostgres, err := getEnvVariable("POSTGRES_PORT", "5432")
+	portPostgres, err := getEnvVariable(logger, "POSTGRES_PORT", "5432")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	postgresConfig.Port = portPostgres
 
-	usernamePostgres, err := getEnvVariable("POSTGRES_USER", "postgres")
+	usernamePostgres, err := getEnvVariable(logger, "POSTGRES_USER", "postgres")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	postgresConfig.Username = usernamePostgres
 
-	passwordPostgres, err := getEnvVariable("POSTGRES_PASSWORD", "")
+	passwordPostgres, err := getEnvVariable(logger, "POSTGRES_PASSWORD", "")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	postgresConfig.Password = passwordPostgres
 
-	databasePostgres, err := getEnvVariable("POSTGRES_DB", "postgres")
+	databasePostgres, err := getEnvVariable(logger, "POSTGRES_DB", "postgres")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	postgresConfig.Database = databasePostgres
 
-	s3Host, err := getEnvVariable("S3_HOST", "minio")
+	s3Host, err := getEnvVariable(logger, "S3_HOST", "minio")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	s3Config.Host = s3Host
 
-	s3Port, err := getEnvVariable("S3_PORT", "9000")
+	s3Port, err := getEnvVariable(logger, "S3_PORT", "9000")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	s3Config.Port = s3Port
 
-	s3AccessKey, err := getEnvVariable("S3_ACCESS_KEY", "minioadmin")
+	s3AccessKey, err := getEnvVariable(logger, "S3_ACCESS_KEY", "minioadmin")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	s3Config.AccessKey = s3AccessKey
 
-	s3SecretKey, err := getEnvVariable("S3_SECRET_KEY", "minioadmin")
+	s3SecretKey, err := getEnvVariable(logger, "S3_SECRET_KEY", "minioadmin")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	s3Config.SecretKey = s3SecretKey
 
-	s3Bucket, err := getEnvVariable("S3_BUCKET", "media")
+	s3Bucket, err := getEnvVariable(logger, "S3_BUCKET", "media")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	s3Config.Bucket = s3Bucket
 
-	s3UseSSL, err := getEnvVariable("S3_USE_SSL", "false")
+	s3UseSSL, err := getEnvVariable(logger, "S3_USE_SSL", "false")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	s3Config.UseSSL = s3UseSSL == "true" || s3UseSSL == "1"
 
-	s3PublicHost, err := getEnvVariable("S3_PUBLIC_HOST", "localhost")
+	s3PublicHost, err := getEnvVariable(logger, "S3_PUBLIC_HOST", "localhost")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	s3Config.PublicHost = s3PublicHost
 
-	s3PublicPort, err := getEnvVariable("S3_PUBLIC_PORT", "9000")
+	s3PublicPort, err := getEnvVariable(logger, "S3_PUBLIC_PORT", "9000")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
 	}
 	s3Config.PublicPort = s3PublicPort
+
+	shutdownTimeString, err := getEnvVariable(logger, "SHUTDOWN_TIME", "10")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+
+	ShutdownTime, err := strconv.Atoi(shutdownTimeString)
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	appConfig.ShutdownTime = time.Duration(ShutdownTime) * time.Second
 
 	config := &Config{
 		ServerConfig:   serverConfig,
@@ -228,20 +252,51 @@ func LoadConfigFromEnv() (*Config, error) {
 		RedisConfig:    redisConfig,
 		PostgresConfig: postgresConfig,
 		S3Config:       s3Config,
+		AppConfig:      appConfig,
 	}
+
+	logger.Info("config loaded",
+		zap.String("http_listen", serverConfig.ServerInfo()),
+		zap.String("postgres", postgresConfig.ServerInfo()),
+		zap.String("redis", redisConfig.ServerInfo()),
+		zap.String("s3_endpoint", s3Config.Endpoint()),
+		zap.String("s3_bucket", s3Config.Bucket),
+		zap.Duration("shutdown_timeout", appConfig.ShutdownTime),
+	)
 
 	return config, nil
 }
 
-func getEnvVariable(variable string, defaultValue string) (string, error) {
+func redactEnvKey(key string) bool {
+	u := strings.ToUpper(key)
+	return strings.Contains(u, "PASSWORD") || strings.Contains(u, "SECRET") || strings.HasSuffix(u, "_KEY")
+}
+
+func envValueForLog(key, value string) string {
+	if redactEnvKey(key) {
+		if value == "" {
+			return "(empty)"
+		}
+		return "***"
+	}
+	return value
+}
+
+func getEnvVariable(logger *zap.Logger, variable string, defaultValue string) (string, error) {
 	value, ok := os.LookupEnv(variable)
 	if !ok {
 		if defaultValue == "" {
 			return "", fmt.Errorf("Variable %s not set (no default value provided)", variable)
 		}
-		log.Printf("Variable %s not found, using default %s", variable, defaultValue)
+		logger.Debug("env: using default",
+			zap.String("var", variable),
+			zap.String("value", envValueForLog(variable, defaultValue)),
+		)
 		return defaultValue, nil
 	}
-	log.Printf("Variable %s found, using %s", variable, value)
+	logger.Debug("env: set",
+		zap.String("var", variable),
+		zap.String("value", envValueForLog(variable, value)),
+	)
 	return value, nil
 }
