@@ -56,7 +56,7 @@ func (s SessionRepository) CreateSession(ctx context.Context, session *domain.Se
 
 	key := "session:" + session.SessionID
 
-	_, err = conn.Do("SET", key, sessionValue, "EX", int(s.TTL.Seconds()))
+	_, err = conn.Do("SET", key, sessionValue, "EX", int(session.ExpiresAt.Sub(time.Now()).Seconds()))
 
 	if err != nil {
 		return "", fmt.Errorf("Failed to set session: %w", err)
