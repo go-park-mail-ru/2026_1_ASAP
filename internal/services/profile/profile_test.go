@@ -726,3 +726,144 @@ func TestNegativeProfileService_UpdateBirthDate(t *testing.T) {
 		})
 	}
 }
+
+func TestPositiveProfileService_SearchIdByLogin(t *testing.T) {
+	type fields struct {
+		profileRepository *mock.MockProfileRepositoryInterface
+		mediaRepository   *mock.MockMediaRepositoryInterface
+	}
+
+	type args struct {
+		ctx     context.Context
+		request *dto.RequestSearchIdByLogin
+	}
+
+	tests := []struct {
+		name    string
+		prepare func(*fields)
+		args    args
+		want    *dto.ResponseSearchIdByLogin
+	}{
+		{
+			name: "found by login",
+			prepare: func(f *fields) {
+				f.profileRepository.EXPECT().
+					GetProfileIdByLogin(context.Background(), "alice").
+					Return(int64(42), nil)
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dto.RequestSearchIdByLogin{Login: "alice"},
+			},
+			want: &dto.ResponseSearchIdByLogin{UserId: 42, Login: "alice"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			f := fields{
+				profileRepository: mock.NewMockProfileRepositoryInterface(ctrl),
+				mediaRepository:   mock.NewMockMediaRepositoryInterface(ctrl),
+			}
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+			s := &ProfileService{
+				profileRepository: f.profileRepository,
+				mediaRepository:   f.mediaRepository,
+			}
+			got, err := s.SearchIdByLogin(tt.args.ctx, tt.args.request)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestNegativeProfileService_SearchIdByLogin(t *testing.T) {
+	type fields struct {
+		profileRepository *mock.MockProfileRepositoryInterface
+		mediaRepository   *mock.MockMediaRepositoryInterface
+	}
+
+	type args struct {
+		ctx     context.Context
+		request *dto.RequestSearchIdByLogin
+	}
+
+	tests := []struct {
+		name           string
+		prepare        func(*fields)
+		args           args
+		wantErrIs      error
+		wantErrMessage string
+		wantAnyErr     bool
+	}{
+		{
+			name:    "nil request",
+			prepare: func(f *fields) {},
+			args: args{
+				ctx:     context.Background(),
+				request: nil,
+			},
+			wantErrMessage: "update profile bio nil request",
+		},
+		{
+			name: "user not found",
+			prepare: func(f *fields) {
+				f.profileRepository.EXPECT().
+					GetProfileIdByLogin(context.Background(), "nobody").
+					Return(int64(0), domain.ErrNotFound)
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dto.RequestSearchIdByLogin{Login: "nobody"},
+			},
+			wantErrIs: domain.ErrNotFound,
+		},
+		{
+			name: "repository error",
+			prepare: func(f *fields) {
+				f.profileRepository.EXPECT().
+					GetProfileIdByLogin(context.Background(), "alice").
+					Return(int64(0), errors.New("db down"))
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dto.RequestSearchIdByLogin{Login: "alice"},
+			},
+			wantAnyErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			f := fields{
+				profileRepository: mock.NewMockProfileRepositoryInterface(ctrl),
+				mediaRepository:   mock.NewMockMediaRepositoryInterface(ctrl),
+			}
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+			s := &ProfileService{
+				profileRepository: f.profileRepository,
+				mediaRepository:   f.mediaRepository,
+			}
+			got, err := s.SearchIdByLogin(tt.args.ctx, tt.args.request)
+			require.Nil(t, got)
+			if tt.wantAnyErr {
+				require.Error(t, err)
+				return
+			}
+			if tt.wantErrIs != nil {
+				require.Error(t, err)
+				require.True(t, errors.Is(err, tt.wantErrIs), "expected %v, got %v", tt.wantErrIs, err)
+				return
+			}
+			require.EqualError(t, err, tt.wantErrMessage)
+		})
+	}
+}

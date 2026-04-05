@@ -22,6 +22,7 @@ type ProfileServiceInterface interface {
 	UpdateProfileBio(ctx context.Context, userID int64, request *dto.RequestUpdateBio) (response *dto.ResponseUpdateProfile, err error)
 	UpdateProfileAvatar(ctx context.Context, userID int64, request *dto.RequestUpdateAvatar) (response *dto.ResponseUpdateProfile, err error)
 	UpdateProfileBirthDate(ctx context.Context, userID int64, request *dto.RequestUpdateBirthDate) (response *dto.ResponseUpdateProfile, err error)
+	SearchIdByLogin(ctx context.Context, login *dto.RequestSearchIdByLogin) (response *dto.ResponseSearchIdByLogin, err error)
 }
 
 type ProfileHandler struct {
@@ -463,5 +464,59 @@ func (h *ProfileHandler) UpdateProfileBirthDate(w http.ResponseWriter, r *http.R
 		Status: dtoApi.Success,
 		Body:   *responseUpdate,
 	}
+	response.Send(w, http.StatusOK, resp)
+}
+
+func (h *ProfileHandler) SearchIdByLogin(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	request := &dto.RequestSearchIdByLogin{}
+
+	err := decoder.Decode(request)
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidJson,
+					Message: dtoApi.InvalidJsonMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	responseSearch, err := h.profileService.SearchIdByLogin(r.Context(), request)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.NotFound,
+						Message: dtoApi.NotFoundMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusNotFound, resp)
+			return
+		}
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusInternalServerError, resp)
+		return
+	}
+	resp := dtoApi.ApiSuccessResponse[dto.ResponseSearchIdByLogin]{
+		Status: dtoApi.Success,
+		Body:   *responseSearch,
+	}
+
 	response.Send(w, http.StatusOK, resp)
 }

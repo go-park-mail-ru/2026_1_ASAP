@@ -24,3 +24,8 @@ type ResponseUpdateProfile struct {
 	Bio       *string    `json:"bio,omitempty"`
 	LastSeen  *time.Time `json:"last_seen,omitempty"`
 }
+
+type ResponseSearchIdByLogin struct {
+	UserId int64  `json:"user_id"`
+	Login  string `json:"login"`
+}

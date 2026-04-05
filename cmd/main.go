@@ -134,6 +134,7 @@ func main() {
 		mux.With(authMiddleware).Post("/me/avatar", profileHandlers.UpdateUserAvatar)
 		mux.With(authMiddleware).Get("/{id}", profileHandlers.GetUserProfile)
 		mux.With(authMiddleware).Post("/me/birth", profileHandlers.UpdateProfileBirthDate)
+		mux.With(authMiddleware).Get("/search", profileHandlers.SearchIdByLogin)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
