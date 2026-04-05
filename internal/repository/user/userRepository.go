@@ -51,7 +51,30 @@ func NewUserRepository(ctx context.Context, cfg config.PostgresConfig) (*UserRep
 
 func (r *UserRepository) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
 	userModel := toModel(user)
-	err := r.db.QueryRow(ctx,
+
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var exists bool
+	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE login = $1)`, userModel.Login).Scan(&exists)
+	if err != nil {
+		return nil, fmt.Errorf("check login: %w", err)
+	}
+	if exists {
+		return nil, domain.ErrLoginAlreadyExists
+	}
+	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, userModel.Email).Scan(&exists)
+	if err != nil {
+		return nil, fmt.Errorf("check email: %w", err)
+	}
+	if exists {
+		return nil, domain.ErrEmailAlreadyExists
+	}
+
+	err = tx.QueryRow(ctx,
 		`INSERT INTO users
         (login, first_name, last_name, email, password_hash, avatar_url, bio, birth_date, last_seen, created_at, updated_at)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
@@ -71,6 +94,10 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) (*domain
 			}
 		}
 		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit: %w", err)
 	}
 
 	return toDomain(userModel), nil
