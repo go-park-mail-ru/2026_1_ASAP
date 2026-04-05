@@ -20,11 +20,28 @@ type ProfileRepositoryInterface interface {
 	UploadBio(ctx context.Context, userId int64, bio string) (*domain.Profile, error)
 	UploadAvatarUrl(ctx context.Context, userId int64, avatarUrl string) (*domain.Profile, error)
 	UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*domain.Profile, error)
+	GetProfileIdByLogin(ctx context.Context, login string) (int64, error)
 }
 
 type ProfileService struct {
 	profileRepository ProfileRepositoryInterface
 	mediaRepository   MediaRepositoryInterface
+}
+
+func (p ProfileService) SearchIdByLogin(ctx context.Context, login *dto.RequestSearchIdByLogin) (response *dto.ResponseSearchIdByLogin, err error) {
+	if login == nil {
+		return nil, errors.New("update profile bio nil request")
+	}
+
+	userID, err := p.profileRepository.GetProfileIdByLogin(ctx, login.Login)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search profile by id: %w", err)
+	}
+
+	return &dto.ResponseSearchIdByLogin{
+		Login:  login.Login,
+		UserId: userID,
+	}, nil
 }
 
 func (p ProfileService) UpdateProfileBirthDate(ctx context.Context, userID int64, request *dto.RequestUpdateBirthDate) (response *dto.ResponseUpdateProfile, err error) {

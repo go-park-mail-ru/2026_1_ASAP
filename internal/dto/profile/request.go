@@ -2,6 +2,9 @@ package profile
 
 import "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 
+type RequestSearchIdByLogin struct {
+	Login string `json:"login"`
+}
 type RequestUpdateBio struct {
 	Bio *string `json:"bio,omitempty"`
 }

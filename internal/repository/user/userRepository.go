@@ -19,6 +19,19 @@ type UserRepository struct {
 	db *pgxpool.Pool
 }
 
+func (r *UserRepository) GetProfileIdByLogin(ctx context.Context, login string) (int64, error) {
+	user, err := r.GetUserByLogin(ctx, login)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return 0, profile.ErrNotFound
+		}
+
+		return 0, fmt.Errorf("get id: %w", err)
+	}
+
+	return user.Id, nil
+}
+
 func (r *UserRepository) UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*profile.Profile, error) {
 	row := r.db.QueryRow(ctx,
 		`UPDATE users SET birth_date = $2, updated_at = now()
