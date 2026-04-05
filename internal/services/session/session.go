@@ -53,8 +53,11 @@ func (sessionService *SessionService) GetUserID(ctx context.Context, sessionID s
 		if errors.Is(err, domain.ErrNotFound) {
 			return 0, domain.ErrNotFound
 		}
-
 		return 0, fmt.Errorf("failed to get session: %w", err)
+	}
+
+	if session.ExpiresAt.Before(time.Now()) {
+		return 0, domain.ErrExpired
 	}
 
 	return session.UserID, nil

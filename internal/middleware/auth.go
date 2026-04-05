@@ -41,7 +41,7 @@ func AuthMiddleware(sessionService SessionService) func(http.Handler) http.Handl
 
 			userID, err := sessionService.GetUserID(r.Context(), cookie.Value)
 			if err != nil {
-				if errors.Is(err, domainSession.ErrNotFound) {
+				if errors.Is(err, domainSession.ErrNotFound) || errors.Is(err, domainSession.ErrExpired) {
 					response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 						Status: dtoApi.Error,
 						Errors: []dtoApi.ApiError{
