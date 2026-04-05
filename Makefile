@@ -30,12 +30,18 @@ $(MOCKGEN):
 	@$(MAKE) install-mockgen
 
 
-mocks: mocks-profile
+mocks: mocks-contacts mocks-profile
 
 
 mocks-profile: internal/services/profile/mock/profile_mock.go
+mocks-contacts: internal/services/contacts/mock/contacts_mock.go
 
 internal/services/profile/mock/profile_mock.go: internal/services/profile/profile.go | $(MOCKGEN)
 	@echo "Generating mocks for profile..."
 	@mkdir -p $(dir $@)
 	$(MOCKGEN) -source=$< -destination=$@ -package=mock_profile
+
+internal/services/contacts/mock/contacts_mock.go: internal/services/contacts/contacts.go | $(MOCKGEN)
+	@echo "Generating mocks for contacts..."
+	@mkdir -p $(dir $@)
+	$(MOCKGEN) -source=$< -destination=$@ -package=mock_contacts
