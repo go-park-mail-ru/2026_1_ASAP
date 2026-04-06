@@ -7,4 +7,7 @@ type SessionModel struct {
 	UserID    int64     `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 	ExpiresAt time.Time `json:"expires_at"`
+
+	CSRFToken     string    `json:"csrf_token,omitempty"`
+	CSRFExpiresAt time.Time `json:"csrf_expires_at,omitempty"`
 }

@@ -27,6 +27,10 @@ const (
 	InvalidDate            = "INVALID_DATE"
 	CantDeleteChat         = "CANT_DELETE_CHAT"
 	NotMemberOfChat        = "NOT_MEMBER_OF_CHAT"
+	CSRFTokenMissing       = "CSRF_TOKEN_MISSING"
+	CSRFTokenMismatch      = "CSRF_TOKEN_MISMATCH"
+	CSRFTokenExpired       = "CSRF_TOKEN_EXPIRED"
+	CSRFTokenNotInSession  = "CSRF_TOKEN_NOT_IN_SESSION"
 )
 
 const (
@@ -53,6 +57,10 @@ const (
 	InvalidDateMsg            = "Invalid date"
 	CantDeleteChatMsg         = "You cant delete this chat"
 	NotMemberOfChatMsg        = "You are not member of this chat"
+	CSRFTokenMissingMsg       = "CSRF token missing"
+	CSRFTokenMismatchMsg      = "CSRF token mismatch"
+	CSRFTokenExpiredMsg       = "CSRF token expired"
+	CSRFTokenNotInSessionMsg  = "CSRF token not in session"
 )
 
 type ApiError struct {

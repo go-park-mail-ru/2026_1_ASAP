@@ -10,6 +10,9 @@ func toModel(session *domain.Session) *SessionModel {
 		UserID:    session.UserID,
 		CreatedAt: session.CreatedAt,
 		ExpiresAt: session.ExpiresAt,
+
+		CSRFToken:     session.CSRFToken,
+		CSRFExpiresAt: session.CSRFExpiresAt,
 	}
 }
 
@@ -19,5 +22,8 @@ func toDomain(session *SessionModel) *domain.Session {
 		UserID:    session.UserID,
 		CreatedAt: session.CreatedAt,
 		ExpiresAt: session.ExpiresAt,
+
+		CSRFToken:     session.CSRFToken,
+		CSRFExpiresAt: session.CSRFExpiresAt,
 	}
 }

@@ -137,7 +137,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			Login: newRequestLogin.Login,
 		},
 	}
-
+	w.Header().Set("X-NEW-CSRF-TOKEN", session.CSRFToken)
 	response.Send(w, http.StatusOK, resp)
 }
 
@@ -245,6 +245,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 			Login: newRequestRegister.Login,
 		},
 	}
+	w.Header().Set("X-NEW-CSRF-TOKEN", session.CSRFToken)
 	response.Send(w, http.StatusOK, resp)
 }
 
