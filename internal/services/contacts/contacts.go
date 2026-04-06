@@ -14,12 +14,12 @@ import (
 type ContactRepositoryInterface interface {
 	GetAllContactsByUserID(ctx context.Context, userID int64) ([]*domain.Contact, error)
 	CreateContact(ctx context.Context, contact *domain.Contact) (*domain.Contact, error)
-	DeleteContact(ctx context.Context, userID, contactUserID int64) (error)
+	DeleteContact(ctx context.Context, userID, contactUserID int64) error
 	IsContact(ctx context.Context, userID, contactUserID int64) (bool, error)
 }
 
 type UserRepositoryInterface interface {
-	Create(ctx context.Context, user *domainUser.User) (*domainUser.User, error)
+	Create(ctx context.Context, u *domainUser.User) (*domainUser.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*domainUser.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*domainUser.User, error)
 	GetUserByID(ctx context.Context, id int64) (*domainUser.User, error)
@@ -27,13 +27,13 @@ type UserRepositoryInterface interface {
 
 type ContactService struct {
 	contactRepo ContactRepositoryInterface
-	userRepo UserRepositoryInterface
+	userRepo    UserRepositoryInterface
 }
 
 func NewContactService(contactRepo ContactRepositoryInterface, userRepo UserRepositoryInterface) *ContactService {
 	return &ContactService{
 		contactRepo: contactRepo,
-		userRepo: userRepo,
+		userRepo:    userRepo,
 	}
 }
 
@@ -50,11 +50,11 @@ func (s *ContactService) GetContacts(ctx context.Context, userID int64) ([]*dto.
 	result := make([]*dto.ContactResponse, 0, len(contacts))
 	for _, contact := range contacts {
 		result = append(result, &dto.ContactResponse{
-			UserID: contact.UserID,
-			ContactUserID: contact.ContactUserID,
+			UserID:           contact.UserID,
+			ContactUserID:    contact.ContactUserID,
 			ContactAvatarUrl: contact.ContactAvatarUrl,
-			ContactName: contact.ContactName,
-			CreatedAt: contact.CreatedAt,
+			ContactName:      contact.ContactName,
+			CreatedAt:        contact.CreatedAt,
 		})
 	}
 
@@ -82,13 +82,13 @@ func (s *ContactService) AddContact(ctx context.Context, contactRequest dto.AddC
 	if exists {
 		return nil, domain.ErrContactExists
 	}
-	
+
 	contact := &domain.Contact{
-		UserID: userID,
+		UserID:        userID,
 		ContactUserID: contactRequest.ContactUserID,
-		ContactName: contactRequest.ContactName,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ContactName:   contactRequest.ContactName,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 
 	result, err := s.contactRepo.CreateContact(ctx, contact)
@@ -97,17 +97,17 @@ func (s *ContactService) AddContact(ctx context.Context, contactRequest dto.AddC
 	}
 
 	contactDTO := &dto.ContactResponse{
-		UserID: result.UserID,
-		ContactUserID: result.ContactUserID,
-		ContactName: result.ContactName,
+		UserID:           result.UserID,
+		ContactUserID:    result.ContactUserID,
+		ContactName:      result.ContactName,
 		ContactAvatarUrl: result.ContactAvatarUrl,
-		CreatedAt: result.CreatedAt,
+		CreatedAt:        result.CreatedAt,
 	}
 
 	return contactDTO, nil
 }
 
-func (s *ContactService) DeleteContact(ctx context.Context, contactRequest dto.DeleteContactRequest, userID int64) (error) {
+func (s *ContactService) DeleteContact(ctx context.Context, contactRequest dto.DeleteContactRequest, userID int64) error {
 	_, err := s.userRepo.GetUserByID(ctx, contactRequest.ContactUserID)
 	if err != nil {
 		if errors.Is(err, domainUser.ErrNotFound) {
@@ -126,7 +126,7 @@ func (s *ContactService) DeleteContact(ctx context.Context, contactRequest dto.D
 	}
 
 	contact := &domain.Contact{
-		UserID: userID,
+		UserID:        userID,
 		ContactUserID: contactRequest.ContactUserID,
 	}
 

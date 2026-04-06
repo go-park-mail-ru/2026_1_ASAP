@@ -89,6 +89,7 @@ func main() {
 	requestIDMiddleware := middleware.RequestIDMiddleware()
 	accessMiddleware := middleware.AccessMiddleware(logger.Named("access"))
 	authMiddleware := middleware.AuthMiddleware(sessionServ)
+	csrfMiddleware := middleware.CSRFMiddleware(sessionServ)
 
 	mux := chi.NewRouter()
 
@@ -102,9 +103,15 @@ func main() {
 			"http://localhost",
 			"http://localhost:8080",
 		},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		ExposedHeaders:   []string{"Link"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{
+			"Accept",
+			"Authorization",
+			"Content-Type",
+			"X-CSRF-TOKEN",
+			"X-NEW-CSRF-TOKEN",
+		},
+		ExposedHeaders:   []string{"Link", "X-CSRF-TOKEN", "X-NEW-CSRF-TOKEN"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
@@ -112,29 +119,29 @@ func main() {
 	mux.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
-		mux.With(authMiddleware).Post("/logout", auth.Logout)
+		mux.With(authMiddleware, csrfMiddleware).Post("/logout", auth.Logout)
 	})
 
 	mux.Route("/api/v1/chats", func(mux chi.Router) {
-		mux.With(authMiddleware).Get("/", chatsHandler.GetChats)
-		mux.With(authMiddleware).Post("/", chatsHandler.ChatCreate)
-		mux.With(authMiddleware).Get("/{id}", chatsHandler.GetChatByID)
-		mux.With(authMiddleware).Delete("/{id}", chatsHandler.DeleteChat)
+		mux.With(authMiddleware, csrfMiddleware).Get("/", chatsHandler.GetChats)
+		mux.With(authMiddleware, csrfMiddleware).Post("/", chatsHandler.ChatCreate)
+		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", chatsHandler.GetChatByID)
+		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}", chatsHandler.DeleteChat)
 	})
 
 	mux.Route("/api/v1/contacts", func(mux chi.Router) {
-		mux.With(authMiddleware).Get("/", contactsHandler.GetContacts)
-		mux.With(authMiddleware).Post("/", contactsHandler.CreateContact)
-		mux.With(authMiddleware).Delete("/{contact_user_id}", contactsHandler.DeleteContact)
+		mux.With(authMiddleware, csrfMiddleware).Get("/", contactsHandler.GetContacts)
+		mux.With(authMiddleware, csrfMiddleware).Post("/", contactsHandler.CreateContact)
+		mux.With(authMiddleware, csrfMiddleware).Delete("/{contact_user_id}", contactsHandler.DeleteContact)
 	})
 
 	mux.Route("/api/v1/profiles", func(mux chi.Router) {
-		mux.With(authMiddleware).Get("/me", profileHandlers.GetMyProfile)
-		mux.With(authMiddleware).Post("/me/bio", profileHandlers.UpdateUserBio)
-		mux.With(authMiddleware).Post("/me/avatar", profileHandlers.UpdateUserAvatar)
-		mux.With(authMiddleware).Get("/{id}", profileHandlers.GetUserProfile)
-		mux.With(authMiddleware).Post("/me/birth", profileHandlers.UpdateProfileBirthDate)
-		mux.With(authMiddleware).Get("/search", profileHandlers.SearchIdByLogin)
+		mux.With(authMiddleware, csrfMiddleware).Get("/me", profileHandlers.GetMyProfile)
+		mux.With(authMiddleware, csrfMiddleware).Post("/me/bio", profileHandlers.UpdateUserBio)
+		mux.With(authMiddleware, csrfMiddleware).Post("/me/avatar", profileHandlers.UpdateUserAvatar)
+		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", profileHandlers.GetUserProfile)
+		mux.With(authMiddleware, csrfMiddleware).Post("/me/birth", profileHandlers.UpdateProfileBirthDate)
+		mux.With(authMiddleware, csrfMiddleware).Get("/search", profileHandlers.SearchIdByLogin)
 	})
 
 	mux.Get("/swagger/*", httpSwagger.Handler())

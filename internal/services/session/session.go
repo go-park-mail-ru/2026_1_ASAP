@@ -8,6 +8,7 @@ import (
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	sessionDTO "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
+	utils "github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/csrf"
 	"github.com/google/uuid"
 )
 
@@ -22,6 +23,55 @@ type SessionService struct {
 	sessionTTL        time.Duration
 }
 
+func (sessionService *SessionService) GetCSRFToken(ctx context.Context, sessionID string) (string, error) {
+	session, err := sessionService.sessionRepository.GetSession(ctx, sessionID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return "", domain.ErrNotFound
+		}
+		return "", fmt.Errorf("failed to get session: %w", err)
+	}
+
+	if session.ExpiresAt.Before(time.Now()) {
+		return "", domain.ErrExpired
+	}
+
+	if session.CSRFToken == "" {
+		return "", domain.ErrCSRFNotFound
+	}
+
+	if session.CSRFExpiresAt.Before(time.Now()) {
+		return "", domain.ErrCSRFExpired
+	}
+
+	return session.CSRFToken, nil
+}
+
+func (sessionService *SessionService) SetCSRFToken(ctx context.Context, sessionID string, token string) error {
+	session, err := sessionService.sessionRepository.GetSession(ctx, sessionID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return domain.ErrNotFound
+		}
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+
+	if session.ExpiresAt.Before(time.Now()) {
+		return domain.ErrExpired
+	}
+	session.CSRFToken = token
+
+	session.CSRFExpiresAt = time.Now().Add(1 * time.Hour)
+	session.CSRFToken = token
+
+	_, err = sessionService.sessionRepository.CreateSession(ctx, session)
+	if err != nil {
+		return fmt.Errorf("failed to create session: %w", err)
+	}
+
+	return nil
+}
+
 func NewSessionService(repository SessionRepository, sessionTTL time.Duration) *SessionService {
 	return &SessionService{
 		sessionRepository: repository,
@@ -30,10 +80,17 @@ func NewSessionService(repository SessionRepository, sessionTTL time.Duration) *
 }
 
 func (sessionService *SessionService) CreateSession(ctx context.Context, userID int64) (*sessionDTO.SessionDTO, error) {
+	token, err := utils.GenerateToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate token: %w", err)
+	}
+
 	session := &domain.Session{
-		SessionID: uuid.New().String(),
-		UserID:    userID,
-		ExpiresAt: time.Now().Add(sessionService.sessionTTL),
+		SessionID:     uuid.New().String(),
+		UserID:        userID,
+		CSRFToken:     token,
+		CSRFExpiresAt: time.Now().Add(1 * time.Hour),
+		ExpiresAt:     time.Now().Add(sessionService.sessionTTL),
 	}
 	sessionID, err := sessionService.sessionRepository.CreateSession(ctx, session)
 	if err != nil {
@@ -43,6 +100,7 @@ func (sessionService *SessionService) CreateSession(ctx context.Context, userID 
 	return &sessionDTO.SessionDTO{
 		SessionID: sessionID,
 		Expire:    session.ExpiresAt,
+		CSRFToken: session.CSRFToken,
 	}, nil
 }
 
