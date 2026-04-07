@@ -4,7 +4,8 @@ import "time"
 
 type AddContactRequest struct {
 	ContactUserID int64 `json:"contact_user_id"`
-	ContactName string `json:"contact_name"`
+	FirstName string     `json:"first_name"`
+	LastName  *string    `json:"last_name,omitempty"`
 }
 
 type DeleteContactRequest struct {
@@ -14,7 +15,8 @@ type DeleteContactRequest struct {
 type ContactResponse struct {
 	UserID int64 `json:"user_id"` 
 	ContactUserID int64 `json:"contact_user_id"`
-	ContactName string `json:"contact_name"`
+	FirstName string     `json:"first_name"`
+	LastName  *string    `json:"last_name,omitempty"`
 	ContactAvatarUrl  *string `json:"contact_avatar_url"`
 	CreatedAt time.Time `json:"created_at"`
 }

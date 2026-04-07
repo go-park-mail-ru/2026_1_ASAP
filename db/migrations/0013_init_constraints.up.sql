@@ -4,8 +4,6 @@ ADD CONSTRAINT fk_contacts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DE
 ALTER TABLE contacts
 ADD CONSTRAINT fk_contacts_contact_user FOREIGN KEY (contact_user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE contacts
-ADD CONSTRAINT uq_contacts_name UNIQUE (user_id, contact_user_id);
-ALTER TABLE contacts
 ADD CONSTRAINT chk_contacts_user_not_null CHECK (user_id IS NOT NULL AND contact_user_id IS NOT NULL);
 
 -- CHATS

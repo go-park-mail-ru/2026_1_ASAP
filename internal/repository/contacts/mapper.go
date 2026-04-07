@@ -8,7 +8,8 @@ import (
 func toDomainContact(contactModel *ContactModel) *domain.Contact {
 	return &domain.Contact{
 		UserID: contactModel.UserID,
-		ContactName: contactModel.ContactName,
+		FirstName: contactModel.FirstName,
+		LastName: null.NullStringToPtrString(contactModel.LastName),
 		ContactUserID: contactModel.ContactUserID,
 		ContactAvatarUrl: null.NullStringToPtrString(contactModel.ContactAvatarUrl),
 		CreatedAt: contactModel.CreatedAt,
@@ -19,7 +20,8 @@ func toDomainContact(contactModel *ContactModel) *domain.Contact {
 func toModelContact(contactDomain *domain.Contact) *ContactModel {
 	return &ContactModel{
 		UserID: contactDomain.UserID,
-		ContactName: contactDomain.ContactName,
+		FirstName: contactDomain.FirstName,
+		LastName: null.StringPtrToNullString(contactDomain.LastName),
 		ContactUserID: contactDomain.ContactUserID,
 		ContactAvatarUrl: null.StringPtrToNullString(contactDomain.ContactAvatarUrl),
 		CreatedAt: contactDomain.CreatedAt,
