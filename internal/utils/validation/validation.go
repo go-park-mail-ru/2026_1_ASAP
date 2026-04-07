@@ -239,11 +239,21 @@ func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
 func ValidationContactCreate(req *dtoContact.AddContactRequest) []ValidationError {
 	var errs []ValidationError
 
-	if req.ContactName != "" && len(req.ContactName) > 100{
+	if req.FirstName != "" && len(req.FirstName) > 100{
 		errs = append(errs, ValidationError{
-			Field: "contact_name",
-			Message: "contact name must be less than 100 caracters",
-			Code: "CONTACT_NAME_MUST_LESS_100_CHARACTERS",
+			Field: "first_name",
+			Message: "contact firstname must be less than 100 caracters",
+			Code: "CONTACT_FIRST_NAME_MUST_LESS_100_CHARACTERS",
+		})
+	}
+
+	
+
+	if len(*req.LastName) > 100{
+		errs = append(errs, ValidationError{
+			Field: "last_name",
+			Message: "contact lastname must be less than 100 caracters",
+			Code: "CONTACT_LAST_NAME_MUST_LESS_100_CHARACTERS",
 		})
 	}
 

@@ -67,13 +67,17 @@ func (s *ContactService) AddContact(ctx context.Context, contactRequest dto.AddC
 		return nil, domain.ErrCantCreateContactWithYourself
 	}
 
-	_, err := s.userRepo.GetUserByID(ctx, contactRequest.ContactUserID)
+	contactUser, err := s.userRepo.GetUserByID(ctx, contactRequest.ContactUserID)
 	if err != nil {
 		if errors.Is(err, domainUser.ErrNotFound) {
 			return nil, domainUser.ErrNotFound
 		}
 
 		return nil, fmt.Errorf("failed to check contact user id: %w", err)
+	}
+
+	if contactRequest.FirstName == "" {
+		contactRequest.FirstName = contactUser.Login
 	}
 
 	exists, err := s.contactRepo.IsContact(ctx, userID, contactRequest.ContactUserID)
