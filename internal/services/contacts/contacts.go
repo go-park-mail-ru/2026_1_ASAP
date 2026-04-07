@@ -53,7 +53,8 @@ func (s *ContactService) GetContacts(ctx context.Context, userID int64) ([]*dto.
 			UserID:           contact.UserID,
 			ContactUserID:    contact.ContactUserID,
 			ContactAvatarUrl: contact.ContactAvatarUrl,
-			ContactName:      contact.ContactName,
+			FirstName:        contact.FirstName,
+			LastName:         contact.LastName,
 			CreatedAt:        contact.CreatedAt,
 		})
 	}
@@ -86,7 +87,8 @@ func (s *ContactService) AddContact(ctx context.Context, contactRequest dto.AddC
 	contact := &domain.Contact{
 		UserID:        userID,
 		ContactUserID: contactRequest.ContactUserID,
-		ContactName:   contactRequest.ContactName,
+		FirstName:     contactRequest.FirstName,
+		LastName:      contactRequest.LastName,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
@@ -99,7 +101,8 @@ func (s *ContactService) AddContact(ctx context.Context, contactRequest dto.AddC
 	contactDTO := &dto.ContactResponse{
 		UserID:           result.UserID,
 		ContactUserID:    result.ContactUserID,
-		ContactName:      result.ContactName,
+		FirstName:        result.FirstName,
+		LastName:         result.LastName,
 		ContactAvatarUrl: result.ContactAvatarUrl,
 		CreatedAt:        result.CreatedAt,
 	}
