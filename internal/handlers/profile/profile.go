@@ -468,11 +468,10 @@ func (h *ProfileHandler) UpdateProfileBirthDate(w http.ResponseWriter, r *http.R
 }
 
 func (h *ProfileHandler) SearchIdByLogin(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
 	request := &dto.RequestSearchIdByLogin{}
 
-	err := decoder.Decode(request)
-	if err != nil {
+	login := r.URL.Query().Get("login")
+	if login == "" {
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -485,6 +484,7 @@ func (h *ProfileHandler) SearchIdByLogin(w http.ResponseWriter, r *http.Request)
 		response.Send(w, http.StatusBadRequest, resp)
 		return
 	}
+	request.Login = login
 
 	responseSearch, err := h.profileService.SearchIdByLogin(r.Context(), request)
 	if err != nil {
