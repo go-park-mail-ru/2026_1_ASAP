@@ -13,4 +13,7 @@ var (
 	ErrCantCreateDialogWithYourself = errors.New("you cant create dialog with yourself")
 	ErrDialogMustHave2Users         = errors.New("dialog must have only 2 users")
 	ErrOnlyOwnerCanDeleteChat       = errors.New("Only owner of the chat can delete chat")
+	ErrMessageEmpty                 = errors.New("Message is empty")
+	ErrMessageTooLong               = errors.New("Message is too long")
+	ErrMessageNotMember             = errors.New("Message sender is not member of this chat")
 )
