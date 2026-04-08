@@ -96,7 +96,7 @@ func (r *ChatRepository) GetChatByID(ctx context.Context, chatID int64) (*domain
 func (r *ChatRepository) CreateChat(ctx context.Context, chat *domain.Chat) (*domain.Chat, error) {
 	chatModel := toModelChat(chat)
 	err := r.db.QueryRow(ctx,
-		`INSERT INTO chats
+	`INSERT INTO chats
 	 (type, title, description, owner_id, avatar_url, created_at, updated_at)
 	 VALUES ($1, $2, $3, $4, $5, $6, $7)
 	 RETURNING id`,
@@ -203,7 +203,7 @@ func (r *ChatRepository) GetChatMembers(ctx context.Context, chatID int64) ([]in
 
 func (r *ChatRepository) AddMember(ctx context.Context, chatID, userID int64, role string) error {
 	_, err := r.db.Exec(ctx,
-		`INSERT INTO chat_members
+	`INSERT INTO chat_members
 	 (chat_id, user_id, role, joined_at)
 	 VALUES ($1, $2, $3, $4)`, chatID, userID, role, time.Now())
 	if err != nil {

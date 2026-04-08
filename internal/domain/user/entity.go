@@ -20,8 +20,8 @@ type User struct {
 }
 
 func (u User) Username() string {
-	if u.LastName == nil {
-		return u.FirstName + *u.LastName
-	}
-	return u.FirstName
+    if u.LastName != nil && *u.LastName != "" {
+        return u.FirstName + " " + *u.LastName
+    }
+    return u.FirstName
 }
