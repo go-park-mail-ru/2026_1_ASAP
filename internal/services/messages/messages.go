@@ -23,7 +23,7 @@ type MessageService struct {
 	chatRepo    ChatRepositoryInterface
 }
 
-func (m MessageService) GetMessagesByChatID(ctx context.Context, userID int64, chatID int64, req *dto.RequestGetMessages) (*dto.ResponseGetMessages, error) {
+func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, chatID int64, req *dto.RequestGetMessages) (*dto.ResponseGetMessages, error) {
 	if req == nil {
 		return nil, errors.New("get messages nil request")
 	}
