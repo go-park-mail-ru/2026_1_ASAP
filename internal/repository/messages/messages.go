@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -11,6 +12,17 @@ import (
 
 type MessageRepository struct {
 	db *pgxpool.Pool
+}
+
+func NewMessageRepository(ctx context.Context, cfg config.PostgresConfig) (*MessageRepository, error) {
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
+
+	pool, err := pgxpool.New(ctx, connStr)
+	if err != nil {
+		return nil, err
+	}
+	return &MessageRepository{db: pool}, nil
 }
 
 func (m MessageRepository) CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error) {
