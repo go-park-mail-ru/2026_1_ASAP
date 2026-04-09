@@ -211,7 +211,7 @@ func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
 		})
 	}
 
-	if req.Type == dtoChat.ChatTypeDialog && len(req.MembersID) != 2 {
+	if req.Type == dtoChat.ChatTypeDialog && len(req.MembersID) > 2 {
 		errs = append(errs, ValidationError{
 			Field:   "members_id",
 			Message: "Dialog must have only 2 members",
