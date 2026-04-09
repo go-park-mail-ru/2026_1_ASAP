@@ -75,7 +75,7 @@ func main() {
 	// Services
 	sessionServ := session.NewSessionService(sessRepo, cfg.SessionConfig.SessionTTL)
 	authServ := authService.NewAuthService(userRepo, sessionServ)
-	chatServ := chatService.NewChatService(chatRepo, userRepo)
+	chatServ := chatService.NewChatService(chatRepo, userRepo, mediaRepo)
 	contactServ := contactService.NewContactService(contactRepo, userRepo)
 	profileServ := profileService.NewProfileService(userRepo, mediaRepo)
 
@@ -126,6 +126,9 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/", chatsHandler.GetChats)
 		mux.With(authMiddleware, csrfMiddleware).Post("/", chatsHandler.ChatCreate)
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", chatsHandler.GetChatByID)
+		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/avatar", chatsHandler.UpdateChatAvatar)
+		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/members", chatsHandler.AddMembersToChat)
+		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/title", chatsHandler.UpdateChatTitle)
 		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}", chatsHandler.DeleteChat)
 	})
 

@@ -77,6 +77,25 @@ func (m MediaRepository) UploadAvatar(ctx context.Context, userId int64, input *
 	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucket, objectName), nil
 }
 
+func (m MediaRepository) UploadChatAvatar(ctx context.Context, chatID int64, input *media.FileInput) (string, error) {
+	if input == nil || input.Body == nil {
+		return "", profile.ErrEmptyAvatar
+	}
+
+	extension := getExtensionFromContentType(input.ContentType)
+
+	objectName := fmt.Sprintf("avatar/%d%s", chatID, extension)
+
+	_, err := m.client.PutObject(ctx, m.bucket, objectName, input.Body, input.Size, minio.PutObjectOptions{
+		ContentType: input.ContentType,
+	})
+	if err != nil {
+		return "", fmt.Errorf("upload avatar: %w", err)
+	}
+
+	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucket, objectName), nil
+}
+
 func (m *MediaRepository) Close() {
 
 }

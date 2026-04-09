@@ -302,6 +302,57 @@ func (r *ChatRepository) GetMemberRole(ctx context.Context, userID, chatID int64
 	return role, nil
 }
 
+func (r *ChatRepository) UploadAvatarUrl(ctx context.Context, chatID int64, avatarURL string) (*domain.Chat, error) {
+	row := r.db.QueryRow(ctx,
+		`UPDATE chats SET avatar_url = $2, updated_at = now()
+		 WHERE id = $1
+		 RETURNING id, type, title, description, owner_id, avatar_url, created_at, updated_at`,
+		chatID, avatarURL)
+
+	chatModel := &ChatModel{}
+	if err := row.Scan(
+		&chatModel.Id,
+		&chatModel.Type,
+		&chatModel.Title,
+		&chatModel.Description,
+		&chatModel.OwnerId,
+		&chatModel.AvatarUrl,
+		&chatModel.CreatedAt,
+		&chatModel.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrChatNotFound
+		}
+		return nil, fmt.Errorf("chatRepo failed upload avatar url: %w", err)
+	}
+	return toDomainChat(chatModel), nil
+}
+
+func (r *ChatRepository) UpdateTitle(ctx context.Context, chatID int64, title string) (*domain.Chat, error) {
+	row := r.db.QueryRow(ctx,
+	`UPDATE chats SET title = $2, updated_at = now()
+	 WHERE id = $1
+	 RETURNING id, type, title, description, owner_id, avatar_url, created_at, updated_at`, chatID, title)
+
+	chatModel := &ChatModel{}
+	if err := row.Scan(
+		&chatModel.Id,
+		&chatModel.Type,
+		&chatModel.Title,
+		&chatModel.Description,
+		&chatModel.OwnerId,
+		&chatModel.AvatarUrl,
+		&chatModel.CreatedAt,
+		&chatModel.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrChatNotFound
+		}
+		return nil, fmt.Errorf("chatRepo failed update title: %w", err)
+	}
+	return toDomainChat(chatModel), nil
+}
+
 func (r *ChatRepository) Close() {
 	r.db.Close()
 }

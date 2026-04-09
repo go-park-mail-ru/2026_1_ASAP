@@ -10,6 +10,8 @@ import (
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
+	domainProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 )
 
 type ChatRepositoryInterface interface {
@@ -24,6 +26,8 @@ type ChatRepositoryInterface interface {
 	GetDialogBetweenUsers(ctx context.Context, user1ID, user2ID int64) (*domain.Chat, error)
 	DeleteChat(ctx context.Context, chatID int64) (error)
 	GetMemberRole(ctx context.Context, userID, chatID int64) (string, error)
+	UploadAvatarUrl(ctx context.Context, chatID int64, avatarURL string) (*domain.Chat, error)
+	UpdateTitle(ctx context.Context, chatID int64, title string) (*domain.Chat, error)
 }
 
 type UserRepositoryInterface interface {
@@ -33,15 +37,21 @@ type UserRepositoryInterface interface {
 	GetUserByID(ctx context.Context, id int64) (*domainUser.User, error)
 }
 
+type MediaRepositoryInterface interface {
+	UploadChatAvatar(ctx context.Context, chatID int64, input *media.FileInput) (string, error)
+}
+
 type ChatService struct {
 	chatRepo ChatRepositoryInterface
 	userRepo UserRepositoryInterface
+	mediaRepo MediaRepositoryInterface
 }
 
-func NewChatService(chatRepo ChatRepositoryInterface, userRepo UserRepositoryInterface) *ChatService {
+func NewChatService(chatRepo ChatRepositoryInterface, userRepo UserRepositoryInterface, mediaRepo MediaRepositoryInterface) *ChatService {
 	return &ChatService{
 		chatRepo: chatRepo,
 		userRepo: userRepo,
+		mediaRepo: mediaRepo,
 	}
 }
 
@@ -111,6 +121,7 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 			Title:       displayTitle,
 			ChatType:    dto.ChatType(chat.Type),
 			LastMessage: messageDTO,
+			Avatar:      chat.AvatarUrl,
 		})
 	}
 
@@ -188,6 +199,7 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 		ChatType:    dto.ChatType(createdChat.Type),
 		Title:       displayTitle,
 		LastMessage: dto.MessageDTO{},
+		Avatar:      createdChat.AvatarUrl,
 	}, nil
 }
 
@@ -232,6 +244,7 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 		ChatType:    dto.ChatType(chat.Type),
 		Title:       displayTitle,
 		LastMessage: messageDTO,
+		Avatar:      chat.AvatarUrl,
 	}, nil
 }
 
@@ -262,3 +275,193 @@ func (s *ChatService) DeleteChat(ctx context.Context, userID, chatID int64) erro
 
 	return nil
 }
+
+func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateAvatar) (*dto.ChatInformationDTO, error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	if !isMember {
+		return nil, domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return nil, domain.ErrChatNotFound
+		}
+
+		return nil, fmt.Errorf("failed to get chat by id: %w", err)
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		return nil, domain.ErrDialogCannotHaveCustomAvatar
+	}
+	
+	if request == nil {
+		return nil, errors.New("update profile avatar nil request")
+	}
+	err = checkAvatar(request.File)
+	if err != nil {
+		switch {
+		case errors.Is(err, media.ErrFileTooLarge):
+			return nil, domainProfile.ErrAvatarTooLarge
+		case errors.Is(err, media.ErrInvalidFileType):
+			return nil, domainProfile.ErrInvalidAvatarType
+		case errors.Is(err, media.ErrEmptyFile):
+			return nil, domainProfile.ErrEmptyAvatar
+		}
+
+		return nil, fmt.Errorf("invalid avatar: %w", err)
+	}
+
+	avatarURL, err := s.mediaRepo.UploadChatAvatar(ctx, chatID, request.File)
+	if err != nil {
+		return nil, fmt.Errorf("failed upload avatar: %w", err)
+	}
+
+	result, err := s.chatRepo.UploadAvatarUrl(ctx, chatID, avatarURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed upload avatar url: %w", err)
+	}
+
+	lastMsg, err := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
+	if err != nil && !errors.Is(err, domain.ErrNoMessage) {
+		return nil, fmt.Errorf("failed to get last message: %w", err)
+	}
+
+	messageDTO := dto.MessageDTO{
+		SenderId:  lastMsg.SenderId,
+		Text:      lastMsg.Content,
+		CreatedAt: lastMsg.CreatedAt,
+	}
+
+	return &dto.ChatInformationDTO{
+		ID:          result.Id,
+		ChatType:    dto.ChatType(result.Type),
+		Title:       result.Title,
+		LastMessage: messageDTO,
+		Avatar:      result.AvatarUrl,
+	}, nil
+}
+
+func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateTitle) (*dto.ChatInformationDTO, error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	if !isMember {
+		return nil, domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return nil, domain.ErrChatNotFound
+		}
+
+		return nil, fmt.Errorf("failed to get chat by id: %w", err)
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		return nil, domain.ErrDialogCannotHaveCustomTitle
+	}
+
+	result, err := s.chatRepo.UpdateTitle(ctx, chatID, request.Title)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return nil, domain.ErrChatNotFound
+		}
+		return nil, fmt.Errorf("failed to update title: %w", err)
+	}
+
+	lastMsg, err := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
+	if err != nil && !errors.Is(err, domain.ErrNoMessage) {
+		return nil, fmt.Errorf("failed to get last message: %w", err)
+	}
+
+	messageDTO := dto.MessageDTO{
+		SenderId:  lastMsg.SenderId,
+		Text:      lastMsg.Content,
+		CreatedAt: lastMsg.CreatedAt,
+	}
+
+	return &dto.ChatInformationDTO{
+		ID:          result.Id,
+		ChatType:    dto.ChatType(result.Type),
+		Title:       result.Title,
+		LastMessage: messageDTO,
+		Avatar:      result.AvatarUrl,
+	}, nil
+}
+
+func (s *ChatService) AddMembersToChat(ctx context.Context, userID, chatID int64, request *dto.RequestAddMember) (error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	if !isMember {
+		return domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return domain.ErrChatNotFound
+		}
+
+		return fmt.Errorf("failed to get chat by id: %w", err)
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		return domain.ErrCantAddMemberToDialog
+	}
+	if chat.OwnerId != userID {
+		return domain.ErrOnlyOwnerCanAddPeople
+	}
+
+	for _, member := range request.MembersId {
+		isMember, err := s.chatRepo.IsMember(ctx, chatID, member)
+		if err != nil {
+			return fmt.Errorf("failed to check user is member of chat: %w", err)
+		}
+		if isMember {
+			return domain.ErrMemberAlreadyInChat
+		}
+
+		role := "member"
+		err = s.chatRepo.AddMember(ctx, chatID, member, role)
+		if err != nil {
+			return fmt.Errorf("failed to add member to chat: %w", err)
+		}
+	}
+
+	return nil
+}
+
+const maxAvatarSize = 5 * 1024 * 1024
+
+var allowedAvatarTypes = map[string]bool{
+	"image/jpeg": true,
+	"image/jpg":  true,
+	"image/png":  true,
+	"image/webp": true,
+	"image/gif":  true,
+}
+
+func checkAvatar(input *media.FileInput) error {
+	if input == nil || input.Body == nil {
+		return media.ErrEmptyFile
+	}
+	if input.Size <= 0 {
+		return media.ErrEmptyFile
+	}
+	if input.Size > maxAvatarSize {
+		return media.ErrFileTooLarge
+	}
+	if !allowedAvatarTypes[input.ContentType] {
+		return media.ErrInvalidFileType
+	}
+	return nil
+}
+

@@ -10,12 +10,14 @@ import (
 	"github.com/go-chi/chi"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
+	domainProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 )
 
 type ChatService interface {
@@ -24,6 +26,9 @@ type ChatService interface {
 	CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ownerID int64) (*dto.ChatInformationDTO, error)
 	GetChatByID(ctx context.Context, chatID, userID int64) (*dto.ChatInformationDTO, error)
 	DeleteChat(ctx context.Context, userID, chatID int64) (error)
+	UpdateChatAvatar(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateAvatar) (*dto.ChatInformationDTO, error)
+	UpdateChatTitle(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateTitle) (*dto.ChatInformationDTO, error)
+	AddMembersToChat(ctx context.Context, userID, chatID int64, request *dto.RequestAddMember) (error)
 }
 
 type ChatsHandler struct {
@@ -352,5 +357,420 @@ func (h *ChatsHandler) DeleteChat(w http.ResponseWriter, r *http.Request) {
 			Body: string("Chat successful delete"),
 		}
 	response.Send(w, http.StatusOK, resp)
+}
 
+func (h *ChatsHandler) UpdateChatAvatar(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userID, ok := ctx.Value(middleware.UserID).(int64)
+	if !ok {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.Unauthorized,
+					Message: dtoApi.UnauthorizedMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+
+	chatIDurl := chi.URLParam(r, "id")
+	chatID, err := strconv.ParseInt(chatIDurl, 10, 64)
+	if err != nil || chatID < 1 {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidID,
+					Message: dtoApi.InvalidIDMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	file, header, err := r.FormFile("avatar")
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.FileNotFound,
+					Message: dtoApi.FileNotFoundMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	defer file.Close()
+
+	request := &dto.RequestUpdateAvatar{}
+	fileInput := &media.FileInput{
+		Body:        file,
+		ContentType: header.Header.Get("Content-Type"),
+		Size:        header.Size,
+	}
+	request.File = fileInput
+
+	responseUpdate, err := h.chatService.UpdateChatAvatar(ctx, userID, chatID, request)
+	if err != nil {
+		switch {
+		case errors.Is(err, domainProfile.ErrEmptyAvatar):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.EmptyFile,
+						Message: dtoApi.EmptyFileMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+			return
+		case errors.Is(err, domain.ErrNotMember):
+        	resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.NotMemberOfChat,
+                    	Message: dtoApi.NotMemberOfChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		case errors.Is(err, domain.ErrDialogCannotHaveCustomAvatar):
+        	resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.CantChangeAvatar,
+                    	Message: dtoApi.CantChangeAvatarMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusBadRequest, resp)
+        	return
+		case errors.Is(err, domainProfile.ErrInvalidAvatarType):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InvalidFileFormat,
+						Message: dtoApi.InvalidFileFormatMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+			return
+
+		case errors.Is(err, domainProfile.ErrAvatarTooLarge):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.FileTooLarge,
+						Message: dtoApi.FileTooLargeMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+			return
+		default:
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InternalError,
+						Message: dtoApi.InternalErrorMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusInternalServerError, resp)
+			return
+		}
+	}
+
+	resp := dtoApi.ApiSuccessResponse[*dto.ChatInformationDTO]{
+		Status: dtoApi.Success,
+		Body:   responseUpdate,
+	}
+	response.Send(w, http.StatusOK, resp)
+}
+
+func (h *ChatsHandler) UpdateChatTitle(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ctx := r.Context()
+	userID, ok := ctx.Value(middleware.UserID).(int64)
+	if !ok {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.Unauthorized,
+					Message: dtoApi.UnauthorizedMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+
+	chatIDurl := chi.URLParam(r, "id")
+	chatID, err := strconv.ParseInt(chatIDurl, 10, 64)
+	if err != nil || chatID < 1 {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidID,
+					Message: dtoApi.InvalidIDMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	request := &dto.RequestUpdateTitle{}
+	err = decoder.Decode(request)
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidJson,
+					Message: dtoApi.InvalidJsonMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	errs := validation.ValidationRequestTitle(request)
+	if errs != nil {
+		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: apiErrors,
+		}
+
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	responseUpdate, err := h.chatService.UpdateChatTitle(ctx, userID, chatID, request)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrNotMember):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.NotMemberOfChat,
+                    	Message: dtoApi.NotMemberOfChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		case errors.Is(err, domain.ErrChatNotFound):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.CantFindChat,
+                    	Message: dtoApi.CantFindChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusNotFound, resp)
+        	return
+		case errors.Is(err, domain.ErrDialogCannotHaveCustomTitle):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.CantChangeTitle,
+                    	Message: dtoApi.CantChangeTitleMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusBadRequest, resp)
+        	return
+		default:
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InternalError,
+						Message: dtoApi.InternalErrorMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusInternalServerError, resp)
+			return
+		}
+	}
+
+	resp := dtoApi.ApiSuccessResponse[*dto.ChatInformationDTO]{
+		Status: dtoApi.Success,
+		Body:   responseUpdate,
+	}
+	response.Send(w, http.StatusOK, resp)
+}
+
+func (h *ChatsHandler) AddMembersToChat(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ctx := r.Context()
+	userID, ok := ctx.Value(middleware.UserID).(int64)
+	if !ok {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.Unauthorized,
+					Message: dtoApi.UnauthorizedMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+
+	chatIDurl := chi.URLParam(r, "id")
+	chatID, err := strconv.ParseInt(chatIDurl, 10, 64)
+	if err != nil || chatID < 1 {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidID,
+					Message: dtoApi.InvalidIDMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	request := &dto.RequestAddMember{}
+	err = decoder.Decode(request)
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidJson,
+					Message: dtoApi.InvalidJsonMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	errs := validation.ValidationRequestAddMember(request)
+	if errs != nil {
+		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: apiErrors,
+		}
+
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	err = h.chatService.AddMembersToChat(ctx, userID, chatID, request)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrNotMember):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.NotMemberOfChat,
+                    	Message: dtoApi.NotMemberOfChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		case errors.Is(err, domain.ErrChatNotFound):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.CantFindChat,
+                    	Message: dtoApi.CantFindChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusNotFound, resp)
+        	return
+		case errors.Is(err, domain.ErrCantAddMemberToDialog):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.CantAddMemberToDialog,
+                    	Message: dtoApi.CantAddMemberToDialogMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusBadRequest, resp)
+        	return
+		case errors.Is(err, domain.ErrOnlyOwnerCanAddPeople):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.OnlyOwnerCanAddMembers,
+                    	Message: dtoApi.OnlyOwnerCanAddMembersMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		case errors.Is(err, domain.ErrMemberAlreadyInChat):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.MemberAlreadyInChat,
+                    	Message: dtoApi.MemberAlreadyInChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusBadRequest, resp)
+        	return
+		default:
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InternalError,
+						Message: dtoApi.InternalErrorMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusInternalServerError, resp)
+			return
+		}
+	}
+
+	resp := dtoApi.ApiSuccessResponse[any]{
+		Status: dtoApi.Success,
+		Body:   "Members added to chat successfuly",
+	}
+	response.Send(w, http.StatusOK, resp)
 }

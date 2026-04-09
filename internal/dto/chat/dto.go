@@ -2,6 +2,7 @@ package dto
 
 import (
 	"time"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 )
 
 type ChatType string
@@ -22,6 +23,7 @@ type ChatInformationDTO struct {
 	LastMessage MessageDTO `json:"last_message"`
 	Title       string     `json:"title" example:"Chat Title"`
 	ChatType    ChatType   `json:"chat_type" example:"dialog"`
+	Avatar      *string    `json:"avatar,omitempty"`
 	ID          int64      `json:"id"`
 }
 
@@ -30,4 +32,20 @@ type ChatCreate struct {
 	Type      ChatType    `json:"type" example:"Dialog"`
 	MembersID []int64     `json:"members_id"`
 	ID        int64       `json:"id"`
+}
+
+type RequestUpdateAvatar struct {
+	File *media.FileInput
+}
+
+type RequestUpdateTitle struct {
+	Title string `json:"title"`
+}
+
+type RequestAddMember struct {
+	MembersId []int64 `json:"members_id"`
+}
+
+type RequestDeleteMember struct {
+	MembersId []int64 `json:"members_id"`
 }
