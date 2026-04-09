@@ -167,7 +167,7 @@ func ValidationRequestLogin(request *dtoAuth.RequestLogin) []ValidationError {
 func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
 	var errs []ValidationError
 
-	if req.Title == "" {
+	if req.Title == "" && req.Type != dtoChat.ChatTypeDialog{
 		errs = append(errs, ValidationError{
 			Field:   "title",
 			Message: "Title is required",
