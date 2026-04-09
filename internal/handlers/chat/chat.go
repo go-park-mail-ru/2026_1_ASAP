@@ -146,7 +146,7 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 
 	createdChat, err := h.chatService.CreateChat(ctx, req, userID)
 	if err != nil {
-		if errors.Is(err, domain.ErrChatAlreadyExists) {
+		if errors.Is(err, domain.ErrDialogAlreadyExists) {
 			resp := dtoApi.ApiErrorResponse{
 				Status: dtoApi.Error,
 				Errors: []dtoApi.ApiError{
