@@ -23,7 +23,7 @@ type ChatInformationDTO struct {
 	LastMessage MessageDTO `json:"last_message"`
 	Title       string     `json:"title" example:"Chat Title"`
 	ChatType    ChatType   `json:"chat_type" example:"dialog"`
-	Avatar      *string    `json:"avatar,omitempty"`
+	Avatar      *string    `json:"avatar"`
 	ID          int64      `json:"id"`
 }
 

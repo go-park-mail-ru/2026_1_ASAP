@@ -82,6 +82,32 @@ func (s *ChatService) GetDialogName(ctx context.Context, chatID int64, userID in
 	return friendUser.Username(), nil
 }
 
+func (s *ChatService) GetDialogAvatar(ctx context.Context, chatID int64, userID int64) (*string, error) {
+	members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get members: %w", err)
+	}
+
+	var friendUserID int64
+	for _, member := range members {
+		if member != userID {
+			friendUserID = member
+			break
+		}
+	}
+
+	if friendUserID == 0 {
+		return nil, errors.New("no other user found in chat")
+	}
+
+	friendUser, err := s.userRepo.GetUserByID(ctx, friendUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get userID: %w", err)
+	}
+
+	return friendUser.AvatarUrl, nil
+}
+
 func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInformationDTO, error) {
 	chats, err := s.chatRepo.GetAllChatsByUserID(ctx, id)
 	if err != nil {
@@ -116,13 +142,20 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 				displayTitle = dialogName
 			}
 		}
+		displayAvatar := chat.AvatarUrl
+		if chat.Type == domain.ChatTypeDialog {
+			dialogAvatar, err := s.GetDialogAvatar(ctx, chat.Id, id)
+			if err == nil && dialogAvatar != nil {
+				displayAvatar = dialogAvatar
+			}
+		}
 
 		result = append(result, dto.ChatInformationDTO{
 			ID:          chat.Id,
 			Title:       displayTitle,
 			ChatType:    dto.ChatType(chat.Type),
 			LastMessage: messageDTO,
-			Avatar:      chat.AvatarUrl,
+			Avatar:      displayAvatar,
 		})
 	}
 
@@ -160,6 +193,7 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 	if chatDTO.Type == dto.ChatTypeDialog {
 		title = ""
 	}
+	
 
 	chat := &domain.Chat{
 		Type:        domain.ChatType(chatDTO.Type),
@@ -195,12 +229,20 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 		}
 	}
 
+	displayAvatar := chat.AvatarUrl
+		if createdChat.Type == domain.ChatTypeDialog {
+			dialogAvatar, err := s.GetDialogAvatar(ctx, createdChat.Id, ownerID)
+			if err == nil && dialogAvatar != nil {
+				displayAvatar = dialogAvatar
+			}
+		}
+
 	return &dto.ChatInformationDTO{
 		ID:          createdChat.Id,
 		ChatType:    dto.ChatType(createdChat.Type),
 		Title:       displayTitle,
 		LastMessage: dto.MessageDTO{},
-		Avatar:      createdChat.AvatarUrl,
+		Avatar:      displayAvatar,
 	}, nil
 }
 
@@ -240,12 +282,20 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 		}
 	}
 
+	displayAvatar := chat.AvatarUrl
+		if chat.Type == domain.ChatTypeDialog {
+			dialogAvatar, err := s.GetDialogAvatar(ctx, chat.Id, userID)
+			if err == nil && dialogAvatar != nil {
+				displayAvatar= dialogAvatar
+			}
+		}
+
 	return &dto.ChatInformationDTO{
 		ID:          chat.Id,
 		ChatType:    dto.ChatType(chat.Type),
 		Title:       displayTitle,
 		LastMessage: messageDTO,
-		Avatar:      chat.AvatarUrl,
+		Avatar:      displayAvatar,
 	}, nil
 }
 
