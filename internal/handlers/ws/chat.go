@@ -35,7 +35,7 @@ type subscriber struct {
 }
 
 type ChatServer struct {
-	subcriberMessageBuffer int
+	subscriberMessageBuffer int
 
 	subscribers         map[*subscriber]struct{}
 	subscribersByChatId map[int64]map[*subscriber]struct{}
@@ -47,11 +47,11 @@ type ChatServer struct {
 
 func NewChatServer(messageService MessagesServiceInterface, chatService ChatServiceInterface) *ChatServer {
 	return &ChatServer{
-		subscribers:            make(map[*subscriber]struct{}),
-		subscribersByChatId:    make(map[int64]map[*subscriber]struct{}),
-		messageService:         messageService,
-		chatService:            chatService,
-		subcriberMessageBuffer: 16,
+		subscribers:             make(map[*subscriber]struct{}),
+		subscribersByChatId:     make(map[int64]map[*subscriber]struct{}),
+		messageService:          messageService,
+		chatService:             chatService,
+		subscriberMessageBuffer: 16,
 	}
 }
 
@@ -180,7 +180,7 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 	sub := &subscriber{
 		chatID: chatID,
-		msgs:   make(chan []byte, s.subcriberMessageBuffer),
+		msgs:   make(chan []byte, s.subscriberMessageBuffer),
 	}
 
 	wsConn, err := websocket.Accept(w, r, &websocket.AcceptOptions{})
@@ -208,7 +208,7 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer wsConn.CloseNow()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(reqCtx)
 	defer cancel()
 
 	go s.readClientMessages(ctx, cancel, wsConn, userID, chatID, sub)
@@ -258,7 +258,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, cancel context.Canc
 			continue
 		}
 
-		switch dtoWs.WsRequestType(env.Type) {
+		switch env.Type {
 		case dtoWs.MessageSend:
 			var req dto.RequestSendMessage
 			if len(env.Payload) == 0 {
@@ -271,7 +271,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, cancel context.Canc
 			if err := json.Unmarshal(env.Payload, &req); err != nil {
 				s.sendErr(sub, dtoWs.WsErrorPayload{
 					Code:    dtoWs.ErrCodeInvalidPayload,
-					Message: dtoWs.WsErrorMessage("payload must match message body"),
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
 				})
 				continue
 			}
@@ -297,7 +297,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, cancel context.Canc
 				default:
 					s.sendErr(sub, dtoWs.WsErrorPayload{
 						Code:    dtoWs.ErrCodeSendFailed,
-						Message: dtoWs.WsErrorMessage(err.Error()),
+						Message: dtoWs.ErrCodeSendFailedMsg,
 					})
 				}
 				continue
@@ -316,7 +316,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, cancel context.Canc
 		default:
 			s.sendErr(sub, dtoWs.WsErrorPayload{
 				Code:    dtoWs.ErrCodeUnknownType,
-				Message: dtoWs.WsErrorMessage(env.Type),
+				Message: dtoWs.ErrCodeUnknownTypeMsg,
 			})
 		}
 	}
