@@ -182,6 +182,11 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.AppConfig.ShutdownTime)
 	defer cancel()
+
+	if err := ws.Shutdown(ctx); err != nil {
+		appLogger.Error("WS shutdown", zap.Error(err))
+	}
+
 	if err := server.Shutdown(ctx); err != nil {
 		appLogger.Error("HTTP shutdown", zap.Error(err))
 	}

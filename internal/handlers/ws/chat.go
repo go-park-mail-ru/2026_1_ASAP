@@ -31,6 +31,7 @@ type subscriber struct {
 	chatID    int64
 	conn      *websocket.Conn
 	msgs      chan []byte
+	cancel    context.CancelFunc
 	closeSlow func()
 }
 
@@ -40,6 +41,7 @@ type ChatServer struct {
 	subscribers         map[*subscriber]struct{}
 	subscribersByChatId map[int64]map[*subscriber]struct{}
 	mu                  sync.RWMutex
+	wg                  sync.WaitGroup
 
 	messageService MessagesServiceInterface
 	chatService    ChatServiceInterface
@@ -210,9 +212,55 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithCancel(reqCtx)
 	defer cancel()
+	sub.cancel = cancel
 
-	go s.readClientMessages(ctx, cancel, wsConn, userID, chatID, sub)
+	s.wg.Add(1)
+	defer s.wg.Done()
 
+	go s.readClientMessages(ctx, wsConn, userID, chatID, sub)
+	s.writeClientMessages(ctx, wsConn, sub)
+}
+
+func (s *ChatServer) Shutdown(ctx context.Context) error {
+	s.mu.RLock()
+	subs := make([]*subscriber, 0, len(s.subscribers))
+	for sub := range s.subscribers {
+		subs = append(subs, sub)
+	}
+	s.mu.RUnlock()
+
+	for _, sub := range subs {
+		if sub.cancel != nil {
+			sub.cancel()
+		}
+		if sub.conn != nil {
+			if frame, err := dtoWs.EncodeError(dtoWs.WsErrorPayload{
+				Code:    dtoWs.ErrCodeServerShutdown,
+				Message: dtoWs.ErrCodeServerShutdownMsg,
+			}); err == nil {
+				writeCtx, writeCancel := context.WithTimeout(ctx, 1*time.Second)
+				_ = sub.conn.Write(writeCtx, websocket.MessageText, frame)
+				writeCancel()
+			}
+			_ = sub.conn.Close(websocket.StatusGoingAway, "server shutdown")
+		}
+	}
+
+	done := make(chan struct{})
+	go func() {
+		s.wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (s *ChatServer) writeClientMessages(ctx context.Context, wsConn *websocket.Conn, sub *subscriber) {
 	for {
 		select {
 		case msg, ok := <-sub.msgs:
@@ -238,8 +286,12 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *ChatServer) readClientMessages(ctx context.Context, cancel context.CancelFunc, wsConn *websocket.Conn, userID, chatID int64, sub *subscriber) {
-	defer cancel()
+func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.Conn, userID, chatID int64, sub *subscriber) {
+	defer func() {
+		if sub.cancel != nil {
+			sub.cancel()
+		}
+	}()
 	for {
 		frameType, data, err := wsConn.Read(ctx)
 		if err != nil {
