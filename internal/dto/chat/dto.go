@@ -47,5 +47,5 @@ type RequestAddMember struct {
 }
 
 type RequestDeleteMember struct {
-	MembersId []int64 `json:"members_id"`
+	MemberId int64 `json:"member_id"`
 }

@@ -28,6 +28,7 @@ type ChatRepositoryInterface interface {
 	GetMemberRole(ctx context.Context, userID, chatID int64) (string, error)
 	UploadAvatarUrl(ctx context.Context, chatID int64, avatarURL string) (*domain.Chat, error)
 	UpdateTitle(ctx context.Context, chatID int64, title string) (*domain.Chat, error)
+	DeleteMember(ctx context.Context, chatID, userID int64) (error)
 }
 
 type UserRepositoryInterface interface {
@@ -434,6 +435,53 @@ func (s *ChatService) AddMembersToChat(ctx context.Context, userID, chatID int64
 		if err != nil {
 			return fmt.Errorf("failed to add member to chat: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (s *ChatService) DeleteMemberFromChat(ctx context.Context, userID, chatID int64, request *dto.RequestDeleteMember) (error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	if !isMember {
+		return domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return domain.ErrChatNotFound
+		}
+
+		return fmt.Errorf("failed to get chat by id: %w", err)
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		return domain.ErrCantDeleteMemberFromDialog
+	}
+	if chat.OwnerId != userID {
+		return domain.ErrOnlyOwnerCanDeletePeople
+	}
+
+	if request.MemberId == chat.OwnerId {
+		return domain.ErrCantDeleteOwnerOfChat
+	}
+	memberExists, err := s.chatRepo.IsMember(ctx, chatID, request.MemberId)
+	if err != nil {
+		return fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	if !memberExists {
+		return domain.ErrUserNotMember
+	}
+
+	err = s.chatRepo.DeleteMember(ctx, chatID, request.MemberId)
+	if err != nil {
+		if errors.Is(err, domain.ErrMemberNotFound) {
+			return domain.ErrMemberNotFound
+		}
+		return err
 	}
 
 	return nil

@@ -307,3 +307,16 @@ func ValidationRequestAddMember(req *dto.RequestAddMember) []ValidationError {
 	}
 	return errs
 }
+
+func ValidationRequestDeleteMember(req *dto.RequestDeleteMember) []ValidationError {
+	var errs []ValidationError
+
+	if req.MemberId == 0 || req.MemberId < 0{
+		errs = append(errs, ValidationError{
+			Field:   "member_id",
+			Message: "Invalid id",
+			Code:    "INVALID_ID",
+		})
+	}
+	return errs
+}

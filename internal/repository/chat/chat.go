@@ -353,6 +353,20 @@ func (r *ChatRepository) UpdateTitle(ctx context.Context, chatID int64, title st
 	return toDomainChat(chatModel), nil
 }
 
+func (r *ChatRepository) DeleteMember(ctx context.Context, chatID, userID int64) (error) {
+	result, err := r.db.Exec(ctx, 
+	`DELETE FROM chat_members WHERE chat_id=$1 AND user_id=$2`, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete members from chat: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return domain.ErrMemberNotFound
+	}
+
+	return nil
+}
+
 func (r *ChatRepository) Close() {
 	r.db.Close()
 }

@@ -29,6 +29,7 @@ type ChatService interface {
 	UpdateChatAvatar(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateAvatar) (*dto.ChatInformationDTO, error)
 	UpdateChatTitle(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateTitle) (*dto.ChatInformationDTO, error)
 	AddMembersToChat(ctx context.Context, userID, chatID int64, request *dto.RequestAddMember) (error)
+	DeleteMemberFromChat(ctx context.Context, userID, chatID int64, request *dto.RequestDeleteMember) (error)
 }
 
 type ChatsHandler struct {
@@ -359,6 +360,23 @@ func (h *ChatsHandler) DeleteChat(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, resp)
 }
 
+// UpdateChatAvatar обновляет аватар чата
+// @Summary Обновление аватара чата
+// @Description Обновляет аватар чата. Поддерживаются форматы: JPEG, PNG, GIF, WebP. Максимальный размер файла: 5MB. 
+// @Description Только участники чата могут обновлять аватар.
+// @Description Для диалогов обновление аватара запрещено.
+// @Tags chats
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path int true "ID чата" minimum(1)
+// @Param avatar formData file true "Файл аватара" 
+// @Security BearerAuth
+// @Success 200 {object} dtoApi.ApiSuccessResponse[dto.ChatInformationDTO] "Аватар успешно обновлён"
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Неверный запрос (неверный ID, файл не найден, пустой файл, неверный формат, файл слишком большой, попытка обновить аватар диалога)"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
+// @Failure 403 {object} dtoApi.ApiErrorResponse "Пользователь не является участником чата"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/chats/{id}/avatar [post]
 func (h *ChatsHandler) UpdateChatAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID, ok := ctx.Value(middleware.UserID).(int64)
@@ -503,6 +521,23 @@ func (h *ChatsHandler) UpdateChatAvatar(w http.ResponseWriter, r *http.Request) 
 	response.Send(w, http.StatusOK, resp)
 }
 
+// UpdateChatTitle обновляет название чата
+// @Summary Обновление названия чата
+// @Description Обновляет название чата.
+// @Description Для диалогов (личных чатов) изменение названия запрещено.
+// @Tags chats
+// @Accept json
+// @Produce json
+// @Param id path int true "ID чата" minimum(1)
+// @Param request body dto.RequestUpdateTitle true "Новое название чата"
+// @Security BearerAuth
+// @Success 200 {object} dtoApi.ApiSuccessResponse[dto.ChatInformationDTO] "Название успешно обновлено"
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Неверный запрос (неверный ID, неверный JSON, ошибка валидации, попытка изменить название диалога)"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
+// @Failure 403 {object} dtoApi.ApiErrorResponse "Пользователь не является участником чата или не имеет прав администратора"
+// @Failure 404 {object} dtoApi.ApiErrorResponse "Чат не найден"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/chats/{id}/title [post]
 func (h *ChatsHandler) UpdateChatTitle(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ctx := r.Context()
@@ -627,6 +662,24 @@ func (h *ChatsHandler) UpdateChatTitle(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, resp)
 }
 
+// AddMembersToChat добавляет участников в чат
+// @Summary Добавление участников в чат
+// @Description Добавляет одного или нескольких участников в групповой чат.
+// @Description Только владелец чата может добавлять новых участников.
+// @Description Для диалогов (личных чатов) добавление участников запрещено.
+// @Tags chats
+// @Accept json
+// @Produce json
+// @Param id path int true "ID чата" minimum(1)
+// @Param request body dto.RequestAddMember true "Список ID пользователей для добавления"
+// @Security BearerAuth
+// @Success 200 {object} dtoApi.ApiSuccessResponse[any] "Участники успешно добавлены"
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Неверный запрос (неверный ID, неверный JSON, ошибка валидации, попытка добавить в диалог, пользователь уже в чате)"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
+// @Failure 403 {object} dtoApi.ApiErrorResponse "Пользователь не является участником чата или не имеет прав владельца"
+// @Failure 404 {object} dtoApi.ApiErrorResponse "Чат не найден"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/chats/{id}/members [post]
 func (h *ChatsHandler) AddMembersToChat(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ctx := r.Context()
@@ -771,6 +824,197 @@ func (h *ChatsHandler) AddMembersToChat(w http.ResponseWriter, r *http.Request) 
 	resp := dtoApi.ApiSuccessResponse[any]{
 		Status: dtoApi.Success,
 		Body:   "Members added to chat successfuly",
+	}
+	response.Send(w, http.StatusOK, resp)
+}
+
+// DeleteMemberFromChat удаляет участника из чата
+// @Summary Удаление участника из чата
+// @Description Удаляет участника из группового чата.
+// @Description Только владелец чата может удалять других участников.
+// @Description Нельзя удалить владельца чата.
+// @Description Для диалогов (личных чатов) удаление участников запрещено.
+// @Tags chats
+// @Accept json
+// @Produce json
+// @Param id path int true "ID чата" minimum(1)
+// @Param request body dto.RequestDeleteMember true "ID пользователя для удаления"
+// @Security BearerAuth
+// @Success 200 {object} dtoApi.ApiSuccessResponse[any] "Участник успешно удалён из чата"
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Неверный запрос (неверный ID, неверный JSON, ошибка валидации, попытка удалить из диалога)"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
+// @Failure 403 {object} dtoApi.ApiErrorResponse "Нет прав для удаления (не участник чата, не владелец, попытка удалить владельца)"
+// @Failure 404 {object} dtoApi.ApiErrorResponse "Чат не найден или участник не найден"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/chats/{id}/members [delete]
+func (h *ChatsHandler) DeleteMemberFromChat(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ctx := r.Context()
+	userID, ok := ctx.Value(middleware.UserID).(int64)
+	if !ok {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.Unauthorized,
+					Message: dtoApi.UnauthorizedMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+
+	chatIDurl := chi.URLParam(r, "id")
+	chatID, err := strconv.ParseInt(chatIDurl, 10, 64)
+	if err != nil || chatID < 1 {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidID,
+					Message: dtoApi.InvalidIDMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	request := &dto.RequestDeleteMember{}
+	err = decoder.Decode(request)
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidJson,
+					Message: dtoApi.InvalidJsonMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	errs := validation.ValidationRequestDeleteMember(request)
+	if errs != nil {
+		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: apiErrors,
+		}
+
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	err = h.chatService.DeleteMemberFromChat(ctx, userID, chatID, request)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrNotMember):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.NotMemberOfChat,
+                    	Message: dtoApi.NotMemberOfChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		case errors.Is(err, domain.ErrChatNotFound):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.CantFindChat,
+                    	Message: dtoApi.CantFindChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusNotFound, resp)
+        	return
+		case errors.Is(err, domain.ErrCantDeleteMemberFromDialog):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.DeleteMemberFromDialog,
+                    	Message: dtoApi.DeleteMemberFromDialogMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusBadRequest, resp)
+        	return
+		case errors.Is(err, domain.ErrOnlyOwnerCanDeletePeople):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.OnlyOwnerCanDeleteMember,
+                    	Message: dtoApi.OnlyOwnerCanDeleteMemberMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		case errors.Is(err, domain.ErrCantDeleteOwnerOfChat):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.DeleteOwnerOfChat,
+                    	Message: dtoApi.DeleteOwnerOfChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		case errors.Is(err, domain.ErrMemberNotFound):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.MemberNotFound,
+                    	Message: dtoApi.MemberNotFoundMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusNotFound, resp)
+        	return
+		case errors.Is(err, domain.ErrUserNotMember):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.UserNotMemberOfChat,
+                    	Message: dtoApi.UserNotMemberOfChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		default:
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InternalError,
+						Message: dtoApi.InternalErrorMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusInternalServerError, resp)
+			return
+		}
+	}
+
+	resp := dtoApi.ApiSuccessResponse[any]{
+		Status: dtoApi.Success,
+		Body:   "Members deleted from chat successfuly",
 	}
 	response.Send(w, http.StatusOK, resp)
 }
