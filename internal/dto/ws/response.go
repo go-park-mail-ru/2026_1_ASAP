@@ -6,6 +6,7 @@ type WsResponseStatus string
 const (
 	Error      WsResponseStatus = "error"
 	MessageNew WsResponseStatus = "message.New"
+	MessageGet WsResponseStatus = "message.Get"
 )
 
 // WsResponse исходящий фрейм к клиенту WebSocket.

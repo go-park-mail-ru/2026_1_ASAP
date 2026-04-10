@@ -313,6 +313,48 @@ func (s *ChatServer) readClientMessages(ctx context.Context, cancel context.Canc
 			}
 
 			s.publishMessageToChat(chatID, out)
+		case dtoWs.MessageRecv:
+			var req dto.RequestGetMessages
+			if len(env.Payload) == 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if err := json.Unmarshal(env.Payload, &req); err != nil {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+
+			resp, err := s.messageService.GetMessagesByChatId(ctx, userID, chatID, &req)
+			if err != nil {
+				if errors.Is(err, domainChat.ErrMessageNotMember) {
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeNotMemberOfChat,
+						Message: dtoWs.ErrCodeNotMemberOfChatMsg,
+					})
+					continue
+				}
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInternal,
+					Message: dtoWs.ErrCodeInternalMsg,
+				})
+				continue
+			}
+
+			out, err := dtoWs.EncodeMessageGet(resp)
+			if err != nil {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInternal,
+					Message: dtoWs.ErrCodeInternalMsg,
+				})
+				continue
+			}
+			s.enqueueToSubscriber(sub, out)
 		default:
 			s.sendErr(sub, dtoWs.WsErrorPayload{
 				Code:    dtoWs.ErrCodeUnknownType,
