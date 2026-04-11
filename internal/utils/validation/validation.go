@@ -5,6 +5,7 @@ import (
 	"unicode"
 
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
+	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"
 )
@@ -257,5 +258,65 @@ func ValidationContactCreate(req *dtoContact.AddContactRequest) []ValidationErro
 		})
 	}
 
+	return errs
+}
+
+func ValidationRequestTitle(req *dto.RequestUpdateTitle) []ValidationError {
+	var errs []ValidationError
+
+	if req.Title == ""{
+		errs = append(errs, ValidationError{
+			Field:   "title",
+			Message: "Title is required",
+			Code:    "TITLE_REQUIRED",
+		})
+	} else if len(req.Title) > 100 {
+		errs = append(errs, ValidationError{
+			Field:   "title",
+			Message: "Len of chat title must be less than 100 characters",
+			Code:    "TITLE_TOO_LONG",
+		})
+	}
+	return errs
+}
+
+func ValidationRequestAddMember(req *dto.RequestAddMember) []ValidationError {
+	var errs []ValidationError
+
+	if len(req.MembersId) > 1 {
+		memb := make(map[int64]bool)
+		for _, id := range req.MembersId {
+			if memb[id] {
+				errs = append(errs, ValidationError{
+					Field:   "members_id",
+					Message: "Duplicate users",
+					Code:    "USER_DUPLICATE",
+				})
+				break
+			}
+			memb[id] = true
+		}
+	}
+
+	if len(req.MembersId) == 0 {
+		errs = append(errs, ValidationError{
+			Field:   "members_id",
+			Message: "At least one member is required",
+			Code:    "MEMBERS_REQUIRED",
+		})
+	}
+	return errs
+}
+
+func ValidationRequestDeleteMember(req *dto.RequestDeleteMember) []ValidationError {
+	var errs []ValidationError
+
+	if req.MemberId == 0 || req.MemberId < 0{
+		errs = append(errs, ValidationError{
+			Field:   "member_id",
+			Message: "Invalid id",
+			Code:    "INVALID_ID",
+		})
+	}
 	return errs
 }
