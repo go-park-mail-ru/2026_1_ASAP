@@ -181,7 +181,8 @@ func (r *ChatRepository) GetChatMembers(ctx context.Context, chatID int64) ([]in
 	rows, err := r.db.Query(ctx,
 		`SELECT user_id
 	 FROM chat_members
-	 WHERE chat_id=$1`, chatID)
+	 WHERE chat_id=$1
+	 ORDER BY user_id ASC`, chatID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get chat members: %w", err)
 	}

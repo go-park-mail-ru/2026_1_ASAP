@@ -409,6 +409,66 @@ const docTemplate = `{
             }
         },
         "/api/v1/chats/{id}/members": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список ID всех участников чата.\nТолько участники чата могут просматривать список участников.\nДля диалогов (личных чатов) возвращает ID обоих участников.\nДля групп возвращает ID всех участников, включая владельца.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Получение списка участников чата",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "ID чата",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список участников успешно получен",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос (неверный ID чата)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Пользователь не является участником чата",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1078,6 +1138,22 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
+                }
+            }
+        },
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string": {
             "type": "object",
             "properties": {
@@ -1447,6 +1523,17 @@ const docTemplate = `{
             "properties": {
                 "title": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers": {
+            "type": "object",
+            "properties": {
+                "members_id": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },

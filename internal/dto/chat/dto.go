@@ -49,3 +49,7 @@ type RequestAddMember struct {
 type RequestDeleteMember struct {
 	MemberId int64 `json:"member_id"`
 }
+
+type ResponseGetChatMembers struct {
+	MembersId []int64 `json:"members_id"`
+}

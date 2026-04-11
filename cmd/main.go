@@ -131,6 +131,7 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}/members", chatsHandler.DeleteMemberFromChat)
 		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/title", chatsHandler.UpdateChatTitle)
 		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}", chatsHandler.DeleteChat)
+		mux.With(authMiddleware, csrfMiddleware).Get("/{id}/members", chatsHandler.GetChatMembers)
 	})
 
 	mux.Route("/api/v1/contacts", func(mux chi.Router) {

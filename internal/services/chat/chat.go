@@ -537,6 +537,25 @@ func (s *ChatService) DeleteMemberFromChat(ctx context.Context, userID, chatID i
 	return nil
 }
 
+func (s *ChatService) GetAllChatMembers(ctx context.Context, userID, chatID int64) (*dto.ResponseGetChatMembers, error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	if !isMember {
+		return nil, domain.ErrNotMember
+	}
+
+	members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all chat members: %w", err)
+	}
+
+	return &dto.ResponseGetChatMembers{
+		MembersId: members,
+	}, nil
+}
+
 const maxAvatarSize = 5 * 1024 * 1024
 
 var allowedAvatarTypes = map[string]bool{
@@ -562,4 +581,3 @@ func checkAvatar(input *media.FileInput) error {
 	}
 	return nil
 }
-

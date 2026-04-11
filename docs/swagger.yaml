@@ -36,6 +36,15 @@ definitions:
         - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
         example: success
     type: object
+  ? github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers
+  : properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string:
     properties:
       body:
@@ -263,6 +272,13 @@ definitions:
     properties:
       title:
         type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers:
+    properties:
+      members_id:
+        items:
+          type: integer
+        type: array
     type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.AddContactRequest:
     properties:
@@ -662,6 +678,49 @@ paths:
       security:
       - BearerAuth: []
       summary: Удаление участника из чата
+      tags:
+      - chats
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Возвращает список ID всех участников чата.
+        Только участники чата могут просматривать список участников.
+        Для диалогов (личных чатов) возвращает ID обоих участников.
+        Для групп возвращает ID всех участников, включая владельца.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список участников успешно получен
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers'
+        "400":
+          description: Неверный запрос (неверный ID чата)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Пользователь не является участником чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка участников чата
       tags:
       - chats
     post:
