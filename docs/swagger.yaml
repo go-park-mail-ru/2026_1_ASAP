@@ -777,6 +777,55 @@ paths:
       summary: Добавление участников в чат
       tags:
       - chats
+  /api/v1/chats/{id}/quit:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Позволяет пользователю выйти из группового чата.
+        Владелец чата не может выйти.
+        Выход из диалогов (личных чатов) запрещён.
+        При успешном выходе пользователь удаляется из списка участников чата.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь успешно покинул чат
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any'
+        "400":
+          description: Неверный запрос (неверный ID чата, попытка выйти из диалога)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Нет прав для выхода (пользователь не участник чата или является
+            владельцем)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден или пользователь не найден в чате
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Выход из чата
+      tags:
+      - chats
   /api/v1/chats/{id}/title:
     post:
       consumes:

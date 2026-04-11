@@ -23,4 +23,6 @@ var (
 	ErrCantDeleteMemberFromDialog   = errors.New("You cant delete member from your dialog chat")
 	ErrCantDeleteOwnerOfChat        = errors.New("You cant delete owner of chat from the chat")
 	ErrUserNotMember                = errors.New("User you try to delete is not member of this chat")
+	ErrCantQuitDialog               = errors.New("You cant quit dialog")
+	ErrOwnerCantQuitGroup           = errors.New("As owner you cant quit group")
 )

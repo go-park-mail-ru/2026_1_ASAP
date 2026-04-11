@@ -620,6 +620,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/chats/{id}/quit": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Позволяет пользователю выйти из группового чата.\nВладелец чата не может выйти.\nВыход из диалогов (личных чатов) запрещён.\nПри успешном выходе пользователь удаляется из списка участников чата.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Выход из чата",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "ID чата",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь успешно покинул чат",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос (неверный ID чата, попытка выйти из диалога)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав для выхода (пользователь не участник чата или является владельцем)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Чат не найден или пользователь не найден в чате",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/chats/{id}/title": {
             "post": {
                 "security": [

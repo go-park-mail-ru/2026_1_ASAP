@@ -556,6 +556,42 @@ func (s *ChatService) GetAllChatMembers(ctx context.Context, userID, chatID int6
 	}, nil
 }
 
+func (s *ChatService) QuitChat(ctx context.Context, userID, chatID int64) (error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	if !isMember {
+		return domain.ErrNotMember
+	}
+	
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return domain.ErrChatNotFound
+		}
+
+		return fmt.Errorf("failed to get chat by id: %w", err)
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		return domain.ErrCantQuitDialog
+	}
+	if chat.OwnerId == userID {
+		return domain.ErrOwnerCantQuitGroup
+	}
+
+	err = s.chatRepo.DeleteMember(ctx, chatID, userID)
+	if err != nil {
+		if errors.Is(err, domain.ErrMemberNotFound) {
+			return domain.ErrMemberNotFound
+		}
+		return err
+	}
+
+	return nil
+}
+
 const maxAvatarSize = 5 * 1024 * 1024
 
 var allowedAvatarTypes = map[string]bool{

@@ -31,6 +31,7 @@ type ChatService interface {
 	AddMembersToChat(ctx context.Context, userID, chatID int64, request *dto.RequestAddMember) (error)
 	DeleteMemberFromChat(ctx context.Context, userID, chatID int64, request *dto.RequestDeleteMember) (error)
 	GetAllChatMembers(ctx context.Context, userID, chatID int64) (*dto.ResponseGetChatMembers, error) 
+	QuitChat(ctx context.Context, userID, chatID int64) (error)
 }
 
 type ChatsHandler struct {
@@ -1101,6 +1102,142 @@ func (h *ChatsHandler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
 	resp := dtoApi.ApiSuccessResponse[*dto.ResponseGetChatMembers]{
 		Status: dtoApi.Success,
 		Body:   members,
+	}
+	response.Send(w, http.StatusOK, resp)
+}
+
+// QuitChat выход пользователя из чата
+// @Summary Выход из чата
+// @Description Позволяет пользователю выйти из группового чата.
+// @Description Владелец чата не может выйти.
+// @Description Выход из диалогов (личных чатов) запрещён.
+// @Description При успешном выходе пользователь удаляется из списка участников чата.
+// @Tags chats
+// @Accept json
+// @Produce json
+// @Param id path int true "ID чата" minimum(1)
+// @Security BearerAuth
+// @Success 200 {object} dtoApi.ApiSuccessResponse[any] "Пользователь успешно покинул чат"
+// @Failure 400 {object} dtoApi.ApiErrorResponse "Неверный запрос (неверный ID чата, попытка выйти из диалога)"
+// @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
+// @Failure 403 {object} dtoApi.ApiErrorResponse "Нет прав для выхода (пользователь не участник чата или является владельцем)"
+// @Failure 404 {object} dtoApi.ApiErrorResponse "Чат не найден или пользователь не найден в чате"
+// @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/chats/{id}/quit [post]
+func (h *ChatsHandler) QuitChat(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userID, ok := ctx.Value(middleware.UserID).(int64)
+	if !ok {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.Unauthorized,
+					Message: dtoApi.UnauthorizedMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+
+	chatIDurl := chi.URLParam(r, "id")
+	chatID, err := strconv.ParseInt(chatIDurl, 10, 64)
+	if err != nil || chatID < 1 {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidID,
+					Message: dtoApi.InvalidIDMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	err = h.chatService.QuitChat(ctx, userID, chatID)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrNotMember):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.NotMemberOfChat,
+                    	Message: dtoApi.NotMemberOfChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		case errors.Is(err, domain.ErrChatNotFound):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.CantFindChat,
+                    	Message: dtoApi.CantFindChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusNotFound, resp)
+        	return
+		case errors.Is(err, domain.ErrCantQuitDialog):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.CantQuitDialog,
+                    	Message: dtoApi.CantQuitDialogMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusBadRequest, resp)
+        	return
+		case errors.Is(err, domain.ErrOwnerCantQuitGroup):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.OwnerCantQuitChat,
+                    	Message: dtoApi.OwnerCantQuitChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusForbidden, resp)
+        	return
+		case errors.Is(err, domain.ErrMemberNotFound):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.MemberNotFound,
+                    	Message: dtoApi.MemberNotFoundMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusNotFound, resp)
+        	return
+		default:
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InternalError,
+						Message: dtoApi.InternalErrorMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusInternalServerError, resp)
+			return
+		}
+	}
+
+	resp := dtoApi.ApiSuccessResponse[any]{
+		Status: dtoApi.Success,
+		Body:   "You are leave chat successfuly",
 	}
 	response.Send(w, http.StatusOK, resp)
 }
