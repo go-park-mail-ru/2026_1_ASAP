@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
@@ -27,6 +28,7 @@ func AuthMiddleware(sessionService SessionService) func(http.Handler) http.Handl
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			cookie, err := r.Cookie("session_id")
 			if err != nil {
+				log.Println(err)
 				response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 					Status: dtoApi.Error,
 					Errors: []dtoApi.ApiError{

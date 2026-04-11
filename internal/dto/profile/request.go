@@ -16,3 +16,16 @@ type RequestUpdateAvatar struct {
 type RequestUpdateBirthDate struct {
 	BirthDate *string `json:"birth_date,omitempty"`
 }
+
+type RequestUpdateName struct {
+	FirstName string  `json:"name"`
+	LastName  *string `json:"last_name,omitempty"`
+}
+
+type RequestUpdateEmail struct {
+	Email string `json:"email"`
+}
+
+type RequestUpdateLogin struct {
+	Login string `json:"login"`
+}

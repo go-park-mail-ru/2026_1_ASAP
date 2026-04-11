@@ -24,7 +24,7 @@ type ChatRepositoryInterface interface {
 	AddMember(ctx context.Context, chatID, userID int64, role string) error
 	IsMember(ctx context.Context, chatID, userID int64) (bool, error)
 	GetDialogBetweenUsers(ctx context.Context, user1ID, user2ID int64) (*domain.Chat, error)
-	DeleteChat(ctx context.Context, chatID int64) (error)
+	DeleteChat(ctx context.Context, chatID int64) error
 	GetMemberRole(ctx context.Context, userID, chatID int64) (string, error)
 	UploadAvatarUrl(ctx context.Context, chatID int64, avatarURL string) (*domain.Chat, error)
 	UpdateTitle(ctx context.Context, chatID int64, title string) (*domain.Chat, error)
@@ -325,6 +325,14 @@ func (s *ChatService) DeleteChat(ctx context.Context, userID, chatID int64) erro
 	}
 
 	return nil
+}
+
+func (s *ChatService) IsMember(ctx context.Context, userID, chatID int64) (bool, error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return false, fmt.Errorf("failed to check user is member of chat: %w", err)
+	}
+	return isMember, nil
 }
 
 func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateAvatar) (*dto.ChatInformationDTO, error) {

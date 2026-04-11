@@ -13,6 +13,9 @@ var (
 	ErrCantCreateDialogWithYourself = errors.New("you cant create dialog with yourself")
 	ErrDialogMustHave2Users         = errors.New("dialog must have only 2 users")
 	ErrOnlyOwnerCanDeleteChat       = errors.New("Only owner of the chat can delete chat")
+	ErrMessageEmpty                 = errors.New("Message is empty")
+	ErrMessageTooLong               = errors.New("Message is too long")
+	ErrMessageNotMember             = errors.New("Message sender is not member of this chat")
 	ErrDialogCannotHaveCustomAvatar = errors.New("Cant change avatar in dialog")
 	ErrDialogCannotHaveCustomTitle  = errors.New("Cant change title in dialog")
 	ErrOnlyOwnerCanAddPeople        = errors.New("Only owner of chat can add people to chat")
@@ -26,3 +29,4 @@ var (
 	ErrCantQuitDialog               = errors.New("You cant quit dialog")
 	ErrOwnerCantQuitGroup           = errors.New("As owner you cant quit group")
 )
+

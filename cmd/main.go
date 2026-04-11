@@ -20,15 +20,19 @@ import (
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
 	contactHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/contacts"
 	profileHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/profile"
+	wsHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/ws"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
 	contactRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts"
 	mediaRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/media"
+	messageRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/messages"
 	sessionRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 	chatService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat"
 	contactService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/contacts"
+	messageService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/messages"
 	profileService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile"
+
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
 	"go.uber.org/zap"
 )
@@ -72,18 +76,25 @@ func main() {
 		appLogger.Fatal(err.Error())
 	}
 
+	messageRepo, err := messageRepository.NewMessageRepository(context.Background(), cfg.PostgresConfig)
+	if err != nil {
+		appLogger.Fatal(err.Error())
+
+	}
 	// Services
 	sessionServ := session.NewSessionService(sessRepo, cfg.SessionConfig.SessionTTL)
 	authServ := authService.NewAuthService(userRepo, sessionServ)
 	chatServ := chatService.NewChatService(chatRepo, userRepo, mediaRepo)
 	contactServ := contactService.NewContactService(contactRepo, userRepo)
 	profileServ := profileService.NewProfileService(userRepo, mediaRepo)
+	messageServ := messageService.NewMessageService(messageRepo, chatRepo)
 
 	// Handlers
 	chatsHandler := chatHandlers.NewChatHandler(chatServ)
 	contactsHandler := contactHandlers.NewContactHandler(contactServ)
 	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
 	auth := authHandlers.NewAuthHandler(authServ)
+	ws := wsHandlers.NewChatServer(messageServ, chatServ)
 
 	//Middleware
 	requestIDMiddleware := middleware.RequestIDMiddleware()
@@ -152,6 +163,10 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/search", profileHandlers.SearchIdByLogin)
 	})
 
+	mux.Route("/api/v1/ws", func(mux chi.Router) {
+		mux.With(authMiddleware).Get("/chat", ws.SubscribeHandler)
+	})
+
 	mux.Get("/swagger/*", httpSwagger.Handler())
 
 	server := &http.Server{
@@ -175,6 +190,11 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.AppConfig.ShutdownTime)
 	defer cancel()
+
+	if err := ws.Shutdown(ctx); err != nil {
+		appLogger.Error("WS shutdown", zap.Error(err))
+	}
+
 	if err := server.Shutdown(ctx); err != nil {
 		appLogger.Error("HTTP shutdown", zap.Error(err))
 	}
