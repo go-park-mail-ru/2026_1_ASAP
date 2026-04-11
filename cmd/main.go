@@ -102,6 +102,8 @@ func main() {
 			"http://212.233.96.180",
 			"http://localhost",
 			"http://localhost:8080",
+			"http://0.0.0.0:80",
+			"http://0.0.0.0",
 		},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{
