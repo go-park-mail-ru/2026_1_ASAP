@@ -29,11 +29,11 @@ func NewContactsRepository(ctx context.Context, cfg config.PostgresConfig) (*Con
 
 func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID int64) ([]*domain.Contact, error) {
 	rows, err := r.db.Query(ctx,
-		`SELECT c.user_id, c.contact_name, c.contact_user_id, u.avatar_url, c.created_at, c.updated_at
+	`SELECT c.user_id, c.first_name, c.last_name, c.contact_user_id, u.avatar_url, c.created_at, c.updated_at
 	 FROM contacts c
 	 JOIN users u ON c.contact_user_id=u.id
 	 WHERE c.user_id=$1
-	 ORDER BY contact_name ASC`, userID)
+	 ORDER BY first_name ASC`, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all contacts: %w", err)
 	}
@@ -44,7 +44,8 @@ func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID 
 		contact := &ContactModel{}
 		err := rows.Scan(
 			&contact.UserID,
-			&contact.ContactName,
+			&contact.FirstName,
+			&contact.LastName,
 			&contact.ContactUserID,
 			&contact.ContactAvatarUrl,
 			&contact.CreatedAt,
@@ -62,13 +63,13 @@ func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID 
 func (r *ContactsRepository) CreateContact(ctx context.Context, contact *domain.Contact) (*domain.Contact, error) {
 	contactModel := toModelContact(contact)
 	err := r.db.QueryRow(ctx,
-		`INSERT INTO contacts
-	 (user_id, contact_user_id, contact_name, created_at, updated_at)
-	 VALUES ($1, $2, $3, $4, $5)
-	 RETURNING user_id, contact_user_id, contact_name`, contactModel.UserID, contactModel.ContactUserID, contactModel.ContactName, contactModel.CreatedAt, contactModel.UpdatedAt).Scan(&contactModel.UserID, &contactModel.ContactUserID, &contactModel.ContactName)
+	`INSERT INTO contacts
+	 (user_id, contact_user_id, first_name, last_name, created_at, updated_at)
+	 VALUES ($1, $2, $3, $4, $5, $6)
+	 RETURNING user_id, contact_user_id, first_name, last_name`, contactModel.UserID, contactModel.ContactUserID, contactModel.FirstName, contactModel.LastName, contactModel.CreatedAt, contactModel.UpdatedAt).Scan(&contactModel.UserID, &contactModel.ContactUserID, &contactModel.FirstName, &contactModel.LastName)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to creaye contact: %w", err)
+		return nil, fmt.Errorf("failed to create contact: %w", err)
 	}
 
 	var contactAvatarUrl sql.NullString

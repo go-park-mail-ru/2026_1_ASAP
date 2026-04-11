@@ -339,6 +339,432 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/chats/{id}/avatar": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет аватар чата. Поддерживаются форматы: JPEG, PNG, GIF, WebP. Максимальный размер файла: 5MB.\nТолько участники чата могут обновлять аватар.\nДля диалогов обновление аватара запрещено.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Обновление аватара чата",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "ID чата",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Файл аватара",
+                        "name": "avatar",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Аватар успешно обновлён",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ChatInformationDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос (неверный ID, файл не найден, пустой файл, неверный формат, файл слишком большой, попытка обновить аватар диалога)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Пользователь не является участником чата",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/chats/{id}/members": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список ID всех участников чата.\nТолько участники чата могут просматривать список участников.\nДля диалогов (личных чатов) возвращает ID обоих участников.\nДля групп возвращает ID всех участников, включая владельца.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Получение списка участников чата",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "ID чата",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список участников успешно получен",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос (неверный ID чата)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Пользователь не является участником чата",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Добавляет одного или нескольких участников в групповой чат.\nТолько владелец чата может добавлять новых участников.\nДля диалогов (личных чатов) добавление участников запрещено.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Добавление участников в чат",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "ID чата",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Список ID пользователей для добавления",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestAddMember"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Участники успешно добавлены",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос (неверный ID, неверный JSON, ошибка валидации, попытка добавить в диалог, пользователь уже в чате)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Пользователь не является участником чата или не имеет прав владельца",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Чат не найден",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет участника из группового чата.\nТолько владелец чата может удалять других участников.\nНельзя удалить владельца чата.\nДля диалогов (личных чатов) удаление участников запрещено.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Удаление участника из чата",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "ID чата",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ID пользователя для удаления",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestDeleteMember"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Участник успешно удалён из чата",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос (неверный ID, неверный JSON, ошибка валидации, попытка удалить из диалога)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав для удаления (не участник чата, не владелец, попытка удалить владельца)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Чат не найден или участник не найден",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/chats/{id}/quit": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Позволяет пользователю выйти из группового чата.\nВладелец чата не может выйти.\nВыход из диалогов (личных чатов) запрещён.\nПри успешном выходе пользователь удаляется из списка участников чата.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Выход из чата",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "ID чата",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь успешно покинул чат",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос (неверный ID чата, попытка выйти из диалога)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав для выхода (пользователь не участник чата или является владельцем)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Чат не найден или пользователь не найден в чате",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/chats/{id}/title": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет название чата.\nДля диалогов (личных чатов) изменение названия запрещено.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Обновление названия чата",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "ID чата",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Новое название чата",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestUpdateTitle"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Название успешно обновлено",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ChatInformationDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос (неверный ID, неверный JSON, ошибка валидации, попытка изменить название диалога)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Пользователь не является участником чата или не имеет прав администратора",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Чат не найден",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/contacts": {
             "get": {
                 "description": "Возвращает все контакты текущего пользователя",
@@ -750,6 +1176,52 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any": {
+            "type": "object",
+            "properties": {
+                "body": {},
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ChatInformationDTO": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus"
+                        }
+                    ],
+                    "example": "success"
+                }
+            }
+        },
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string": {
             "type": "object",
             "properties": {
@@ -1043,6 +1515,9 @@ const docTemplate = `{
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "chat_type": {
                     "allOf": [
                         {
@@ -1092,27 +1567,74 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestAddMember": {
+            "type": "object",
+            "properties": {
+                "members_id": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestDeleteMember": {
+            "type": "object",
+            "properties": {
+                "member_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestUpdateTitle": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers": {
+            "type": "object",
+            "properties": {
+                "members_id": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.AddContactRequest": {
             "type": "object",
             "properties": {
-                "contact_name": {
-                    "type": "string"
-                },
                 "contact_user_id": {
                     "type": "integer"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
                 }
             }
         },
         "github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse": {
             "type": "object",
             "properties": {
-                "contact_name": {
+                "contact_avatar_url": {
                     "type": "string"
                 },
                 "contact_user_id": {
                     "type": "integer"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
                     "type": "string"
                 },
                 "user_id": {

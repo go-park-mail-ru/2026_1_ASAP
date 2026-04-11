@@ -6,12 +6,13 @@ import (
 )
 
 type ContactModel struct {
-	UserID int64 `json:"user_id"`
-	ContactName string `json:"contact_name"`
-	ContactUserID int64 `json:"contact_user_id"`
-	CreatedAt time.Time `json:"created_at"`
-	ContactAvatarUrl sql.NullString `json:"contact_avatar_url"`
-	UpdatedAt time.Time `json:"updated_at"`
+	UserID int64 
+	FirstName string  
+	LastName  sql.NullString
+	ContactUserID int64 
+	ContactAvatarUrl sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time 
 }
 
 type ContactUserInfoModel struct {

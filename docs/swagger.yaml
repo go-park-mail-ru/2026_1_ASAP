@@ -19,6 +19,32 @@ definitions:
         - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
         example: error
     type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any:
+    properties:
+      body: {}
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  ? github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ChatInformationDTO
+  : properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  ? github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers
+  : properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string:
     properties:
       body:
@@ -195,6 +221,8 @@ definitions:
     type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO:
     properties:
+      avatar:
+        type: string
       chat_type:
         allOf:
         - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatType'
@@ -228,20 +256,50 @@ definitions:
         example: Hello, my name is Artem
         type: string
     type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestAddMember:
+    properties:
+      members_id:
+        items:
+          type: integer
+        type: array
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestDeleteMember:
+    properties:
+      member_id:
+        type: integer
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestUpdateTitle:
+    properties:
+      title:
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers:
+    properties:
+      members_id:
+        items:
+          type: integer
+        type: array
+    type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.AddContactRequest:
     properties:
-      contact_name:
-        type: string
       contact_user_id:
         type: integer
+      first_name:
+        type: string
+      last_name:
+        type: string
     type: object
   github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse:
     properties:
-      contact_name:
+      contact_avatar_url:
         type: string
       contact_user_id:
         type: integer
       created_at:
+        type: string
+      first_name:
+        type: string
+      last_name:
         type: string
       user_id:
         type: integer
@@ -515,6 +573,311 @@ paths:
           schema:
             $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
       summary: Удалить чат
+      tags:
+      - chats
+  /api/v1/chats/{id}/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        Обновляет аватар чата. Поддерживаются форматы: JPEG, PNG, GIF, WebP. Максимальный размер файла: 5MB.
+        Только участники чата могут обновлять аватар.
+        Для диалогов обновление аватара запрещено.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      - description: Файл аватара
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Аватар успешно обновлён
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ChatInformationDTO'
+        "400":
+          description: Неверный запрос (неверный ID, файл не найден, пустой файл,
+            неверный формат, файл слишком большой, попытка обновить аватар диалога)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Пользователь не является участником чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление аватара чата
+      tags:
+      - chats
+  /api/v1/chats/{id}/members:
+    delete:
+      consumes:
+      - application/json
+      description: |-
+        Удаляет участника из группового чата.
+        Только владелец чата может удалять других участников.
+        Нельзя удалить владельца чата.
+        Для диалогов (личных чатов) удаление участников запрещено.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      - description: ID пользователя для удаления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestDeleteMember'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Участник успешно удалён из чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any'
+        "400":
+          description: Неверный запрос (неверный ID, неверный JSON, ошибка валидации,
+            попытка удалить из диалога)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Нет прав для удаления (не участник чата, не владелец, попытка
+            удалить владельца)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден или участник не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление участника из чата
+      tags:
+      - chats
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Возвращает список ID всех участников чата.
+        Только участники чата могут просматривать список участников.
+        Для диалогов (личных чатов) возвращает ID обоих участников.
+        Для групп возвращает ID всех участников, включая владельца.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список участников успешно получен
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers'
+        "400":
+          description: Неверный запрос (неверный ID чата)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Пользователь не является участником чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка участников чата
+      tags:
+      - chats
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Добавляет одного или нескольких участников в групповой чат.
+        Только владелец чата может добавлять новых участников.
+        Для диалогов (личных чатов) добавление участников запрещено.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      - description: Список ID пользователей для добавления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestAddMember'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Участники успешно добавлены
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any'
+        "400":
+          description: Неверный запрос (неверный ID, неверный JSON, ошибка валидации,
+            попытка добавить в диалог, пользователь уже в чате)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Пользователь не является участником чата или не имеет прав
+            владельца
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Добавление участников в чат
+      tags:
+      - chats
+  /api/v1/chats/{id}/quit:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Позволяет пользователю выйти из группового чата.
+        Владелец чата не может выйти.
+        Выход из диалогов (личных чатов) запрещён.
+        При успешном выходе пользователь удаляется из списка участников чата.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь успешно покинул чат
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any'
+        "400":
+          description: Неверный запрос (неверный ID чата, попытка выйти из диалога)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Нет прав для выхода (пользователь не участник чата или является
+            владельцем)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден или пользователь не найден в чате
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Выход из чата
+      tags:
+      - chats
+  /api/v1/chats/{id}/title:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Обновляет название чата.
+        Для диалогов (личных чатов) изменение названия запрещено.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      - description: Новое название чата
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestUpdateTitle'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Название успешно обновлено
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ChatInformationDTO'
+        "400":
+          description: Неверный запрос (неверный ID, неверный JSON, ошибка валидации,
+            попытка изменить название диалога)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Пользователь не является участником чата или не имеет прав
+            администратора
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление названия чата
       tags:
       - chats
   /api/v1/contacts:

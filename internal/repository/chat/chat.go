@@ -96,7 +96,7 @@ func (r *ChatRepository) GetChatByID(ctx context.Context, chatID int64) (*domain
 func (r *ChatRepository) CreateChat(ctx context.Context, chat *domain.Chat) (*domain.Chat, error) {
 	chatModel := toModelChat(chat)
 	err := r.db.QueryRow(ctx,
-		`INSERT INTO chats
+	`INSERT INTO chats
 	 (type, title, description, owner_id, avatar_url, created_at, updated_at)
 	 VALUES ($1, $2, $3, $4, $5, $6, $7)
 	 RETURNING id`,
@@ -181,7 +181,8 @@ func (r *ChatRepository) GetChatMembers(ctx context.Context, chatID int64) ([]in
 	rows, err := r.db.Query(ctx,
 		`SELECT user_id
 	 FROM chat_members
-	 WHERE chat_id=$1`, chatID)
+	 WHERE chat_id=$1
+	 ORDER BY user_id ASC`, chatID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get chat members: %w", err)
 	}
@@ -203,7 +204,7 @@ func (r *ChatRepository) GetChatMembers(ctx context.Context, chatID int64) ([]in
 
 func (r *ChatRepository) AddMember(ctx context.Context, chatID, userID int64, role string) error {
 	_, err := r.db.Exec(ctx,
-		`INSERT INTO chat_members
+	`INSERT INTO chat_members
 	 (chat_id, user_id, role, joined_at)
 	 VALUES ($1, $2, $3, $4)`, chatID, userID, role, time.Now())
 	if err != nil {
@@ -300,6 +301,71 @@ func (r *ChatRepository) GetMemberRole(ctx context.Context, userID, chatID int64
 	}
 
 	return role, nil
+}
+
+func (r *ChatRepository) UploadAvatarUrl(ctx context.Context, chatID int64, avatarURL string) (*domain.Chat, error) {
+	row := r.db.QueryRow(ctx,
+		`UPDATE chats SET avatar_url = $2, updated_at = now()
+		 WHERE id = $1
+		 RETURNING id, type, title, description, owner_id, avatar_url, created_at, updated_at`,
+		chatID, avatarURL)
+
+	chatModel := &ChatModel{}
+	if err := row.Scan(
+		&chatModel.Id,
+		&chatModel.Type,
+		&chatModel.Title,
+		&chatModel.Description,
+		&chatModel.OwnerId,
+		&chatModel.AvatarUrl,
+		&chatModel.CreatedAt,
+		&chatModel.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrChatNotFound
+		}
+		return nil, fmt.Errorf("chatRepo failed upload avatar url: %w", err)
+	}
+	return toDomainChat(chatModel), nil
+}
+
+func (r *ChatRepository) UpdateTitle(ctx context.Context, chatID int64, title string) (*domain.Chat, error) {
+	row := r.db.QueryRow(ctx,
+	`UPDATE chats SET title = $2, updated_at = now()
+	 WHERE id = $1
+	 RETURNING id, type, title, description, owner_id, avatar_url, created_at, updated_at`, chatID, title)
+
+	chatModel := &ChatModel{}
+	if err := row.Scan(
+		&chatModel.Id,
+		&chatModel.Type,
+		&chatModel.Title,
+		&chatModel.Description,
+		&chatModel.OwnerId,
+		&chatModel.AvatarUrl,
+		&chatModel.CreatedAt,
+		&chatModel.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrChatNotFound
+		}
+		return nil, fmt.Errorf("chatRepo failed update title: %w", err)
+	}
+	return toDomainChat(chatModel), nil
+}
+
+func (r *ChatRepository) DeleteMember(ctx context.Context, chatID, userID int64) (error) {
+	result, err := r.db.Exec(ctx, 
+	`DELETE FROM chat_members WHERE chat_id=$1 AND user_id=$2`, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete members from chat: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return domain.ErrMemberNotFound
+	}
+
+	return nil
 }
 
 func (r *ChatRepository) Close() {

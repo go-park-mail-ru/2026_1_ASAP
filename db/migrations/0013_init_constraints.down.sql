@@ -1,7 +1,6 @@
 -- CONTACT
 ALTER TABLE contacts DROP CONSTRAINT fk_contacts_user;
 ALTER TABLE contacts DROP CONSTRAINT fk_contacts_contact_user;
-ALTER TABLE contacts DROP CONSTRAINT uq_contacts_name;
 ALTER TABLE contacts DROP CONSTRAINT chk_contacts_user_not_null;
 
 -- CHATS
