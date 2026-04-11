@@ -8,10 +8,10 @@ import (
 	"time"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
+	domainProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
-	domainProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 )
 
 type ChatRepositoryInterface interface {
@@ -28,7 +28,7 @@ type ChatRepositoryInterface interface {
 	GetMemberRole(ctx context.Context, userID, chatID int64) (string, error)
 	UploadAvatarUrl(ctx context.Context, chatID int64, avatarURL string) (*domain.Chat, error)
 	UpdateTitle(ctx context.Context, chatID int64, title string) (*domain.Chat, error)
-	DeleteMember(ctx context.Context, chatID, userID int64) (error)
+	DeleteMember(ctx context.Context, chatID, userID int64) error
 }
 
 type UserRepositoryInterface interface {
@@ -43,15 +43,15 @@ type MediaRepositoryInterface interface {
 }
 
 type ChatService struct {
-	chatRepo ChatRepositoryInterface
-	userRepo UserRepositoryInterface
+	chatRepo  ChatRepositoryInterface
+	userRepo  UserRepositoryInterface
 	mediaRepo MediaRepositoryInterface
 }
 
 func NewChatService(chatRepo ChatRepositoryInterface, userRepo UserRepositoryInterface, mediaRepo MediaRepositoryInterface) *ChatService {
 	return &ChatService{
-		chatRepo: chatRepo,
-		userRepo: userRepo,
+		chatRepo:  chatRepo,
+		userRepo:  userRepo,
 		mediaRepo: mediaRepo,
 	}
 }
@@ -193,7 +193,6 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 	if chatDTO.Type == dto.ChatTypeDialog {
 		title = ""
 	}
-	
 
 	chat := &domain.Chat{
 		Type:        domain.ChatType(chatDTO.Type),
@@ -230,12 +229,12 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 	}
 
 	displayAvatar := chat.AvatarUrl
-		if createdChat.Type == domain.ChatTypeDialog {
-			dialogAvatar, err := s.GetDialogAvatar(ctx, createdChat.Id, ownerID)
-			if err == nil && dialogAvatar != nil {
-				displayAvatar = dialogAvatar
-			}
+	if createdChat.Type == domain.ChatTypeDialog {
+		dialogAvatar, err := s.GetDialogAvatar(ctx, createdChat.Id, ownerID)
+		if err == nil && dialogAvatar != nil {
+			displayAvatar = dialogAvatar
 		}
+	}
 
 	return &dto.ChatInformationDTO{
 		ID:          createdChat.Id,
@@ -283,12 +282,12 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 	}
 
 	displayAvatar := chat.AvatarUrl
-		if chat.Type == domain.ChatTypeDialog {
-			dialogAvatar, err := s.GetDialogAvatar(ctx, chat.Id, userID)
-			if err == nil && dialogAvatar != nil {
-				displayAvatar= dialogAvatar
-			}
+	if chat.Type == domain.ChatTypeDialog {
+		dialogAvatar, err := s.GetDialogAvatar(ctx, chat.Id, userID)
+		if err == nil && dialogAvatar != nil {
+			displayAvatar = dialogAvatar
 		}
+	}
 
 	return &dto.ChatInformationDTO{
 		ID:          chat.Id,
@@ -356,7 +355,7 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 	if chat.Type == domain.ChatTypeDialog {
 		return nil, domain.ErrDialogCannotHaveCustomAvatar
 	}
-	
+
 	if request == nil {
 		return nil, errors.New("update profile avatar nil request")
 	}
@@ -454,7 +453,7 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 	}, nil
 }
 
-func (s *ChatService) AddMembersToChat(ctx context.Context, userID, chatID int64, request *dto.RequestAddMember) (error) {
+func (s *ChatService) AddMembersToChat(ctx context.Context, userID, chatID int64, request *dto.RequestAddMember) error {
 	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to check user is member of chat: %w", err)
@@ -498,7 +497,7 @@ func (s *ChatService) AddMembersToChat(ctx context.Context, userID, chatID int64
 	return nil
 }
 
-func (s *ChatService) DeleteMemberFromChat(ctx context.Context, userID, chatID int64, request *dto.RequestDeleteMember) (error) {
+func (s *ChatService) DeleteMemberFromChat(ctx context.Context, userID, chatID int64, request *dto.RequestDeleteMember) error {
 	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to check user is member of chat: %w", err)
@@ -545,6 +544,10 @@ func (s *ChatService) DeleteMemberFromChat(ctx context.Context, userID, chatID i
 	return nil
 }
 
+func (s *ChatService) GetChatMemberIDs(ctx context.Context, chatID int64) ([]int64, error) {
+	return s.chatRepo.GetChatMembers(ctx, chatID)
+}
+
 func (s *ChatService) GetAllChatMembers(ctx context.Context, userID, chatID int64) (*dto.ResponseGetChatMembers, error) {
 	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
 	if err != nil {
@@ -564,7 +567,7 @@ func (s *ChatService) GetAllChatMembers(ctx context.Context, userID, chatID int6
 	}, nil
 }
 
-func (s *ChatService) QuitChat(ctx context.Context, userID, chatID int64) (error) {
+func (s *ChatService) QuitChat(ctx context.Context, userID, chatID int64) error {
 	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to check user is member of chat: %w", err)
@@ -572,7 +575,7 @@ func (s *ChatService) QuitChat(ctx context.Context, userID, chatID int64) (error
 	if !isMember {
 		return domain.ErrNotMember
 	}
-	
+
 	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
 	if err != nil {
 		if errors.Is(err, domain.ErrChatNotFound) {

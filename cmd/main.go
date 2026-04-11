@@ -113,6 +113,8 @@ func main() {
 			"http://212.233.96.180",
 			"http://localhost",
 			"http://localhost:8080",
+			"http://127.0.0.1",
+			"http://127.0.0.1:8080",
 			"http://0.0.0.0:80",
 			"http://0.0.0.0",
 		},
@@ -163,16 +165,14 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/search", profileHandlers.SearchIdByLogin)
 	})
 
-	mux.Route("/api/v1/ws", func(mux chi.Router) {
-		mux.With(authMiddleware).Get("/chat", ws.SubscribeHandler)
-	})
+	mux.With(authMiddleware).Get("/api/v1/ws", ws.SubscribeHandler)
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
 
 	server := &http.Server{
 		Addr:         cfg.ServerConfig.ServerInfo(),
 		Handler:      mux,
-		ReadTimeout:  5 * time.Second,
+		ReadTimeout:  120 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
