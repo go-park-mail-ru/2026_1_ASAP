@@ -89,13 +89,12 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) (*domain
 
 	err = tx.QueryRow(ctx,
 		`INSERT INTO users
-        (login, first_name, last_name, email, password_hash, avatar_url, bio, birth_date, last_seen, created_at, updated_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-        RETURNING id`,
+        (login, first_name, last_name, email, password_hash, avatar_url, bio, birth_date, last_seen)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        RETURNING id, created_at, updated_at`,
 		userModel.Login, userModel.FirstName, userModel.LastName, userModel.Email, userModel.PasswordHash,
 		userModel.AvatarUrl, userModel.Bio, userModel.BirthDate, userModel.LastSeenAt,
-		userModel.CreatedAt, userModel.UpdatedAt,
-	).Scan(&userModel.Id)
+	).Scan(&userModel.Id, &userModel.CreatedAt, &userModel.UpdatedAt)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {

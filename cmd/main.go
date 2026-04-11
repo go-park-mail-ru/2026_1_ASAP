@@ -163,9 +163,7 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/search", profileHandlers.SearchIdByLogin)
 	})
 
-	mux.Route("/api/v1/ws", func(mux chi.Router) {
-		mux.With(authMiddleware).Get("/chat", ws.SubscribeHandler)
-	})
+	mux.With(authMiddleware).Get("/api/v1/ws", ws.SubscribeHandler)
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
 

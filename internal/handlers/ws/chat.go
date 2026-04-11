@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -25,10 +24,11 @@ type MessagesServiceInterface interface {
 
 type ChatServiceInterface interface {
 	IsMember(ctx context.Context, userID int64, chatID int64) (bool, error)
+	GetChatMemberIDs(ctx context.Context, chatID int64) ([]int64, error)
 }
 
 type subscriber struct {
-	chatID    int64
+	userID    int64
 	conn      *websocket.Conn
 	msgs      chan []byte
 	cancel    context.CancelFunc
@@ -39,7 +39,7 @@ type ChatServer struct {
 	subscriberMessageBuffer int
 
 	subscribers         map[*subscriber]struct{}
-	subscribersByChatId map[int64]map[*subscriber]struct{}
+	subscribersByUserID map[int64]map[*subscriber]struct{}
 	mu                  sync.RWMutex
 	wg                  sync.WaitGroup
 
@@ -50,7 +50,7 @@ type ChatServer struct {
 func NewChatServer(messageService MessagesServiceInterface, chatService ChatServiceInterface) *ChatServer {
 	return &ChatServer{
 		subscribers:             make(map[*subscriber]struct{}),
-		subscribersByChatId:     make(map[int64]map[*subscriber]struct{}),
+		subscribersByUserID:     make(map[int64]map[*subscriber]struct{}),
 		messageService:          messageService,
 		chatService:             chatService,
 		subscriberMessageBuffer: 16,
@@ -60,22 +60,22 @@ func NewChatServer(messageService MessagesServiceInterface, chatService ChatServ
 func (s *ChatServer) addSubscriber(sub *subscriber) {
 	s.mu.Lock()
 	s.subscribers[sub] = struct{}{}
-	chatHub := s.subscribersByChatId[sub.chatID]
-	if chatHub == nil {
-		chatHub = make(map[*subscriber]struct{})
-		s.subscribersByChatId[sub.chatID] = chatHub
+	userHub := s.subscribersByUserID[sub.userID]
+	if userHub == nil {
+		userHub = make(map[*subscriber]struct{})
+		s.subscribersByUserID[sub.userID] = userHub
 	}
-	chatHub[sub] = struct{}{}
+	userHub[sub] = struct{}{}
 	s.mu.Unlock()
 }
 
 func (s *ChatServer) removeSubscriber(sub *subscriber) {
 	s.mu.Lock()
 	delete(s.subscribers, sub)
-	if chatHub := s.subscribersByChatId[sub.chatID]; chatHub != nil {
-		delete(chatHub, sub)
-		if len(chatHub) == 0 {
-			delete(s.subscribersByChatId, sub.chatID)
+	if userHub := s.subscribersByUserID[sub.userID]; userHub != nil {
+		delete(userHub, sub)
+		if len(userHub) == 0 {
+			delete(s.subscribersByUserID, sub.userID)
 		}
 	}
 	s.mu.Unlock()
@@ -99,16 +99,21 @@ func (s *ChatServer) sendErr(sub *subscriber, p dtoWs.WsErrorPayload) {
 	s.enqueueToSubscriber(sub, b)
 }
 
-func (s *ChatServer) publishMessageToChat(chatID int64, message []byte) {
-	s.mu.RLock()
-	chatHub := s.subscribersByChatId[chatID]
-	if chatHub == nil || len(chatHub) == 0 {
-		s.mu.RUnlock()
+// publishMessageNewToChatMembers шлёт message.New всем онлайн-участникам чата (по user id).
+func (s *ChatServer) publishMessageNewToChatMembers(ctx context.Context, chatID int64, message []byte) {
+	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil || len(memberIDs) == 0 {
 		return
 	}
-	subs := make([]*subscriber, 0, len(chatHub))
-	for sub := range chatHub {
-		subs = append(subs, sub)
+
+	s.mu.RLock()
+	subs := make([]*subscriber, 0)
+	for _, uid := range memberIDs {
+		if userHub, ok := s.subscribersByUserID[uid]; ok && len(userHub) > 0 {
+			for sub := range userHub {
+				subs = append(subs, sub)
+			}
+		}
 	}
 	s.mu.RUnlock()
 
@@ -135,53 +140,8 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chatIDStr := r.URL.Query().Get("chatID")
-	chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
-	if err != nil || chatID <= 0 {
-		resp := dtoApi.ApiErrorResponse{
-			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{
-				{
-					Code:    dtoApi.InvalidID,
-					Message: dtoApi.InvalidIDMsg,
-				},
-			},
-		}
-		response.Send(w, http.StatusBadRequest, resp)
-		return
-	}
-
-	isMember, err := s.chatService.IsMember(reqCtx, userID, chatID)
-	if err != nil {
-		resp := dtoApi.ApiErrorResponse{
-			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{
-				{
-					Code:    dtoApi.InternalError,
-					Message: dtoApi.InternalErrorMsg,
-				},
-			},
-		}
-		response.Send(w, http.StatusInternalServerError, resp)
-		return
-	}
-
-	if !isMember {
-		resp := dtoApi.ApiErrorResponse{
-			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{
-				{
-					Code:    dtoApi.NotMemberOfChat,
-					Message: dtoApi.NotMemberOfChatMsg,
-				},
-			},
-		}
-		response.Send(w, http.StatusForbidden, resp)
-		return
-	}
-
 	sub := &subscriber{
-		chatID: chatID,
+		userID: userID,
 		msgs:   make(chan []byte, s.subscriberMessageBuffer),
 	}
 
@@ -217,7 +177,7 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	s.wg.Add(1)
 	defer s.wg.Done()
 
-	go s.readClientMessages(ctx, wsConn, userID, chatID, sub)
+	go s.readClientMessages(ctx, wsConn, userID, sub)
 	s.writeClientMessages(ctx, wsConn, sub)
 }
 
@@ -286,7 +246,7 @@ func (s *ChatServer) writeClientMessages(ctx context.Context, wsConn *websocket.
 	}
 }
 
-func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.Conn, userID, chatID int64, sub *subscriber) {
+func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.Conn, userID int64, sub *subscriber) {
 	defer func() {
 		if sub.cancel != nil {
 			sub.cancel()
@@ -327,8 +287,15 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				})
 				continue
 			}
+			if req.ChatID <= 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
 
-			resp, err := s.messageService.SendMessage(ctx, userID, chatID, &req)
+			resp, err := s.messageService.SendMessage(ctx, userID, req.ChatID, &req)
 			if err != nil {
 				switch {
 				case errors.Is(err, domainChat.ErrMessageEmpty):
@@ -364,7 +331,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			s.publishMessageToChat(chatID, out)
+			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
 		case dtoWs.MessageRecv:
 			var req dto.RequestGetMessages
 			if len(env.Payload) == 0 {
@@ -381,8 +348,15 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				})
 				continue
 			}
+			if req.ChatID <= 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
 
-			resp, err := s.messageService.GetMessagesByChatId(ctx, userID, chatID, &req)
+			resp, err := s.messageService.GetMessagesByChatId(ctx, userID, req.ChatID, &req)
 			if err != nil {
 				if errors.Is(err, domainChat.ErrMessageNotMember) {
 					s.sendErr(sub, dtoWs.WsErrorPayload{

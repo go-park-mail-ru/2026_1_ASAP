@@ -288,13 +288,13 @@ func getEnvVariable(logger *zap.Logger, variable string, defaultValue string) (s
 		if defaultValue == "" {
 			return "", fmt.Errorf("Variable %s not set (no default value provided)", variable)
 		}
-		logger.Debug("env: using default",
+		logger.Debug(".env: using default",
 			zap.String("var", variable),
 			zap.String("value", envValueForLog(variable, defaultValue)),
 		)
 		return defaultValue, nil
 	}
-	logger.Debug("env: set",
+	logger.Debug(".env: set",
 		zap.String("var", variable),
 		zap.String("value", envValueForLog(variable, value)),
 	)

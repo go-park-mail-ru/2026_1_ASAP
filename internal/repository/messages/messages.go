@@ -35,17 +35,14 @@ func (m MessageRepository) CreateMessage(ctx context.Context, message *domain.Me
 
 	err = trx.QueryRow(ctx,
 		`INSERT INTO messages
-		(chat_id, sender_id, content, sticker_id, edited, created_at, updated_at, deleted_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		(chat_id, sender_id, content, sticker_id, edited)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, chat_id, sender_id, content, sticker_id, edited, created_at, updated_at, deleted_at`,
 		messageModel.ChatId,
 		messageModel.SenderId,
 		messageModel.Content,
 		messageModel.StickerId,
 		messageModel.Edited,
-		messageModel.CreatedAt,
-		messageModel.UpdatedAt,
-		messageModel.DeletedAt,
 	).Scan(
 		&messageModel.Id,
 		&messageModel.ChatId,
