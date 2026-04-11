@@ -99,7 +99,6 @@ func (s *ChatServer) sendErr(sub *subscriber, p dtoWs.WsErrorPayload) {
 	s.enqueueToSubscriber(sub, b)
 }
 
-// publishMessageNewToChatMembers шлёт message.New всем онлайн-участникам чата (по user id).
 func (s *ChatServer) publishMessageNewToChatMembers(ctx context.Context, chatID int64, message []byte) {
 	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
 	if err != nil || len(memberIDs) == 0 {

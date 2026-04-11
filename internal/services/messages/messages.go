@@ -109,10 +109,11 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 	}
 
 	return &dto.ResponseSendMessage{
-		ID:       createdMessage.Id,
-		ChatID:   createdMessage.ChatId,
-		SenderID: createdMessage.SenderId,
-		Text:     createdMessage.Content,
+		ID:        createdMessage.Id,
+		ChatID:    createdMessage.ChatId,
+		SenderID:  createdMessage.SenderId,
+		Text:      createdMessage.Content,
+		CreatedAt: createdMessage.CreatedAt,
 	}, nil
 }
 
