@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
@@ -65,7 +66,7 @@ func (m MediaRepository) UploadAvatar(ctx context.Context, userId int64, input *
 
 	extension := getExtensionFromContentType(input.ContentType)
 
-	objectName := fmt.Sprintf("avatar/%d%s", userId, extension)
+	objectName := fmt.Sprintf("avatar/user_%d_%d%s", userId, time.Now().UnixNano(), extension)
 
 	_, err := m.client.PutObject(ctx, m.bucket, objectName, input.Body, input.Size, minio.PutObjectOptions{
 		ContentType: input.ContentType,
@@ -84,7 +85,7 @@ func (m MediaRepository) UploadChatAvatar(ctx context.Context, chatID int64, inp
 
 	extension := getExtensionFromContentType(input.ContentType)
 
-	objectName := fmt.Sprintf("avatar/%d%s", chatID, extension)
+	objectName := fmt.Sprintf("avatar/chat_%d_%d%s", chatID, time.Now().UnixNano(), extension)
 
 	_, err := m.client.PutObject(ctx, m.bucket, objectName, input.Body, input.Size, minio.PutObjectOptions{
 		ContentType: input.ContentType,
