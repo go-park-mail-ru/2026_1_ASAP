@@ -88,6 +88,10 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 		return nil, domain.ErrMessageEmpty
 	}
 
+	if len(req.Text) > 2000 {
+		return nil, domain.ErrMessageTooLong
+	}
+
 	isUserMember, err := m.chatRepo.IsMember(ctx, chatId, userID)
 	if err != nil {
 		return nil, fmt.Errorf("chatrepo check is member: %w", err)

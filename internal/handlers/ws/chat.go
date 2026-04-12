@@ -17,6 +17,12 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
 
+// Исходящая очередь на клиента: мало слотов + медленный Write дают переполнение и обрыв (message new не доходит).
+const defaultSubscriberMsgBuffer = 256
+
+// Один большой JSON в сеть может писаться дольше 1s; иначе writeClientMessages выходит и клиент «молчит».
+const wsWriteTimeout = 2 * time.Minute
+
 type MessagesServiceInterface interface {
 	SendMessage(ctx context.Context, userID int64, chatID int64, req *dto.RequestSendMessage) (*dto.ResponseSendMessage, error)
 	GetMessagesByChatId(ctx context.Context, userID int64, chatID int64, req *dto.RequestGetMessages) (*dto.ResponseGetMessages, error)
@@ -53,7 +59,7 @@ func NewChatServer(messageService MessagesServiceInterface, chatService ChatServ
 		subscribersByUserID:     make(map[int64]map[*subscriber]struct{}),
 		messageService:          messageService,
 		chatService:             chatService,
-		subscriberMessageBuffer: 16,
+		subscriberMessageBuffer: defaultSubscriberMsgBuffer,
 	}
 }
 
@@ -213,7 +219,7 @@ func (s *ChatServer) Shutdown(ctx context.Context) error {
 				Code:    dtoWs.ErrCodeServerShutdown,
 				Message: dtoWs.ErrCodeServerShutdownMsg,
 			}); err == nil {
-				writeCtx, writeCancel := context.WithTimeout(ctx, 1*time.Second)
+				writeCtx, writeCancel := context.WithTimeout(ctx, 3*time.Second)
 				_ = sub.conn.Write(writeCtx, websocket.MessageText, frame)
 				writeCancel()
 			}
@@ -242,7 +248,7 @@ func (s *ChatServer) writeClientMessages(ctx context.Context, wsConn *websocket.
 			if !ok {
 				return
 			}
-			ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, 1*time.Second)
+			ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, wsWriteTimeout)
 			writeErr := wsConn.Write(ctxWithTimeout, websocket.MessageText, msg)
 			timeoutCancel()
 			if writeErr != nil {
