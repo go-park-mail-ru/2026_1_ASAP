@@ -44,6 +44,7 @@ const (
 	CSRFTokenMismatch      = "CSRF_TOKEN_MISMATCH"
 	CSRFTokenExpired       = "CSRF_TOKEN_EXPIRED"
 	CSRFTokenNotInSession  = "CSRF_TOKEN_NOT_IN_SESSION"
+	UserNotFound           = "USER_NOT_FOUND"
 )
 
 const (
@@ -87,6 +88,7 @@ const (
 	CSRFTokenMismatchMsg      = "CSRF token mismatch"
 	CSRFTokenExpiredMsg       = "CSRF token expired"
 	CSRFTokenNotInSessionMsg  = "CSRF token not in session"
+	UserNotFoundMsg           = "Cant find user you try to add"
 )
 
 type ApiError struct {

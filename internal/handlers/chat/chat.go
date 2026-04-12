@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
+	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	domainProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
@@ -145,6 +146,7 @@ func (h *ChatsHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 // @Success 201 {object} dtoApi.ResponseCreateChatSuccessForSwagger
 // @Failure 400 {object} dtoApi.ApiErrorResponse "Некорретный запрос или ошибка формата полей"
 // @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь неавторизован"
+// @Failure 404 {object} dtoApi.ApiErrorResponse "Пользователь, которого вы пытаетесь добавить в чат, не найден"
 // @Failure 500 {object} dtoApi.ApiErrorResponse "Ошибка создания чата"
 // @Router /api/v1/chats [post]
 func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
@@ -196,30 +198,44 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 
 	createdChat, err := h.chatService.CreateChat(ctx, req, userID)
 	if err != nil {
-		if errors.Is(err, domain.ErrDialogAlreadyExists) {
-			resp := dtoApi.ApiErrorResponse{
-				Status: dtoApi.Error,
-				Errors: []dtoApi.ApiError{
-					{
-						Code:    dtoApi.DialogAlreadyExists,
-						Message: dtoApi.DialogAlreadyExistsMsg,
+		switch {
+			case errors.Is(err, domain.ErrDialogAlreadyExists):
+				resp := dtoApi.ApiErrorResponse{
+					Status: dtoApi.Error,
+					Errors: []dtoApi.ApiError{
+						{
+							Code:    dtoApi.DialogAlreadyExists,
+							Message: dtoApi.DialogAlreadyExistsMsg,
+						},
 					},
-				},
-			}
-			response.Send(w, http.StatusConflict, resp)
-			return
+				}
+				response.Send(w, http.StatusConflict, resp)
+				return
+			case errors.Is(err, domainUser.ErrNotFound):
+				resp := dtoApi.ApiErrorResponse{
+					Status: dtoApi.Error,
+					Errors: []dtoApi.ApiError{
+						{
+							Code:    dtoApi.UserNotFound,
+							Message: dtoApi.UserNotFoundMsg,
+						},
+					},
+				}
+				response.Send(w, http.StatusNotFound, resp)
+				return
+			default:
+				resp := dtoApi.ApiErrorResponse{
+					Status: dtoApi.Error,
+					Errors: []dtoApi.ApiError{
+						{
+							Code:    dtoApi.CreateFailed,
+							Message: dtoApi.CreateFailedMsg,
+						},
+					},
+				}
+				response.Send(w, http.StatusInternalServerError, resp)
+				return
 		}
-		resp := dtoApi.ApiErrorResponse{
-			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{
-				{
-					Code:    dtoApi.CreateFailed,
-					Message: dtoApi.CreateFailedMsg,
-				},
-			},
-		}
-		response.Send(w, http.StatusInternalServerError, resp)
-		return
 	}
 
 	resp := dtoApi.ApiSuccessResponse[*dto.ChatInformationDTO]{
