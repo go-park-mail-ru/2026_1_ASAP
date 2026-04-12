@@ -339,6 +339,7 @@ func (h *ChatsHandler) GetChatByID(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} dtoApi.ApiErrorResponse "Некорректный ID чата"
 // @Failure 401 {object} dtoApi.ApiErrorResponse "Пользователь не авторизован"
 // @Failure 403 {object} dtoApi.ApiErrorResponse "Нет прав на удаление чата (не владелец или не участник)"
+// @Failure 404 {object} dtoApi.ApiErrorResponse "Нe удалось найти чат, который вы хотите удалить"
 // @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
 // @Router /api/v1/chats/{id} [delete]
 func (h *ChatsHandler) DeleteChat(w http.ResponseWriter, r *http.Request) {
@@ -403,6 +404,18 @@ func (h *ChatsHandler) DeleteChat(w http.ResponseWriter, r *http.Request) {
 			}
 			response.Send(w, http.StatusForbidden, resp)
 			return
+		case errors.Is(err, domain.ErrChatNotFound):
+			resp := dtoApi.ApiErrorResponse{
+            	Status: dtoApi.Error,
+            	Errors: []dtoApi.ApiError{
+                	{
+                    	Code:    dtoApi.CantFindChat,
+                    	Message: dtoApi.CantFindChatMsg,
+                	},
+            	},
+        	}
+        	response.Send(w, http.StatusNotFound, resp)
+        	return
 		default:
 			resp := dtoApi.ApiErrorResponse{
 				Status: dtoApi.Error,
