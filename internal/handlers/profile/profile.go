@@ -23,6 +23,7 @@ type ProfileServiceInterface interface {
 	UpdateProfileAvatar(ctx context.Context, userID int64, request *dto.RequestUpdateAvatar) (response *dto.ResponseUpdateProfile, err error)
 	UpdateProfileBirthDate(ctx context.Context, userID int64, request *dto.RequestUpdateBirthDate) (response *dto.ResponseUpdateProfile, err error)
 	SearchIdByLogin(ctx context.Context, login *dto.RequestSearchIdByLogin) (response *dto.ResponseSearchIdByLogin, err error)
+	UpdateProfileName(ctx context.Context, userID int64, request *dto.RequestUpdateName) (*dto.ResponseUpdateProfile, error)
 }
 
 type ProfileHandler struct {
@@ -518,5 +519,76 @@ func (h *ProfileHandler) SearchIdByLogin(w http.ResponseWriter, r *http.Request)
 		Body:   *responseSearch,
 	}
 
+	response.Send(w, http.StatusOK, resp)
+}
+
+func (h *ProfileHandler) UpdateProfileName(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userId, ok := ctx.Value(middleware.UserID).(int64)
+	if !ok {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.Unauthorized,
+					Message: dtoApi.UnauthorizedMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+
+	request := &dto.RequestUpdateName{}
+
+	err := decoder.Decode(request)
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidJson,
+					Message: dtoApi.InvalidJsonMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	responseUpdate, err := h.profileService.UpdateProfileName(ctx, userId, request)
+	if err != nil {
+		if errors.Is(err, domain.ErrEmptyFirstName) {
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.EmptyFirstName,
+						Message: dtoApi.EmptyFirstNameMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+			return
+		}
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusInternalServerError, resp)
+		return
+	}
+
+	resp := dtoApi.ApiSuccessResponse[dto.ResponseUpdateProfile]{
+		Status: dtoApi.Success,
+		Body:   *responseUpdate,
+	}
 	response.Send(w, http.StatusOK, resp)
 }

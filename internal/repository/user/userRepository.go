@@ -174,12 +174,12 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id int64) (*domain.Use
 
 func (r *UserRepository) GetProfileById(ctx context.Context, profileId int64) (*profile.Profile, error) {
 	row := r.db.QueryRow(ctx,
-		`SELECT id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen
+		`SELECT id, login, first_name, last_name, email, avatar_url, bio, birth_date, last_seen
          FROM users WHERE id=$1`, profileId)
 
 	p := &ProfileModel{}
 	if err := row.Scan(
-		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
+		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Email, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, profile.ErrNotFound
@@ -214,6 +214,35 @@ func (r *UserRepository) UploadAvatarUrl(ctx context.Context, userId int64, avat
 		 WHERE id = $1
 		 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`,
 		userId, avatarURL)
+
+	p := &ProfileModel{}
+	if err := row.Scan(
+		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, profile.ErrNotFound
+		}
+		return nil, fmt.Errorf("userRepository failed upload avatar url: %w", err)
+	}
+	return toDomainProfile(p), nil
+}
+
+func (r *UserRepository) UploadName(ctx context.Context, userId int64, firstName string, lastName *string) (*profile.Profile, error) {
+	var row pgx.Row
+
+	if lastName == nil {
+		row = r.db.QueryRow(ctx,
+			`UPDATE users SET first_name = $2, updated_at = now()
+		 WHERE id = $1
+		 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`,
+			userId, firstName)
+	} else {
+		row = r.db.QueryRow(ctx,
+			`UPDATE users SET first_name = $2, last_name = $3, updated_at = now()
+		 WHERE id = $1
+		 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`,
+			userId, firstName, *lastName)
+	}
 
 	p := &ProfileModel{}
 	if err := row.Scan(
