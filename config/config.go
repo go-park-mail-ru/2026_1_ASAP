@@ -224,6 +224,12 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 	}
 	s3Config.UseSSL = s3UseSSL == "true" || s3UseSSL == "1"
 
+	s3PublicUseSSLStr, err := getEnvVariable(logger, "S3_PUBLIC_USE_SSL", "true")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.PublicUseSSL = s3PublicUseSSLStr == "true" || s3PublicUseSSLStr == "1"
+
 	s3PublicHost, err := getEnvVariable(logger, "S3_PUBLIC_HOST", "localhost")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)

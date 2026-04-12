@@ -30,7 +30,7 @@ services:
       S3_USE_SSL: ${S3_USE_SSL:-false}
       S3_PUBLIC_USE_SSL: ${S3_PUBLIC_USE_SSL:-true}
       S3_PUBLIC_HOST: ${S3_PUBLIC_HOST:-localhost}
-      S3_PUBLIC_PORT: ${S3_PUBLIC_PORT:-8080}
+      S3_PUBLIC_PORT: ${S3_PUBLIC_PORT:-443}
 
     depends_on:
       - redis
