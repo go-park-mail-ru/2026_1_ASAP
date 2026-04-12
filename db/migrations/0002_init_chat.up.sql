@@ -5,6 +5,7 @@ CREATE TABLE chats (
     description TEXT,
     owner_id BIGINT,
     avatar_url TEXT,
+    last_message_id BIGINT,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
