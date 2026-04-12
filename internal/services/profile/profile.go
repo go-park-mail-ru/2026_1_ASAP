@@ -61,6 +61,9 @@ func (p ProfileService) UpdateProfileBirthDate(ctx context.Context, userID int64
 	if date.After(time.Now()) {
 		return nil, domain.ErrInvalidBirthDate
 	}
+	if date.Before(time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)) {
+		return nil, domain.ErrInvalidBirthDate
+	}
 
 	profile, err := p.profileRepository.UploadBirthDate(ctx, userID, &date)
 	if err != nil {
