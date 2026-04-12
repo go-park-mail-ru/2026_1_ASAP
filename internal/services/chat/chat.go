@@ -314,6 +314,22 @@ func (s *ChatService) DeleteChat(ctx context.Context, userID, chatID int64) erro
 		return domain.ErrNotMember
 	}
 
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return domain.ErrChatNotFound
+		}
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		err = s.chatRepo.DeleteChat(ctx, chatID)
+		if err != nil {
+			return fmt.Errorf("failed to delete chat: %w", err)
+		}
+
+		return nil
+	}
+
 	userRole, err := s.chatRepo.GetMemberRole(ctx, userID, chatID)
 	if err != nil {
 		return fmt.Errorf("failed to check user role: %w", err)
