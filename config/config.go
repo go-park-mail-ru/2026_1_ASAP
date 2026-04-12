@@ -261,6 +261,7 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 		zap.String("redis", redisConfig.ServerInfo()),
 		zap.String("s3_endpoint", s3Config.Endpoint()),
 		zap.String("s3_bucket", s3Config.Bucket),
+		zap.String("s3_public_url", s3Config.PublicURL()),
 		zap.Duration("shutdown_timeout", appConfig.ShutdownTime),
 	)
 

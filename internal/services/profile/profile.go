@@ -236,8 +236,6 @@ var allowedAvatarTypes = map[string]bool{
 	"image/jpeg": true,
 	"image/jpg":  true,
 	"image/png":  true,
-	"image/webp": true,
-	"image/gif":  true,
 }
 
 func checkAvatar(input *media.FileInput) error {
