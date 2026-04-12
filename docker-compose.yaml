@@ -28,6 +28,7 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
       S3_BUCKET: ${S3_BUCKET:-media}
       S3_USE_SSL: ${S3_USE_SSL:-false}
+      S3_PUBLIC_USE_SSL: ${S3_PUBLIC_USE_SSL:-true}
       S3_PUBLIC_HOST: ${S3_PUBLIC_HOST:-localhost}
       S3_PUBLIC_PORT: ${S3_PUBLIC_PORT:-8080}
 
