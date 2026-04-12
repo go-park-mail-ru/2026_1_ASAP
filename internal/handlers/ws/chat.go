@@ -17,11 +17,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
 
-// Исходящая очередь на клиента: мало слотов + медленный Write дают переполнение и обрыв (message new не доходит).
-const defaultSubscriberMsgBuffer = 256
-
-// Один большой JSON в сеть может писаться дольше 1s; иначе writeClientMessages выходит и клиент «молчит».
-const wsWriteTimeout = 2 * time.Minute
+const wsWriteTimeout = 3 * time.Second
 
 type MessagesServiceInterface interface {
 	SendMessage(ctx context.Context, userID int64, chatID int64, req *dto.RequestSendMessage) (*dto.ResponseSendMessage, error)
@@ -59,7 +55,7 @@ func NewChatServer(messageService MessagesServiceInterface, chatService ChatServ
 		subscribersByUserID:     make(map[int64]map[*subscriber]struct{}),
 		messageService:          messageService,
 		chatService:             chatService,
-		subscriberMessageBuffer: defaultSubscriberMsgBuffer,
+		subscriberMessageBuffer: 16,
 	}
 }
 
@@ -145,6 +141,7 @@ func (s *ChatServer) PublishToUser(_ context.Context, userID int64, message []by
 }
 
 func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
+	// Создать логгер remote_addr user_id conn_id With
 	reqCtx := r.Context()
 	userID, ok := reqCtx.Value(middleware.UserID).(int64)
 	if !ok {
@@ -219,7 +216,7 @@ func (s *ChatServer) Shutdown(ctx context.Context) error {
 				Code:    dtoWs.ErrCodeServerShutdown,
 				Message: dtoWs.ErrCodeServerShutdownMsg,
 			}); err == nil {
-				writeCtx, writeCancel := context.WithTimeout(ctx, 3*time.Second)
+				writeCtx, writeCancel := context.WithTimeout(ctx, 1*time.Second)
 				_ = sub.conn.Write(writeCtx, websocket.MessageText, frame)
 				writeCancel()
 			}
