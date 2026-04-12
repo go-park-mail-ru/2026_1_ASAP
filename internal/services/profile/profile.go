@@ -230,12 +230,12 @@ func (p ProfileService) UpdateProfileName(ctx context.Context, userID int64, req
 	}, nil
 }
 
-const maxAvatarSize = 5 * 1024 * 1024
-
 var allowedAvatarTypes = map[string]bool{
 	"image/jpeg": true,
 	"image/jpg":  true,
 	"image/png":  true,
+	"image/webp": true,
+	"image/gif":  true,
 }
 
 func checkAvatar(input *media.FileInput) error {
@@ -245,7 +245,7 @@ func checkAvatar(input *media.FileInput) error {
 	if input.Size <= 0 {
 		return media.ErrEmptyFile
 	}
-	if input.Size > maxAvatarSize {
+	if input.Size > media.MaxAvatarBytes {
 		return media.ErrFileTooLarge
 	}
 	if !allowedAvatarTypes[input.ContentType] {

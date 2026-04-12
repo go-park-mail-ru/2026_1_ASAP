@@ -626,8 +626,6 @@ func (s *ChatService) QuitChat(ctx context.Context, userID, chatID int64) error 
 	return nil
 }
 
-const maxAvatarSize = 5 * 1024 * 1024
-
 var allowedAvatarTypes = map[string]bool{
 	"image/jpeg": true,
 	"image/jpg":  true,
@@ -643,7 +641,7 @@ func checkAvatar(input *media.FileInput) error {
 	if input.Size <= 0 {
 		return media.ErrEmptyFile
 	}
-	if input.Size > maxAvatarSize {
+	if input.Size > media.MaxAvatarBytes {
 		return media.ErrFileTooLarge
 	}
 	if !allowedAvatarTypes[input.ContentType] {
