@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
@@ -21,6 +22,7 @@ type ProfileRepositoryInterface interface {
 	UploadAvatarUrl(ctx context.Context, userId int64, avatarUrl string) (*domain.Profile, error)
 	UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*domain.Profile, error)
 	GetProfileIdByLogin(ctx context.Context, login string) (int64, error)
+	UploadName(ctx context.Context, userID int64, firstName string, lastName *string) (*domain.Profile, error)
 }
 
 type ProfileService struct {
@@ -186,10 +188,42 @@ func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (respo
 		Login:     profile.Login,
 		FirstName: profile.FirstName,
 		LastName:  profile.LastName,
+		Email:     profile.Email,
 		Avatar:    profile.Avatar,
 		BirthDate: birthDate,
 		Bio:       profile.Bio,
 		LastSeen:  profile.LastSeen,
+	}, nil
+}
+
+func (p ProfileService) UpdateProfileName(ctx context.Context, userID int64, request *dto.RequestUpdateName) (*dto.ResponseUpdateProfile, error) {
+	if request == nil {
+		return nil, errors.New("update profile bio nil request")
+	}
+	if request.FirstName == "" {
+		return nil, domain.ErrEmptyFirstName
+	}
+
+	profile, err := p.profileRepository.UploadName(ctx, userID, request.FirstName, request.LastName)
+	if err != nil {
+		log.Print(err)
+		return nil, fmt.Errorf("update profile avatar: %w", err)
+	}
+
+	var birthDate *string
+	if profile.BirthDate != nil {
+		date := profile.BirthDate.UTC().Format(time.DateOnly)
+		birthDate = &date
+	}
+	return &dto.ResponseUpdateProfile{
+		UserId:    profile.UserId,
+		Login:     profile.Login,
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
+		Avatar:    profile.Avatar,
+		Bio:       profile.Bio,
+		LastSeen:  profile.LastSeen,
+		BirthDate: birthDate,
 	}, nil
 }
 

@@ -23,6 +23,7 @@ type UserModel struct {
 type ProfileModel struct {
 	UserId    int64
 	Login     string
+	Email     string
 	FirstName string
 	LastName  sql.NullString
 	Avatar    sql.NullString

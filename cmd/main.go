@@ -166,6 +166,7 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", profileHandlers.GetUserProfile)
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/birth", profileHandlers.UpdateProfileBirthDate)
 		mux.With(authMiddleware, csrfMiddleware).Get("/search", profileHandlers.SearchIdByLogin)
+		mux.With(authMiddleware, csrfMiddleware).Post("/me/name", profileHandlers.UpdateProfileName)
 	})
 
 	mux.With(authMiddleware).Get("/api/v1/ws", ws.SubscribeHandler)

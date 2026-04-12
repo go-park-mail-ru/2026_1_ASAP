@@ -5,6 +5,7 @@ import "time"
 type Profile struct {
 	UserId    int64
 	Login     string
+	Email     string
 	FirstName string
 	LastName  *string
 	Avatar    *string

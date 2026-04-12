@@ -10,4 +10,5 @@ var (
 	ErrInvalidAvatarType      = errors.New("invalid avatar type")
 	ErrInvalidBirthDate       = errors.New("invalid birth date")
 	ErrInvalidBirthDateFormat = errors.New("invalid birth date format")
+	ErrEmptyFirstName         = errors.New("profile first name cannot be empty")
 )
