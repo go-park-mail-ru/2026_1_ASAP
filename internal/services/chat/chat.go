@@ -210,11 +210,18 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 	}
 
 	for _, member := range chatDTO.MembersID {
+		_, err := s.userRepo.GetUserByID(ctx, member)
+		if err != nil {
+			if errors.Is(err, domainUser.ErrNotFound) {
+				return nil, domainUser.ErrNotFound
+			}
+			return nil, fmt.Errorf("failed to get user: %w", err)
+		}
 		role := "member"
 		if member == ownerID {
 			role = "owner"
 		}
-		err := s.chatRepo.AddMember(ctx, createdChat.Id, member, role)
+		err = s.chatRepo.AddMember(ctx, createdChat.Id, member, role)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add member to chat: %w", err)
 		}

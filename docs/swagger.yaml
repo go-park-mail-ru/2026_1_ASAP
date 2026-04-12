@@ -493,6 +493,10 @@ paths:
           description: Пользователь неавторизован
           schema:
             $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Пользователь, которого вы пытаетесь добавить в чат, не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
         "500":
           description: Ошибка создания чата
           schema:
