@@ -13,6 +13,7 @@ import (
 	domainProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
+	dtoWs "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/ws"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
@@ -32,15 +33,56 @@ type ChatService interface {
 	DeleteMemberFromChat(ctx context.Context, userID, chatID int64, request *dto.RequestDeleteMember) (error)
 	GetAllChatMembers(ctx context.Context, userID, chatID int64) (*dto.ResponseGetChatMembers, error) 
 	QuitChat(ctx context.Context, userID, chatID int64) (error)
+	GetChatMemberIDs(ctx context.Context, chatID int64) ([]int64, error)
+}
+
+type WsUserPublisher interface {
+	PublishToUser(ctx context.Context, userID int64, message []byte)
 }
 
 type ChatsHandler struct {
 	chatService ChatService
+	wsPublisher WsUserPublisher
 }
 
-func NewChatHandler(chatService ChatService) *ChatsHandler {
+func NewChatHandler(chatService ChatService, wsPublisher WsUserPublisher) *ChatsHandler {
 	return &ChatsHandler{
 		chatService: chatService,
+		wsPublisher: wsPublisher,
+	}
+}
+
+func (h *ChatsHandler) wsPublishChatSnapshotToMembers(ctx context.Context, chatID int64, encode func(*dto.ChatInformationDTO) ([]byte, error)) {
+	if h.wsPublisher == nil {
+		return
+	}
+	memberIDs, err := h.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		return
+	}
+	for _, uid := range memberIDs {
+		info, errInfo := h.chatService.GetChatByID(ctx, chatID, uid)
+		if errInfo != nil {
+			continue
+		}
+		frame, errEnc := encode(info)
+		if errEnc != nil {
+			continue
+		}
+		h.wsPublisher.PublishToUser(ctx, uid, frame)
+	}
+}
+
+func (h *ChatsHandler) wsPublishChatDeleted(ctx context.Context, memberIDs []int64, chatID int64) {
+	if h.wsPublisher == nil {
+		return
+	}
+	frame, err := dtoWs.EncodeChatDeleted(chatID)
+	if err != nil {
+		return
+	}
+	for _, uid := range memberIDs {
+		h.wsPublisher.PublishToUser(ctx, uid, frame)
 	}
 }
 
@@ -185,6 +227,8 @@ func (h *ChatsHandler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 		Body:   createdChat,
 	}
 	response.Send(w, http.StatusCreated, resp)
+
+	h.wsPublishChatSnapshotToMembers(ctx, createdChat.ID, dtoWs.EncodeChatNew)
 }
 
 // GetChatByID godoc
@@ -314,6 +358,8 @@ func (h *ChatsHandler) DeleteChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	memberIDs, _ := h.chatService.GetChatMemberIDs(ctx, chatID)
+
 	err = h.chatService.DeleteChat(ctx, userID, chatID)
 	if err != nil {
 		switch {
@@ -360,6 +406,8 @@ func (h *ChatsHandler) DeleteChat(w http.ResponseWriter, r *http.Request) {
 			Body: string("Chat successful delete"),
 		}
 	response.Send(w, http.StatusOK, resp)
+
+	h.wsPublishChatDeleted(ctx, memberIDs, chatID)
 }
 
 // UpdateChatAvatar обновляет аватар чата
@@ -521,6 +569,8 @@ func (h *ChatsHandler) UpdateChatAvatar(w http.ResponseWriter, r *http.Request) 
 		Body:   responseUpdate,
 	}
 	response.Send(w, http.StatusOK, resp)
+
+	h.wsPublishChatSnapshotToMembers(ctx, chatID, dtoWs.EncodeChatUpdated)
 }
 
 // UpdateChatTitle обновляет название чата
@@ -662,6 +712,8 @@ func (h *ChatsHandler) UpdateChatTitle(w http.ResponseWriter, r *http.Request) {
 		Body:   responseUpdate,
 	}
 	response.Send(w, http.StatusOK, resp)
+
+	h.wsPublishChatSnapshotToMembers(ctx, chatID, dtoWs.EncodeChatUpdated)
 }
 
 // AddMembersToChat добавляет участников в чат
@@ -1019,6 +1071,9 @@ func (h *ChatsHandler) DeleteMemberFromChat(w http.ResponseWriter, r *http.Reque
 		Body:   "Members deleted from chat successfuly",
 	}
 	response.Send(w, http.StatusOK, resp)
+
+	h.wsPublishChatDeleted(ctx, []int64{request.MemberId}, chatID)
+	h.wsPublishChatSnapshotToMembers(ctx, chatID, dtoWs.EncodeChatUpdated)
 }
 
 // GetChatMembers получает список участников чата
@@ -1240,4 +1295,7 @@ func (h *ChatsHandler) QuitChat(w http.ResponseWriter, r *http.Request) {
 		Body:   "You are leave chat successfuly",
 	}
 	response.Send(w, http.StatusOK, resp)
+
+	h.wsPublishChatDeleted(ctx, []int64{userID}, chatID)
+	h.wsPublishChatSnapshotToMembers(ctx, chatID, dtoWs.EncodeChatUpdated)
 }

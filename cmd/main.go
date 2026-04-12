@@ -42,6 +42,9 @@ import (
 // @description API веб-приложения Pulse
 // @host pulseapp.space:8080
 func main() {
+	appContext, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer done()
+
 	logger, err := zap.NewProduction()
 	if err != nil {
 		log.Fatalf("zap: %v", err)
@@ -90,11 +93,11 @@ func main() {
 	messageServ := messageService.NewMessageService(messageRepo, chatRepo)
 
 	// Handlers
-	chatsHandler := chatHandlers.NewChatHandler(chatServ)
+	ws := wsHandlers.NewChatServer(messageServ, chatServ)
+	chatsHandler := chatHandlers.NewChatHandler(chatServ, ws)
 	contactsHandler := contactHandlers.NewContactHandler(contactServ)
 	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
 	auth := authHandlers.NewAuthHandler(authServ)
-	ws := wsHandlers.NewChatServer(messageServ, chatServ)
 
 	//Middleware
 	requestIDMiddleware := middleware.RequestIDMiddleware()
@@ -176,9 +179,6 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-
-	appContext, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer done()
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

@@ -76,9 +76,9 @@ services:
       - |
         set -e
         RETRIES=10
-        until migrate -path=/migrations -database="postgres://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable" up || [ $RETRIES -eq 0 ]; do
+        until migrate -path=/migrations -database="postgres://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable" up || [ $$RETRIES -eq 0 ]; do
           echo "Migration failed, retrying in 3s..."
-          RETRIES=$((RETRIES-1))
+          RETRIES=$$((RETRIES-1))
           sleep 3
         done
     depends_on:

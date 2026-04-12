@@ -122,6 +122,22 @@ func (s *ChatServer) publishMessageNewToChatMembers(ctx context.Context, chatID 
 	}
 }
 
+func (s *ChatServer) PublishToUser(_ context.Context, userID int64, message []byte) {
+	s.mu.RLock()
+	var subs []*subscriber
+	if userHub, ok := s.subscribersByUserID[userID]; ok {
+		for sub := range userHub {
+			subs = append(subs, sub)
+		}
+	}
+	s.mu.RUnlock()
+
+	for _, sub := range subs {
+		payload := append([]byte(nil), message...)
+		s.enqueueToSubscriber(sub, payload)
+	}
+}
+
 func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	reqCtx := r.Context()
 	userID, ok := reqCtx.Value(middleware.UserID).(int64)
