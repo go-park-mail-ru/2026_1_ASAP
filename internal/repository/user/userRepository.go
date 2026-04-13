@@ -23,6 +23,7 @@ type dbPool interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	Begin(ctx context.Context) (pgx.Tx, error)
 	Close()
+	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 }
 
 type UserRepository struct {
@@ -78,11 +79,13 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) (_ *doma
 
 	userModel := toModel(user)
 
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("begin tx: %w", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{
+        IsoLevel: pgx.Serializable,
+    })
+    if err != nil {
+        return nil, fmt.Errorf("begin tx: %w", err)
+    }
+    defer func() { _ = tx.Rollback(ctx) }()
 
 	var exists bool
 	err = tx.QueryRow(ctx, usersql.ExistsLogin, userModel.Login).Scan(&exists)

@@ -258,11 +258,13 @@ func (r *ChatRepository) GetDialogBetweenUsers(ctx context.Context, user1ID, use
 }
 
 func (r *ChatRepository) DeleteChat(ctx context.Context, chatID int64) error {
-	trx, err := r.db.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
-	}
-	defer trx.Rollback(ctx)
+	trx, err := r.db.BeginTx(ctx, pgx.TxOptions{
+        IsoLevel: pgx.RepeatableRead,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to create transaction: %w", err)
+    }
+    defer trx.Rollback(ctx)
 
 	q := chatssql.DeleteMessagesByChatID
 	start := time.Now()
