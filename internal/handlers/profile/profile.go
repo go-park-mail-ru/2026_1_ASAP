@@ -220,13 +220,50 @@ func (h *ProfileHandler) UpdateUserAvatar(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	request := &dto.RequestUpdateAvatar{}
-	fileInput := &media.FileInput{
-		Body:        file,
-		ContentType: header.Header.Get("Content-Type"),
-		Size:        header.Size,
+	fileInput, err := media.FileInputFromMultipart(file, header)
+	if err != nil {
+		switch {
+		case errors.Is(err, media.ErrEmptyFile):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.EmptyFile,
+						Message: dtoApi.EmptyFileMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+			return
+		case errors.Is(err, media.ErrFileTooLarge):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.FileTooLarge,
+						Message: dtoApi.FileTooLargeMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+			return
+		default:
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InternalError,
+						Message: dtoApi.InternalErrorMsg,
+					},
+				},
+			}
+			log.Println(err.Error())
+			response.Send(w, http.StatusInternalServerError, resp)
+			return
+		}
 	}
-	request.File = fileInput
+
+	request := &dto.RequestUpdateAvatar{File: fileInput}
 
 	responseUpdate, err := h.profileService.UpdateProfileAvatar(ctx, userId, request)
 	if err != nil {

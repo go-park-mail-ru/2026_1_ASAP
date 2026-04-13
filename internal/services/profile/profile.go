@@ -279,7 +279,7 @@ func checkAvatar(input *media.FileInput) error {
 	if input.Size <= 0 {
 		return media.ErrEmptyFile
 	}
-	if input.Size > maxAvatarSize {
+	if input.Size > media.MaxAvatarBytes {
 		return media.ErrFileTooLarge
 	}
 	if !allowedAvatarTypes[input.ContentType] {
