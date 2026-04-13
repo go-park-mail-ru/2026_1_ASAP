@@ -19,6 +19,7 @@ type dbPool interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	Close()
+	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 }
 
 type MessageRepository struct {
@@ -40,11 +41,13 @@ func NewMessageRepository(ctx context.Context, cfg config.PostgresConfig, logger
 func (m *MessageRepository) CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error) {
 	start := time.Now()
 	messageModel := toModel(message)
-	trx, err := m.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("begin tx: %w", err)
-	}
-	defer func() { _ = trx.Rollback(ctx) }()
+	trx, err := m.db.BeginTx(ctx, pgx.TxOptions{
+        IsoLevel: pgx.RepeatableRead,
+    })
+    if err != nil {
+        return nil, fmt.Errorf("begin tx: %w", err)
+    }
+    defer func() { _ = trx.Rollback(ctx) }()
 
 	err = trx.QueryRow(ctx, messagessql.InsertMessage,
 		messageModel.ChatId,
@@ -150,6 +153,6 @@ func (m *MessageRepository) log(ctx context.Context) *zap.Logger {
 	return loggerctx.EnrichLoggerFromContext(ctx, base)
 }
 
-func (m *MessageRepository) Close(ctx context.Context) error {
-	return m.db.Close()
+func (m *MessageRepository) Close() {
+	m.db.Close()
 }

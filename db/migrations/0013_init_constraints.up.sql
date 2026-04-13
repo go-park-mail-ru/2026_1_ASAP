@@ -10,7 +10,7 @@ ADD CONSTRAINT chk_contacts_user_not_null CHECK (user_id IS NOT NULL AND contact
 ALTER TABLE chats
 ADD CONSTRAINT fk_chats_type FOREIGN KEY (type) REFERENCES chat_types(type);
 ALTER TABLE chats
-ADD CONSTRAINT fk_chats_owner FOREIGN KEY (owner_id) REFERENCES users(id);
+ADD CONSTRAINT fk_chats_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT;
 ALTER TABLE chats
 ADD CONSTRAINT fk_chats_last_message FOREIGN KEY (last_message_id) REFERENCES messages(id) ON DELETE SET NULL;
 
