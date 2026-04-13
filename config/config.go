@@ -44,14 +44,15 @@ type PostgresConfig struct {
 }
 
 type S3Config struct {
-	Host       string
-	Port       string
-	Bucket     string
-	AccessKey  string
-	SecretKey  string
-	UseSSL     bool
-	PublicHost string
-	PublicPort string
+	Host         string
+	Port         string
+	Bucket       string
+	AccessKey    string
+	SecretKey    string
+	UseSSL       bool
+	PublicUseSSL bool
+	PublicHost   string
+	PublicPort   string
 }
 
 type AppConfig struct {
@@ -84,7 +85,7 @@ func (c S3Config) EndpointURL() string {
 
 func (c S3Config) PublicURL() string {
 	scheme := "http"
-	if c.UseSSL {
+	if c.PublicUseSSL {
 		scheme = "https"
 	}
 	if c.PublicPort == "" || c.PublicPort == "80" || c.PublicPort == "443" {
@@ -223,6 +224,12 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 	}
 	s3Config.UseSSL = s3UseSSL == "true" || s3UseSSL == "1"
 
+	s3PublicUseSSLStr, err := getEnvVariable(logger, "S3_PUBLIC_USE_SSL", "true")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	s3Config.PublicUseSSL = s3PublicUseSSLStr == "true" || s3PublicUseSSLStr == "1"
+
 	s3PublicHost, err := getEnvVariable(logger, "S3_PUBLIC_HOST", "localhost")
 	if err != nil {
 		return nil, fmt.Errorf("Load Config error: %w", err)
@@ -261,6 +268,9 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 		zap.String("redis", redisConfig.ServerInfo()),
 		zap.String("s3_endpoint", s3Config.Endpoint()),
 		zap.String("s3_bucket", s3Config.Bucket),
+		zap.Bool("s3_use_ssl", s3Config.UseSSL),
+		zap.Bool("s3_public_use_ssl", s3Config.PublicUseSSL),
+		zap.String("s3_public_url", s3Config.PublicURL()),
 		zap.Duration("shutdown_timeout", appConfig.ShutdownTime),
 	)
 
