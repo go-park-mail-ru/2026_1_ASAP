@@ -163,6 +163,7 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/me", profileHandlers.GetMyProfile)
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/bio", profileHandlers.UpdateUserBio)
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/avatar", profileHandlers.UpdateUserAvatar)
+		mux.With(authMiddleware, csrfMiddleware).Delete("/me/avatar", profileHandlers.DeleteUserAvatat)
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", profileHandlers.GetUserProfile)
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/birth", profileHandlers.UpdateProfileBirthDate)
 		mux.With(authMiddleware, csrfMiddleware).Get("/search", profileHandlers.SearchIdByLogin)

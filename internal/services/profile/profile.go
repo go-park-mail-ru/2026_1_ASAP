@@ -14,6 +14,7 @@ import (
 
 type MediaRepositoryInterface interface {
 	UploadAvatar(ctx context.Context, userId int64, input *media.FileInput) (string, error)
+	DeleteAvatar(ctx context.Context, userID int64) (error)
 }
 
 type ProfileRepositoryInterface interface {
@@ -23,6 +24,7 @@ type ProfileRepositoryInterface interface {
 	UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*domain.Profile, error)
 	GetProfileIdByLogin(ctx context.Context, login string) (int64, error)
 	UploadName(ctx context.Context, userID int64, firstName string, lastName *string) (*domain.Profile, error)
+	DeleteUserAvatar(ctx context.Context, userId int64) (*domain.Profile, error)
 }
 
 type ProfileService struct {
@@ -229,6 +231,36 @@ func (p ProfileService) UpdateProfileName(ctx context.Context, userID int64, req
 		BirthDate: birthDate,
 	}, nil
 }
+
+func (p ProfileService) DeleteProfileAvatar(ctx context.Context, userID int64) (response *dto.ResponseDeleteProfile, err error) {
+	err = p.mediaRepository.DeleteAvatar(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("delete avatar: %w", err)
+	}
+
+	profile, err := p.profileRepository.DeleteUserAvatar(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("delete avatar url: %w", err)
+	}
+
+	var birthDate *string
+	if profile.BirthDate != nil {
+		date := profile.BirthDate.UTC().Format(time.DateOnly)
+		birthDate = &date
+	}
+
+	return &dto.ResponseDeleteProfile{
+		UserId:    profile.UserId,
+		Login:     profile.Login,
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
+		Avatar:    profile.Avatar,
+		BirthDate: birthDate,
+		Bio:       profile.Bio,
+		LastSeen:  profile.LastSeen,
+	}, nil
+}
+
 
 const maxAvatarSize = 5 * 1024 * 1024
 
