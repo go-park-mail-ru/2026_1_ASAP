@@ -209,5 +209,6 @@ func main() {
 	chatRepo.Close()
 	contactRepo.Close()
 	mediaRepo.Close()
+	messageRepo.Close()
 	appLogger.Info("Graceful shutdown complete")
 }

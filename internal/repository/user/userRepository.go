@@ -19,8 +19,14 @@ import (
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 )
 
+type dbPool interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Close()
+}
+
 type UserRepository struct {
-	db     *pgxpool.Pool
+	db     dbPool
 	logger *zap.Logger
 }
 

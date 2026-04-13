@@ -15,8 +15,14 @@ import (
 	"go.uber.org/zap"
 )
 
+type dbPool interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	Close()
+}
+
 type MessageRepository struct {
-	db     *pgxpool.Pool
+	db     dbPool
 	logger *zap.Logger
 }
 
@@ -142,4 +148,8 @@ func (m *MessageRepository) log(ctx context.Context) *zap.Logger {
 		return zap.NewNop()
 	}
 	return loggerctx.EnrichLoggerFromContext(ctx, base)
+}
+
+func (m *MessageRepository) Close(ctx context.Context) error {
+	return m.db.Close()
 }
