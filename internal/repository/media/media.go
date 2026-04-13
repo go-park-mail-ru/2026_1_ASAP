@@ -97,6 +97,20 @@ func (m MediaRepository) UploadChatAvatar(ctx context.Context, chatID int64, inp
 	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucket, objectName), nil
 }
 
+func (m MediaRepository) DeleteAvatar(ctx context.Context, userID int64) (error) {
+    extensions := []string{".jpg", ".png", ".webp"}
+    
+    for _, ext := range extensions {
+        objectName := fmt.Sprintf("avatar/%d%s", userID, ext)
+        
+        err := m.client.RemoveObject(ctx, m.bucket, objectName, minio.RemoveObjectOptions{})
+        if err != nil && minio.ToErrorResponse(err).Code != "NoSuchKey"{
+			return fmt.Errorf("failed to delete avatar: %w", err)
+        }
+    }
+    return nil
+}
+
 func (m *MediaRepository) Close() {
 
 }

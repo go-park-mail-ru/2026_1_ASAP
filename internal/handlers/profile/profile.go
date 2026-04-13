@@ -24,6 +24,7 @@ type ProfileServiceInterface interface {
 	UpdateProfileBirthDate(ctx context.Context, userID int64, request *dto.RequestUpdateBirthDate) (response *dto.ResponseUpdateProfile, err error)
 	SearchIdByLogin(ctx context.Context, login *dto.RequestSearchIdByLogin) (response *dto.ResponseSearchIdByLogin, err error)
 	UpdateProfileName(ctx context.Context, userID int64, request *dto.RequestUpdateName) (*dto.ResponseUpdateProfile, error)
+	DeleteProfileAvatar(ctx context.Context, userID int64) (response *dto.ResponseDeleteProfile, err error)
 }
 
 type ProfileHandler struct {
@@ -626,6 +627,46 @@ func (h *ProfileHandler) UpdateProfileName(w http.ResponseWriter, r *http.Reques
 	resp := dtoApi.ApiSuccessResponse[dto.ResponseUpdateProfile]{
 		Status: dtoApi.Success,
 		Body:   *responseUpdate,
+	}
+	response.Send(w, http.StatusOK, resp)
+}
+
+func (h *ProfileHandler) DeleteUserAvatat(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userId, ok := ctx.Value(middleware.UserID).(int64)
+	if !ok {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.Unauthorized,
+					Message: dtoApi.UnauthorizedMsg,
+				},
+			},
+		}
+		response.Send(w, http.StatusUnauthorized, resp)
+		return
+	}
+
+	responseDelete, err := h.profileService.DeleteProfileAvatar(ctx, userId)
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{					
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
+		}
+		log.Println(err.Error())
+		response.Send(w, http.StatusInternalServerError, resp)
+		return
+	}
+
+	resp := dtoApi.ApiSuccessResponse[dto.ResponseDeleteProfile]{
+		Status: dtoApi.Success,
+		Body:   *responseDelete,
 	}
 	response.Send(w, http.StatusOK, resp)
 }

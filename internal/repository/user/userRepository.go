@@ -256,6 +256,25 @@ func (r *UserRepository) UploadName(ctx context.Context, userId int64, firstName
 	return toDomainProfile(p), nil
 }
 
+func (r *UserRepository) DeleteUserAvatar(ctx context.Context, userId int64) (*profile.Profile, error) {
+	row := r.db.QueryRow(ctx,
+	`UPDATE users
+	 SET avatar_url=NULL, updated_at = now()
+	 WHERE id=$1
+	 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`, userId)
+	
+	p := &ProfileModel{}
+	if err := row.Scan(
+		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, profile.ErrNotFound
+		}
+		return nil, fmt.Errorf("userRepository failed upload avatar url: %w", err)
+	}
+	return toDomainProfile(p), nil
+}
+
 func (r *UserRepository) Close() {
 	r.db.Close()
 }
