@@ -7,16 +7,21 @@ import (
 	"time"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
+	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user/sql"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 )
 
 type UserRepository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	logger *zap.Logger
 }
 
 func (r *UserRepository) GetProfileIdByLogin(ctx context.Context, login string) (int64, error) {
@@ -33,16 +38,16 @@ func (r *UserRepository) GetProfileIdByLogin(ctx context.Context, login string) 
 }
 
 func (r *UserRepository) UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*profile.Profile, error) {
-	row := r.db.QueryRow(ctx,
-		`UPDATE users SET birth_date = $2, updated_at = now()
-		 WHERE id = $1
-		 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`,
-		userId, birthDate)
+	q := usersql.UploadBirthDate
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, userId, birthDate)
 
 	p := &ProfileModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "UploadBirthDate", q, start, err, []any{userId, birthDate})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, profile.ErrNotFound
 		}
@@ -51,7 +56,7 @@ func (r *UserRepository) UploadBirthDate(ctx context.Context, userId int64, birt
 	return toDomainProfile(p), nil
 }
 
-func NewUserRepository(ctx context.Context, cfg config.PostgresConfig) (*UserRepository, error) {
+func NewUserRepository(ctx context.Context, cfg config.PostgresConfig, logger *zap.Logger) (*UserRepository, error) {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
 
@@ -59,10 +64,12 @@ func NewUserRepository(ctx context.Context, cfg config.PostgresConfig) (*UserRep
 	if err != nil {
 		return nil, err
 	}
-	return &UserRepository{db: pool}, nil
+	return &UserRepository{db: pool, logger: logger}, nil
 }
 
-func (r *UserRepository) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
+func (r *UserRepository) Create(ctx context.Context, user *domain.User) (_ *domain.User, err error) {
+	start := time.Now()
+
 	userModel := toModel(user)
 
 	tx, err := r.db.Begin(ctx)
@@ -72,14 +79,14 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) (*domain
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	var exists bool
-	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE login = $1)`, userModel.Login).Scan(&exists)
+	err = tx.QueryRow(ctx, usersql.ExistsLogin, userModel.Login).Scan(&exists)
 	if err != nil {
 		return nil, fmt.Errorf("check login: %w", err)
 	}
 	if exists {
 		return nil, domain.ErrLoginAlreadyExists
 	}
-	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, userModel.Email).Scan(&exists)
+	err = tx.QueryRow(ctx, usersql.ExistsEmail, userModel.Email).Scan(&exists)
 	if err != nil {
 		return nil, fmt.Errorf("check email: %w", err)
 	}
@@ -87,14 +94,14 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) (*domain
 		return nil, domain.ErrEmailAlreadyExists
 	}
 
-	err = tx.QueryRow(ctx,
-		`INSERT INTO users
-        (login, first_name, last_name, email, password_hash, avatar_url, bio, birth_date, last_seen)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-        RETURNING id, created_at, updated_at`,
+	err = tx.QueryRow(ctx, usersql.InsertUser,
 		userModel.Login, userModel.FirstName, userModel.LastName, userModel.Email, userModel.PasswordHash,
 		userModel.AvatarUrl, userModel.Bio, userModel.BirthDate, userModel.LastSeenAt,
 	).Scan(&userModel.Id, &userModel.CreatedAt, &userModel.UpdatedAt)
+	sqllog.LogQuery(ctx, r.log(ctx), "Create", usersql.CreateUserTxDescription, start, err, []any{
+		userModel.Login, userModel.FirstName, userModel.LastName, userModel.Email, sqllog.ArgRedacted,
+		userModel.AvatarUrl, userModel.Bio, userModel.BirthDate, userModel.LastSeenAt,
+	})
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
@@ -116,16 +123,18 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) (*domain
 }
 
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
-	row := r.db.QueryRow(ctx,
-		`SELECT id, login, first_name, last_name, email, password_hash, avatar_url, bio, birth_date, last_seen, created_at, updated_at
-         FROM users WHERE email=$1`, email)
+	q := usersql.GetUserByEmail
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, email)
 
 	u := &UserModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&u.Id, &u.Login, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash,
 		&u.AvatarUrl, &u.Bio, &u.BirthDate, &u.LastSeenAt,
 		&u.CreatedAt, &u.UpdatedAt,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetUserByEmail", q, start, err, []any{email})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
 		}
@@ -135,16 +144,18 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*dom
 }
 
 func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*domain.User, error) {
-	row := r.db.QueryRow(ctx,
-		`SELECT id, login, first_name, last_name, email, password_hash, avatar_url, bio, birth_date, last_seen, created_at, updated_at
-         FROM users WHERE login=$1`, login)
+	q := usersql.GetUserByLogin
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, login)
 
 	u := &UserModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&u.Id, &u.Login, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash,
 		&u.AvatarUrl, &u.Bio, &u.BirthDate, &u.LastSeenAt,
 		&u.CreatedAt, &u.UpdatedAt,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetUserByLogin", q, start, err, []any{login})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
 		}
@@ -154,16 +165,18 @@ func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*dom
 }
 
 func (r *UserRepository) GetUserByID(ctx context.Context, id int64) (*domain.User, error) {
-	row := r.db.QueryRow(ctx,
-		`SELECT id, login, first_name, last_name, email, password_hash, avatar_url, bio, birth_date, last_seen, created_at, updated_at
-         FROM users WHERE id=$1`, id)
+	q := usersql.GetUserByID
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, id)
 
 	u := &UserModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&u.Id, &u.Login, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash,
 		&u.AvatarUrl, &u.Bio, &u.BirthDate, &u.LastSeenAt,
 		&u.CreatedAt, &u.UpdatedAt,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetUserByID", q, start, err, []any{id})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
 		}
@@ -173,14 +186,16 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id int64) (*domain.Use
 }
 
 func (r *UserRepository) GetProfileById(ctx context.Context, profileId int64) (*profile.Profile, error) {
-	row := r.db.QueryRow(ctx,
-		`SELECT id, login, first_name, last_name, email, avatar_url, bio, birth_date, last_seen
-         FROM users WHERE id=$1`, profileId)
+	q := usersql.GetProfileByID
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, profileId)
 
 	p := &ProfileModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Email, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetProfileById", q, start, err, []any{profileId})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, profile.ErrNotFound
 		}
@@ -190,16 +205,16 @@ func (r *UserRepository) GetProfileById(ctx context.Context, profileId int64) (*
 }
 
 func (r *UserRepository) UploadBio(ctx context.Context, userId int64, bio string) (*profile.Profile, error) {
-	row := r.db.QueryRow(ctx,
-		`UPDATE users SET bio = $2, updated_at = now()
-		 WHERE id = $1
-		 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`,
-		userId, bio)
+	q := usersql.UploadBio
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, userId, bio)
 
 	p := &ProfileModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "UploadBio", q, start, err, []any{userId, bio})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, profile.ErrNotFound
 		}
@@ -209,16 +224,16 @@ func (r *UserRepository) UploadBio(ctx context.Context, userId int64, bio string
 }
 
 func (r *UserRepository) UploadAvatarUrl(ctx context.Context, userId int64, avatarURL string) (*profile.Profile, error) {
-	row := r.db.QueryRow(ctx,
-		`UPDATE users SET avatar_url = $2, updated_at = now()
-		 WHERE id = $1
-		 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`,
-		userId, avatarURL)
+	q := usersql.UploadAvatarURL
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, userId, avatarURL)
 
 	p := &ProfileModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "UploadAvatarUrl", q, start, err, []any{userId, avatarURL})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, profile.ErrNotFound
 		}
@@ -228,26 +243,28 @@ func (r *UserRepository) UploadAvatarUrl(ctx context.Context, userId int64, avat
 }
 
 func (r *UserRepository) UploadName(ctx context.Context, userId int64, firstName string, lastName *string) (*profile.Profile, error) {
+	start := time.Now()
 	var row pgx.Row
+	var q string
 
 	if lastName == nil {
-		row = r.db.QueryRow(ctx,
-			`UPDATE users SET first_name = $2, updated_at = now()
-		 WHERE id = $1
-		 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`,
-			userId, firstName)
+		q = usersql.UploadNameFirstOnly
+		row = r.db.QueryRow(ctx, q, userId, firstName)
 	} else {
-		row = r.db.QueryRow(ctx,
-			`UPDATE users SET first_name = $2, last_name = $3, updated_at = now()
-		 WHERE id = $1
-		 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`,
-			userId, firstName, *lastName)
+		q = usersql.UploadNameFull
+		row = r.db.QueryRow(ctx, q, userId, firstName, *lastName)
 	}
 
 	p := &ProfileModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
-	); err != nil {
+	)
+	if lastName == nil {
+		sqllog.LogQuery(ctx, r.log(ctx), "UploadName", q, start, err, []any{userId, firstName})
+	} else {
+		sqllog.LogQuery(ctx, r.log(ctx), "UploadName", q, start, err, []any{userId, firstName, *lastName})
+	}
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, profile.ErrNotFound
 		}
@@ -257,16 +274,16 @@ func (r *UserRepository) UploadName(ctx context.Context, userId int64, firstName
 }
 
 func (r *UserRepository) DeleteUserAvatar(ctx context.Context, userId int64) (*profile.Profile, error) {
-	row := r.db.QueryRow(ctx,
-	`UPDATE users
-	 SET avatar_url=NULL, updated_at = now()
-	 WHERE id=$1
-	 RETURNING id, login, first_name, last_name, avatar_url, bio, birth_date, last_seen`, userId)
-	
+	q := usersql.DeleteUserAvatar
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, userId)
+
 	p := &ProfileModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "DeleteUserAvatar", q, start, err, []any{userId})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, profile.ErrNotFound
 		}
@@ -277,4 +294,12 @@ func (r *UserRepository) DeleteUserAvatar(ctx context.Context, userId int64) (*p
 
 func (r *UserRepository) Close() {
 	r.db.Close()
+}
+
+func (r *UserRepository) log(ctx context.Context) *zap.Logger {
+	base := r.logger
+	if base == nil {
+		return zap.NewNop()
+	}
+	return loggerctx.EnrichLoggerFromContext(ctx, base)
 }

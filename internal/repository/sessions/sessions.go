@@ -9,12 +9,16 @@ import (
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/redislog"
 	"github.com/gomodule/redigo/redis"
+	"go.uber.org/zap"
 )
 
 type SessionRepository struct {
-	pool *redis.Pool
-	TTL  time.Duration
+	pool   *redis.Pool
+	TTL    time.Duration
+	logger *zap.Logger
 }
 
 func NewRedisPool(config *config.RedisConfig) *redis.Pool {
@@ -37,14 +41,15 @@ func NewRedisPool(config *config.RedisConfig) *redis.Pool {
 	}
 }
 
-func NewSessionRepository(config config.SessionConfig, redisConfig config.RedisConfig) *SessionRepository {
+func NewSessionRepository(config config.SessionConfig, redisConfig config.RedisConfig, logger *zap.Logger) *SessionRepository {
 	return &SessionRepository{
-		pool: NewRedisPool(&redisConfig),
-		TTL:  config.SessionTTL,
+		pool:   NewRedisPool(&redisConfig),
+		TTL:    config.SessionTTL,
+		logger: logger,
 	}
 }
 
-func (s SessionRepository) CreateSession(ctx context.Context, session *domain.Session) (string, error) {
+func (s *SessionRepository) CreateSession(ctx context.Context, session *domain.Session) (string, error) {
 	conn := s.pool.Get()
 	defer conn.Close()
 
@@ -56,7 +61,10 @@ func (s SessionRepository) CreateSession(ctx context.Context, session *domain.Se
 
 	key := "session:" + session.SessionID
 
-	_, err = conn.Do("SET", key, sessionValue, "EX", int(session.ExpiresAt.Sub(time.Now()).Seconds()))
+	start := time.Now()
+	ttlSec := int(session.ExpiresAt.Sub(time.Now()).Seconds())
+	_, err = conn.Do("SET", key, sessionValue, "EX", ttlSec)
+	redislog.LogOp(ctx, s.log(ctx), "CreateSession", fmt.Sprintf("SET %s EX", key), start, err, []any{key, ttlSec, redislog.ArgRedacted})
 
 	if err != nil {
 		return "", fmt.Errorf("Failed to set session: %w", err)
@@ -64,13 +72,15 @@ func (s SessionRepository) CreateSession(ctx context.Context, session *domain.Se
 	return session.SessionID, nil
 }
 
-func (s SessionRepository) GetSession(ctx context.Context, sessionID string) (*domain.Session, error) {
+func (s *SessionRepository) GetSession(ctx context.Context, sessionID string) (*domain.Session, error) {
 	conn := s.pool.Get()
 	defer conn.Close()
 
 	key := "session:" + sessionID
 
+	start := time.Now()
 	sessionValue, err := redis.Bytes(conn.Do("GET", key))
+	redislog.LogOp(ctx, s.log(ctx), "GetSession", fmt.Sprintf("GET %s", key), start, err, []any{key})
 	if err != nil {
 		if errors.Is(err, redis.ErrNil) {
 			return nil, domain.ErrNotFound
@@ -86,12 +96,14 @@ func (s SessionRepository) GetSession(ctx context.Context, sessionID string) (*d
 	return toDomain(&session), nil
 }
 
-func (s SessionRepository) DeleteSession(ctx context.Context, sessionID string) error {
+func (s *SessionRepository) DeleteSession(ctx context.Context, sessionID string) error {
 	conn := s.pool.Get()
 	defer conn.Close()
 
 	key := "session:" + sessionID
+	start := time.Now()
 	deleted, err := conn.Do("DEL", key)
+	redislog.LogOp(ctx, s.log(ctx), "DeleteSession", fmt.Sprintf("DEL %s", key), start, err, []any{key, deleted})
 	if err != nil {
 		return fmt.Errorf("Failed to delete session: %w", err)
 	}
@@ -103,4 +115,12 @@ func (s SessionRepository) DeleteSession(ctx context.Context, sessionID string) 
 
 func (s *SessionRepository) Close() {
 	s.pool.Close()
+}
+
+func (s *SessionRepository) log(ctx context.Context) *zap.Logger {
+	base := s.logger
+	if base == nil {
+		return zap.NewNop()
+	}
+	return loggerctx.EnrichLoggerFromContext(ctx, base)
 }

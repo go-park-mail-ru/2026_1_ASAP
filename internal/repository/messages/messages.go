@@ -3,18 +3,24 @@ package messages
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
+	messagessql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/messages/sql"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 )
 
 type MessageRepository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	logger *zap.Logger
 }
 
-func NewMessageRepository(ctx context.Context, cfg config.PostgresConfig) (*MessageRepository, error) {
+func NewMessageRepository(ctx context.Context, cfg config.PostgresConfig, logger *zap.Logger) (*MessageRepository, error) {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
 
@@ -22,10 +28,11 @@ func NewMessageRepository(ctx context.Context, cfg config.PostgresConfig) (*Mess
 	if err != nil {
 		return nil, err
 	}
-	return &MessageRepository{db: pool}, nil
+	return &MessageRepository{db: pool, logger: logger}, nil
 }
 
-func (m MessageRepository) CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error) {
+func (m *MessageRepository) CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error) {
+	start := time.Now()
 	messageModel := toModel(message)
 	trx, err := m.db.Begin(ctx)
 	if err != nil {
@@ -33,11 +40,7 @@ func (m MessageRepository) CreateMessage(ctx context.Context, message *domain.Me
 	}
 	defer func() { _ = trx.Rollback(ctx) }()
 
-	err = trx.QueryRow(ctx,
-		`INSERT INTO messages
-		(chat_id, sender_id, content, sticker_id, edited)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, chat_id, sender_id, content, sticker_id, edited, created_at, updated_at, deleted_at`,
+	err = trx.QueryRow(ctx, messagessql.InsertMessage,
 		messageModel.ChatId,
 		messageModel.SenderId,
 		messageModel.Content,
@@ -54,50 +57,52 @@ func (m MessageRepository) CreateMessage(ctx context.Context, message *domain.Me
 		&messageModel.UpdatedAt,
 		&messageModel.DeletedAt,
 	)
+	sqllog.LogQuery(ctx, m.log(ctx), "CreateMessage", messagessql.CreateMessageTxDescription, start, err, []any{
+		messageModel.ChatId, messageModel.SenderId, messageModel.Content, messageModel.StickerId, messageModel.Edited,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("insert message: %w", err)
 	}
 
-	if _, err = trx.Exec(ctx,
-		`UPDATE chats
-		SET last_message_id = $1, updated_at = now()
-		WHERE id = $2`,
+	start = time.Now()
+	if _, err = trx.Exec(ctx, messagessql.UpdateChatLastMessage,
 		messageModel.Id, messageModel.ChatId,
 	); err != nil {
+		sqllog.LogQuery(ctx, m.log(ctx), "CreateMessage.updateChat", messagessql.UpdateChatLastMessage, start, err, []any{messageModel.Id, messageModel.ChatId})
 		return nil, fmt.Errorf("update chat last message: %w", err)
 	}
+	sqllog.LogQuery(ctx, m.log(ctx), "CreateMessage.updateChat", messagessql.UpdateChatLastMessage, start, err, []any{messageModel.Id, messageModel.ChatId})
 
+	start = time.Now()
 	if err = trx.Commit(ctx); err != nil {
+		sqllog.LogQuery(ctx, m.log(ctx), "CreateMessage.commit", "COMMIT", start, err, []any{messageModel.ChatId})
 		return nil, fmt.Errorf("commit tx: %w", err)
 	}
+	sqllog.LogQuery(ctx, m.log(ctx), "CreateMessage.commit", "COMMIT", start, nil, []any{messageModel.ChatId})
 
 	return toDomainModel(messageModel), nil
 }
 
-func (m MessageRepository) GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error) {
+func (m *MessageRepository) GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error) {
 	var (
 		rows pgx.Rows
 		err  error
+		q    string
 	)
+	start := time.Now()
 
 	if beforeID != nil {
-		rows, err = m.db.Query(ctx,
-			`SELECT id, chat_id, sender_id, content, sticker_id, edited, created_at, updated_at, deleted_at
-			FROM messages
-			WHERE chat_id = $1 AND id < $2 AND deleted_at IS NULL
-			ORDER BY id DESC
-			LIMIT $3`,
+		q = messagessql.GetMessagesByChatBeforeID
+		rows, err = m.db.Query(ctx, q,
 			chatId, *beforeID, limit,
 		)
+		sqllog.LogQuery(ctx, m.log(ctx), "GetMessagesByChatId", q, start, err, []any{chatId, *beforeID, limit})
 	} else {
-		rows, err = m.db.Query(ctx,
-			`SELECT id, chat_id, sender_id, content, sticker_id, edited, created_at, updated_at, deleted_at
-			FROM messages
-			WHERE chat_id = $1 AND deleted_at IS NULL
-			ORDER BY id DESC
-			LIMIT $2`,
+		q = messagessql.GetMessagesByChat
+		rows, err = m.db.Query(ctx, q,
 			chatId, limit,
 		)
+		sqllog.LogQuery(ctx, m.log(ctx), "GetMessagesByChatId", q, start, err, []any{chatId, limit})
 	}
 	if err != nil {
 		return nil, fmt.Errorf("query messages by chat id: %w", err)
@@ -129,4 +134,12 @@ func (m MessageRepository) GetMessagesByChatId(ctx context.Context, chatId int64
 	}
 
 	return messages, nil
+}
+
+func (m *MessageRepository) log(ctx context.Context) *zap.Logger {
+	base := m.logger
+	if base == nil {
+		return zap.NewNop()
+	}
+	return loggerctx.EnrichLoggerFromContext(ctx, base)
 }

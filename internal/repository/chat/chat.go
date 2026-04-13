@@ -4,19 +4,25 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
+	chatssql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat/sql"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
 )
 
 type ChatRepository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	logger *zap.Logger
 }
 
-func NewChatRepository(ctx context.Context, cfg config.PostgresConfig) (*ChatRepository, error) {
+func NewChatRepository(ctx context.Context, cfg config.PostgresConfig, logger *zap.Logger) (*ChatRepository, error) {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
 
@@ -24,15 +30,14 @@ func NewChatRepository(ctx context.Context, cfg config.PostgresConfig) (*ChatRep
 	if err != nil {
 		return nil, err
 	}
-	return &ChatRepository{db: pool}, nil
+	return &ChatRepository{db: pool, logger: logger}, nil
 }
 
 func (r *ChatRepository) GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error) {
-	rows, err := r.db.Query(ctx,
-		`SELECT c.id, c.type, c.title, c.description, c.owner_id, c.avatar_url, c.created_at, c.updated_at
-	 FROM chats c
-	 INNER JOIN chat_members cm ON c.id = cm.chat_id
-	 WHERE cm.user_id=$1`, id)
+	q := chatssql.GetAllChatsByUserID
+	start := time.Now()
+	rows, err := r.db.Query(ctx, q, id)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetAllChatsByUserID", q, start, err, []any{id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all chats by userID: %w", err)
 	}
@@ -66,13 +71,12 @@ func (r *ChatRepository) GetAllChatsByUserID(ctx context.Context, id int64) ([]*
 }
 
 func (r *ChatRepository) GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error) {
-	row := r.db.QueryRow(ctx,
-		`SELECT id, type, title, description, owner_id, avatar_url, created_at, updated_at
-	 FROM chats
-	 WHERE id=$1`, chatID)
+	q := chatssql.GetChatByID
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, chatID)
 
 	chatModel := &ChatModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&chatModel.Id,
 		&chatModel.Type,
 		&chatModel.Title,
@@ -81,7 +85,9 @@ func (r *ChatRepository) GetChatByID(ctx context.Context, chatID int64) (*domain
 		&chatModel.AvatarUrl,
 		&chatModel.CreatedAt,
 		&chatModel.UpdatedAt,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetChatByID", q, start, err, []any{chatID})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrChatNotFound
 		}
@@ -94,13 +100,14 @@ func (r *ChatRepository) GetChatByID(ctx context.Context, chatID int64) (*domain
 
 func (r *ChatRepository) CreateChat(ctx context.Context, chat *domain.Chat) (*domain.Chat, error) {
 	chatModel := toModelChat(chat)
-	err := r.db.QueryRow(ctx,
-		`INSERT INTO chats
-	 (type, title, description, owner_id, avatar_url)
-	 VALUES ($1, $2, $3, $4, $5)
-	 RETURNING id, created_at, updated_at`,
+	q := chatssql.InsertChat
+	start := time.Now()
+	err := r.db.QueryRow(ctx, q,
 		chatModel.Type, chatModel.Title, chatModel.Description, chatModel.OwnerId, chatModel.AvatarUrl,
 	).Scan(&chatModel.Id, &chatModel.CreatedAt, &chatModel.UpdatedAt)
+	sqllog.LogQuery(ctx, r.log(ctx), "CreateChat", q, start, err, []any{
+		chatModel.Type, chatModel.Title, chatModel.Description, chatModel.OwnerId, chatModel.AvatarUrl,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat: %w", err)
 	}
@@ -109,11 +116,9 @@ func (r *ChatRepository) CreateChat(ctx context.Context, chat *domain.Chat) (*do
 }
 
 func (r *ChatRepository) GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error) {
-	row := r.db.QueryRow(ctx,
-		`SELECT m.id, m.chat_id, m.sender_id, m.content, m.sticker_id, m.edited, m.created_at, m.updated_at, m.deleted_at
-	 FROM messages m
-	 JOIN chats c ON m.id = c.last_message_id
-	 WHERE c.id=$1`, chatID)
+	q := chatssql.GetLastMessageOfChat
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, chatID)
 
 	msg := &MessageModel{}
 	err := row.Scan(
@@ -127,6 +132,7 @@ func (r *ChatRepository) GetLastMessageOfChat(ctx context.Context, chatID int64)
 		&msg.UpdatedAt,
 		&msg.DeletedAt,
 	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetLastMessageOfChat", q, start, err, []any{chatID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return toDomainMessage(msg), nil
@@ -138,12 +144,10 @@ func (r *ChatRepository) GetLastMessageOfChat(ctx context.Context, chatID int64)
 }
 
 func (r *ChatRepository) GetLastMessagesOfChats(ctx context.Context, id int64) ([]*domain.Message, error) {
-	rows, err := r.db.Query(ctx,
-		`SELECT m.id, m.chat_id, m.sender_id, m.content, m.sticker_id, m.edited, m.created_at, m.updated_at, m.deleted_at
-	 FROM messages m
-	 JOIN chats c ON m.id = c.last_message_id
-	 JOIN chat_members cm ON c.id = cm.chat_id
-	 WHERE cm.user_id=$1`, id)
+	q := chatssql.GetLastMessagesOfChats
+	start := time.Now()
+	rows, err := r.db.Query(ctx, q, id)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetLastMessagesOfChats", q, start, err, []any{id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get last messages: %w", err)
 	}
@@ -178,11 +182,10 @@ func (r *ChatRepository) GetLastMessagesOfChats(ctx context.Context, id int64) (
 }
 
 func (r *ChatRepository) GetChatMembers(ctx context.Context, chatID int64) ([]int64, error) {
-	rows, err := r.db.Query(ctx,
-		`SELECT user_id
-	 FROM chat_members
-	 WHERE chat_id=$1
-	 ORDER BY user_id ASC`, chatID)
+	q := chatssql.GetChatMembers
+	start := time.Now()
+	rows, err := r.db.Query(ctx, q, chatID)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetChatMembers", q, start, err, []any{chatID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get chat members: %w", err)
 	}
@@ -203,9 +206,10 @@ func (r *ChatRepository) GetChatMembers(ctx context.Context, chatID int64) ([]in
 }
 
 func (r *ChatRepository) AddMember(ctx context.Context, chatID, userID int64, role string) error {
-	_, err := r.db.Exec(ctx,
-		`INSERT INTO chat_members (chat_id, user_id, role)
-	 VALUES ($1, $2, $3)`, chatID, userID, role)
+	q := chatssql.InsertChatMember
+	start := time.Now()
+	_, err := r.db.Exec(ctx, q, chatID, userID, role)
+	sqllog.LogQuery(ctx, r.log(ctx), "AddMember", q, start, err, []any{chatID, userID, role})
 	if err != nil {
 		return fmt.Errorf("failed to insert chat member: %w", err)
 	}
@@ -215,8 +219,10 @@ func (r *ChatRepository) AddMember(ctx context.Context, chatID, userID int64, ro
 
 func (r *ChatRepository) IsMember(ctx context.Context, chatID, userID int64) (bool, error) {
 	var exists bool
-	err := r.db.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM chat_members WHERE chat_id=$1 AND user_id=$2)`, chatID, userID).Scan(&exists)
+	q := chatssql.IsMember
+	start := time.Now()
+	err := r.db.QueryRow(ctx, q, chatID, userID).Scan(&exists)
+	sqllog.LogQuery(ctx, r.log(ctx), "IsMember", q, start, err, []any{chatID, userID})
 	if err != nil {
 		return false, fmt.Errorf("failed to check if member exists: %w", err)
 	}
@@ -225,16 +231,9 @@ func (r *ChatRepository) IsMember(ctx context.Context, chatID, userID int64) (bo
 }
 
 func (r *ChatRepository) GetDialogBetweenUsers(ctx context.Context, user1ID, user2ID int64) (*domain.Chat, error) {
-	row := r.db.QueryRow(ctx,
-		`SELECT c.id, c.type, c.title, c.description, c.owner_id, c.avatar_url, c.created_at, c.updated_at
-	 FROM chats c
-	 JOIN chat_members cm1 ON c.id = cm1.chat_id
-	 JOIN chat_members cm2 ON c.id = cm2.chat_id
-	 WHERE c.type = 'dialog' 
-  	 AND cm1.user_id IN ($1, $2) 
-  	 AND cm2.user_id IN ($1, $2) 
-  	 AND cm1.user_id != cm2.user_id
-	 LIMIT 1`, user1ID, user2ID)
+	q := chatssql.GetDialogBetweenUsers
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, user1ID, user2ID)
 
 	chatModel := &ChatModel{}
 	err := row.Scan(
@@ -247,6 +246,7 @@ func (r *ChatRepository) GetDialogBetweenUsers(ctx context.Context, user1ID, use
 		&chatModel.CreatedAt,
 		&chatModel.UpdatedAt,
 	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetDialogBetweenUsers", q, start, err, []any{user1ID, user2ID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -264,33 +264,45 @@ func (r *ChatRepository) DeleteChat(ctx context.Context, chatID int64) error {
 	}
 	defer trx.Rollback(ctx)
 
-	_, err = trx.Exec(ctx,
-		`DELETE FROM messages WHERE chat_id=$1`, chatID)
+	q := chatssql.DeleteMessagesByChatID
+	start := time.Now()
+	_, err = trx.Exec(ctx, q, chatID)
+	sqllog.LogQuery(ctx, r.log(ctx), "DeleteChat.messages", q, start, err, []any{chatID})
 	if err != nil {
 		return fmt.Errorf("failed to delete messages from chat: %w", err)
 	}
 
-	_, err = trx.Exec(ctx,
-		`DELETE FROM chat_members WHERE chat_id=$1`, chatID)
+	q = chatssql.DeleteChatMembersByChatID
+	start = time.Now()
+	_, err = trx.Exec(ctx, q, chatID)
+	sqllog.LogQuery(ctx, r.log(ctx), "DeleteChat.members", q, start, err, []any{chatID})
 	if err != nil {
 		return fmt.Errorf("failed to delete members from chat: %w", err)
 	}
 
-	_, err = trx.Exec(ctx,
-		`DELETE FROM chats WHERE id=$1`, chatID)
+	q = chatssql.DeleteChatByID
+	start = time.Now()
+	_, err = trx.Exec(ctx, q, chatID)
+	sqllog.LogQuery(ctx, r.log(ctx), "DeleteChat.chat", q, start, err, []any{chatID})
 	if err != nil {
 		return fmt.Errorf("failed to delete chat: %w", err)
 	}
 
-	return trx.Commit(ctx)
+	start = time.Now()
+	err = trx.Commit(ctx)
+	sqllog.LogQuery(ctx, r.log(ctx), "DeleteChat.commit", "COMMIT", start, err, []any{chatID})
+	if err != nil {
+		return fmt.Errorf("failed to commit delete chat: %w", err)
+	}
+	return nil
 }
 
 func (r *ChatRepository) GetMemberRole(ctx context.Context, userID, chatID int64) (string, error) {
 	var role string
-	err := r.db.QueryRow(ctx,
-		`SELECT role
-	 FROM chat_members
-	 WHERE chat_id=$1 AND user_id=$2`, chatID, userID).Scan(&role)
+	q := chatssql.GetMemberRole
+	start := time.Now()
+	err := r.db.QueryRow(ctx, q, chatID, userID).Scan(&role)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetMemberRole", q, start, err, []any{chatID, userID})
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -303,14 +315,12 @@ func (r *ChatRepository) GetMemberRole(ctx context.Context, userID, chatID int64
 }
 
 func (r *ChatRepository) UploadAvatarUrl(ctx context.Context, chatID int64, avatarURL string) (*domain.Chat, error) {
-	row := r.db.QueryRow(ctx,
-		`UPDATE chats SET avatar_url = $2, updated_at = now()
-		 WHERE id = $1
-		 RETURNING id, type, title, description, owner_id, avatar_url, created_at, updated_at`,
-		chatID, avatarURL)
+	q := chatssql.UpdateChatAvatarURL
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, chatID, avatarURL)
 
 	chatModel := &ChatModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&chatModel.Id,
 		&chatModel.Type,
 		&chatModel.Title,
@@ -319,7 +329,9 @@ func (r *ChatRepository) UploadAvatarUrl(ctx context.Context, chatID int64, avat
 		&chatModel.AvatarUrl,
 		&chatModel.CreatedAt,
 		&chatModel.UpdatedAt,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "UploadAvatarUrl", q, start, err, []any{chatID, avatarURL})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrChatNotFound
 		}
@@ -329,13 +341,12 @@ func (r *ChatRepository) UploadAvatarUrl(ctx context.Context, chatID int64, avat
 }
 
 func (r *ChatRepository) UpdateTitle(ctx context.Context, chatID int64, title string) (*domain.Chat, error) {
-	row := r.db.QueryRow(ctx,
-		`UPDATE chats SET title = $2, updated_at = now()
-	 WHERE id = $1
-	 RETURNING id, type, title, description, owner_id, avatar_url, created_at, updated_at`, chatID, title)
+	q := chatssql.UpdateChatTitle
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, chatID, title)
 
 	chatModel := &ChatModel{}
-	if err := row.Scan(
+	err := row.Scan(
 		&chatModel.Id,
 		&chatModel.Type,
 		&chatModel.Title,
@@ -344,7 +355,9 @@ func (r *ChatRepository) UpdateTitle(ctx context.Context, chatID int64, title st
 		&chatModel.AvatarUrl,
 		&chatModel.CreatedAt,
 		&chatModel.UpdatedAt,
-	); err != nil {
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "UpdateTitle", q, start, err, []any{chatID, title})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrChatNotFound
 		}
@@ -354,8 +367,10 @@ func (r *ChatRepository) UpdateTitle(ctx context.Context, chatID int64, title st
 }
 
 func (r *ChatRepository) DeleteMember(ctx context.Context, chatID, userID int64) error {
-	result, err := r.db.Exec(ctx,
-		`DELETE FROM chat_members WHERE chat_id=$1 AND user_id=$2`, chatID, userID)
+	q := chatssql.DeleteChatMember
+	start := time.Now()
+	result, err := r.db.Exec(ctx, q, chatID, userID)
+	sqllog.LogQuery(ctx, r.log(ctx), "DeleteMember", q, start, err, []any{chatID, userID})
 	if err != nil {
 		return fmt.Errorf("failed to delete members from chat: %w", err)
 	}
@@ -369,4 +384,12 @@ func (r *ChatRepository) DeleteMember(ctx context.Context, chatID, userID int64)
 
 func (r *ChatRepository) Close() {
 	r.db.Close()
+}
+
+func (r *ChatRepository) log(ctx context.Context) *zap.Logger {
+	base := r.logger
+	if base == nil {
+		return zap.NewNop()
+	}
+	return loggerctx.EnrichLoggerFromContext(ctx, base)
 }

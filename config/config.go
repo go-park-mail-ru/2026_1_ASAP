@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Config struct {
@@ -57,6 +58,15 @@ type S3Config struct {
 
 type AppConfig struct {
 	ShutdownTime time.Duration
+	LogLevel     zapcore.Level
+}
+
+func parseZapLevel(s string) (zapcore.Level, error) {
+	var l zapcore.Level
+	if err := l.UnmarshalText([]byte(strings.TrimSpace(strings.ToLower(s)))); err != nil {
+		return zapcore.InfoLevel, err
+	}
+	return l, nil
 }
 
 func (postgresConfig PostgresConfig) ServerInfo() string {
@@ -92,6 +102,15 @@ func (c S3Config) PublicURL() string {
 		return scheme + "://" + c.PublicHost
 	}
 	return scheme + "://" + c.PublicHost + ":" + c.PublicPort
+}
+
+func LoadConfig() (*Config, error) {
+	loadLogger, err := zap.NewProduction()
+	if err != nil {
+		return nil, fmt.Errorf("zap bootstrap: %w", err)
+	}
+	defer func() { _ = loadLogger.Sync() }()
+	return LoadConfigFromEnv(loadLogger)
 }
 
 func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
@@ -253,6 +272,16 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 	}
 	appConfig.ShutdownTime = time.Duration(ShutdownTime) * time.Second
 
+	logLevelStr, err := getEnvVariable(logger, "LOG_LEVEL", "info")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	logLevel, err := parseZapLevel(logLevelStr)
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: LOG_LEVEL=%q: %w", logLevelStr, err)
+	}
+	appConfig.LogLevel = logLevel
+
 	config := &Config{
 		ServerConfig:   serverConfig,
 		SessionConfig:  sessionConfig,
@@ -272,6 +301,7 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 		zap.Bool("s3_public_use_ssl", s3Config.PublicUseSSL),
 		zap.String("s3_public_url", s3Config.PublicURL()),
 		zap.Duration("shutdown_timeout", appConfig.ShutdownTime),
+		zap.String("log_level", appConfig.LogLevel.String()),
 	)
 
 	return config, nil
