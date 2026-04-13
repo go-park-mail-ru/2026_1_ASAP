@@ -45,41 +45,44 @@ func main() {
 	appContext, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer done()
 
-	logger, err := zap.NewProduction()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("load config: %v", err)
+	}
+
+	zapCfg := zap.NewProductionConfig()
+	zapCfg.Level = zap.NewAtomicLevelAt(cfg.AppConfig.LogLevel)
+	logger, err := zapCfg.Build()
 	if err != nil {
 		log.Fatalf("zap: %v", err)
 	}
 	defer func() { _ = logger.Sync() }()
 
 	appLogger := logger.Named("app")
-
-	cfg, err := config.LoadConfigFromEnv(appLogger)
-	if err != nil {
-		appLogger.Fatal("load config", zap.Error(err))
-	}
-
+	repositoryLogger := logger.Named("repository")
+	handlerLogger := logger.Named("handler")
 	// Repositories
-	sessRepo := sessionRepository.NewSessionRepository(cfg.SessionConfig, cfg.RedisConfig)
-	userRepo, err := userRepository.NewUserRepository(context.Background(), cfg.PostgresConfig)
+	sessRepo := sessionRepository.NewSessionRepository(cfg.SessionConfig, cfg.RedisConfig, repositoryLogger.Named("session_repo"))
+	userRepo, err := userRepository.NewUserRepository(context.Background(), cfg.PostgresConfig, repositoryLogger.Named("user_repo"))
 	if err != nil {
 		appLogger.Fatal(err.Error())
 	}
 
-	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig)
+	chatRepo, err := chatRepository.NewChatRepository(context.Background(), cfg.PostgresConfig, repositoryLogger.Named("chat_repo"))
 	if err != nil {
 		appLogger.Fatal(err.Error())
 	}
-	contactRepo, err := contactRepository.NewContactsRepository(context.Background(), cfg.PostgresConfig)
-	if err != nil {
-		appLogger.Fatal(err.Error())
-	}
-
-	mediaRepo, err := mediaRepository.NewMediaRepository(context.Background(), cfg.S3Config)
+	contactRepo, err := contactRepository.NewContactsRepository(context.Background(), cfg.PostgresConfig, repositoryLogger.Named("contacts_repo"))
 	if err != nil {
 		appLogger.Fatal(err.Error())
 	}
 
-	messageRepo, err := messageRepository.NewMessageRepository(context.Background(), cfg.PostgresConfig)
+	mediaRepo, err := mediaRepository.NewMediaRepository(context.Background(), cfg.S3Config, repositoryLogger.Named("media_repo"))
+	if err != nil {
+		appLogger.Fatal(err.Error())
+	}
+
+	messageRepo, err := messageRepository.NewMessageRepository(context.Background(), cfg.PostgresConfig, repositoryLogger.Named("message_repo"))
 	if err != nil {
 		appLogger.Fatal(err.Error())
 
@@ -93,7 +96,7 @@ func main() {
 	messageServ := messageService.NewMessageService(messageRepo, chatRepo)
 
 	// Handlers
-	ws := wsHandlers.NewChatServer(messageServ, chatServ)
+	ws := wsHandlers.NewChatServer(handlerLogger.Named("ws"), messageServ, chatServ)
 	chatsHandler := chatHandlers.NewChatHandler(chatServ, ws)
 	contactsHandler := contactHandlers.NewContactHandler(contactServ)
 	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
@@ -206,5 +209,6 @@ func main() {
 	chatRepo.Close()
 	contactRepo.Close()
 	mediaRepo.Close()
+	messageRepo.Close()
 	appLogger.Info("Graceful shutdown complete")
 }

@@ -6,6 +6,7 @@ services:
     environment:
       PORT: "8080"
       HOST: ${BACKEND_HOST:-0.0.0.0}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
 
       # Redis
       REDIS_HOST: ${REDIS_HOST}

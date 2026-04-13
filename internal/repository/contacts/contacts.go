@@ -4,19 +4,25 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/contacts"
+	contactssql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts/sql"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
 )
 
 type ContactsRepository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	logger *zap.Logger
 }
 
-func NewContactsRepository(ctx context.Context, cfg config.PostgresConfig) (*ContactsRepository, error) {
+func NewContactsRepository(ctx context.Context, cfg config.PostgresConfig, logger *zap.Logger) (*ContactsRepository, error) {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
 
@@ -24,16 +30,14 @@ func NewContactsRepository(ctx context.Context, cfg config.PostgresConfig) (*Con
 	if err != nil {
 		return nil, err
 	}
-	return &ContactsRepository{db: pool}, nil
+	return &ContactsRepository{db: pool, logger: logger}, nil
 }
 
 func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID int64) ([]*domain.Contact, error) {
-	rows, err := r.db.Query(ctx,
-		`SELECT c.user_id, c.first_name, c.last_name, c.contact_user_id, u.avatar_url, c.created_at, c.updated_at
-	 FROM contacts c
-	 JOIN users u ON c.contact_user_id=u.id
-	 WHERE c.user_id=$1
-	 ORDER BY first_name ASC`, userID)
+	q := contactssql.GetAllContactsByUserID
+	start := time.Now()
+	rows, err := r.db.Query(ctx, q, userID)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetAllContactsByUserID", q, start, err, []any{userID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all contacts: %w", err)
 	}
@@ -62,23 +66,24 @@ func (r *ContactsRepository) GetAllContactsByUserID(ctx context.Context, userID 
 
 func (r *ContactsRepository) CreateContact(ctx context.Context, contact *domain.Contact) (*domain.Contact, error) {
 	contactModel := toModelContact(contact)
-	err := r.db.QueryRow(ctx,
-		`INSERT INTO contacts
-	 (user_id, contact_user_id, first_name, last_name)
-	 VALUES ($1, $2, $3, $4)
-	 RETURNING user_id, contact_user_id, first_name, last_name, created_at, updated_at`,
+	q := contactssql.InsertContact
+	start := time.Now()
+	err := r.db.QueryRow(ctx, q,
 		contactModel.UserID, contactModel.ContactUserID, contactModel.FirstName, contactModel.LastName,
 	).Scan(&contactModel.UserID, &contactModel.ContactUserID, &contactModel.FirstName, &contactModel.LastName, &contactModel.CreatedAt, &contactModel.UpdatedAt)
+	sqllog.LogQuery(ctx, r.log(ctx), "CreateContact", q, start, err, []any{
+		contactModel.UserID, contactModel.ContactUserID, contactModel.FirstName, contactModel.LastName,
+	})
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create contact: %w", err)
 	}
 
 	var contactAvatarUrl sql.NullString
-	errr := r.db.QueryRow(ctx,
-		`SELECT avatar_url
-	 FROM users
-	 WHERE id=$1`, contactModel.ContactUserID).Scan(&contactAvatarUrl)
+	q = contactssql.GetUserAvatarURL
+	start = time.Now()
+	errr := r.db.QueryRow(ctx, q, contactModel.ContactUserID).Scan(&contactAvatarUrl)
+	sqllog.LogQuery(ctx, r.log(ctx), "CreateContact.avatar", q, start, errr, []any{contactModel.ContactUserID})
 
 	if errr != nil && errr != pgx.ErrNoRows {
 		return nil, fmt.Errorf("failed to get user avatar: %w", err)
@@ -89,9 +94,10 @@ func (r *ContactsRepository) CreateContact(ctx context.Context, contact *domain.
 }
 
 func (r *ContactsRepository) DeleteContact(ctx context.Context, userID, contactUserID int64) error {
-	result, err := r.db.Exec(ctx,
-		`DELETE FROM contacts
-	 WHERE user_id=$1 AND contact_user_id=$2`, userID, contactUserID)
+	q := contactssql.DeleteContact
+	start := time.Now()
+	result, err := r.db.Exec(ctx, q, userID, contactUserID)
+	sqllog.LogQuery(ctx, r.log(ctx), "DeleteContact", q, start, err, []any{userID, contactUserID})
 	if err != nil {
 		return fmt.Errorf("failed to delete contact: %w", err)
 	}
@@ -106,12 +112,22 @@ func (r *ContactsRepository) DeleteContact(ctx context.Context, userID, contactU
 func (r *ContactsRepository) IsContact(ctx context.Context, userID, contactUserID int64) (bool, error) {
 	var exists bool
 
-	err := r.db.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM contacts WHERE user_id=$1 AND contact_user_id=$2)`, userID, contactUserID).Scan(&exists)
+	q := contactssql.IsContact
+	start := time.Now()
+	err := r.db.QueryRow(ctx, q, userID, contactUserID).Scan(&exists)
+	sqllog.LogQuery(ctx, r.log(ctx), "IsContact", q, start, err, []any{userID, contactUserID})
 
 	return exists, err
 }
 
 func (r *ContactsRepository) Close() {
 	r.db.Close()
+}
+
+func (r *ContactsRepository) log(ctx context.Context) *zap.Logger {
+	base := r.logger
+	if base == nil {
+		return zap.NewNop()
+	}
+	return loggerctx.EnrichLoggerFromContext(ctx, base)
 }
