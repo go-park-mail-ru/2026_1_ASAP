@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"unicode/utf8"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/message"
 )
+
+const maxMessageRunes = 2000
 
 type MessageRepositoryInterface interface {
 	CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
@@ -86,6 +89,10 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 
 	if req.Text == "" {
 		return nil, domain.ErrMessageEmpty
+	}
+
+	if utf8.RuneCountInString(req.Text) > maxMessageRunes {
+		return nil, domain.ErrMessageTooLong
 	}
 
 	isUserMember, err := m.chatRepo.IsMember(ctx, chatId, userID)

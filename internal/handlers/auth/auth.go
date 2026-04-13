@@ -130,6 +130,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Expires:  session.Expire,
 		SameSite: http.SameSiteLaxMode,
+		Secure:   true,
 	})
 	resp := dtoApi.ApiSuccessResponse[dtoAuth.ResponseLoginSuccess]{
 		Status: dtoApi.Success,
@@ -236,6 +237,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 		HttpOnly: true,
 		Expires:  session.Expire,
 		SameSite: http.SameSiteLaxMode,
+		Secure:   true,
 	})
 
 	resp := dtoApi.ApiSuccessResponse[dtoAuth.ResponseRegisterSuccess]{

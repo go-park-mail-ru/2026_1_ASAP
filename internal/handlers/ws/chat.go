@@ -14,8 +14,13 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/message"
 	dtoWs "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/ws"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
+
+const wsWriteTimeout = 3 * time.Second
 
 type MessagesServiceInterface interface {
 	SendMessage(ctx context.Context, userID int64, chatID int64, req *dto.RequestSendMessage) (*dto.ResponseSendMessage, error)
@@ -43,14 +48,19 @@ type ChatServer struct {
 	mu                  sync.RWMutex
 	wg                  sync.WaitGroup
 
+	logger         *zap.Logger
 	messageService MessagesServiceInterface
 	chatService    ChatServiceInterface
 }
 
-func NewChatServer(messageService MessagesServiceInterface, chatService ChatServiceInterface) *ChatServer {
+func NewChatServer(logger *zap.Logger, messageService MessagesServiceInterface, chatService ChatServiceInterface) *ChatServer {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
 	return &ChatServer{
 		subscribers:             make(map[*subscriber]struct{}),
 		subscribersByUserID:     make(map[int64]map[*subscriber]struct{}),
+		logger:                  logger,
 		messageService:          messageService,
 		chatService:             chatService,
 		subscriberMessageBuffer: 16,
@@ -100,8 +110,13 @@ func (s *ChatServer) sendErr(sub *subscriber, p dtoWs.WsErrorPayload) {
 }
 
 func (s *ChatServer) publishMessageNewToChatMembers(ctx context.Context, chatID int64, message []byte) {
+	log := loggerctx.From(ctx)
 	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
-	if err != nil || len(memberIDs) == 0 {
+	if err != nil {
+		log.Warn("ws get chat members for publish", zap.Int64("chat_id", chatID), zap.Error(err))
+		return
+	}
+	if len(memberIDs) == 0 {
 		return
 	}
 
@@ -155,6 +170,18 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	reqID := "unknown_request_id"
+	if id, ok := middleware.RequestIDFromContext(reqCtx); ok {
+		reqID = id
+	}
+	connID := uuid.NewString()
+	connLog := s.logger.With(
+		zap.String("request_id", reqID),
+		zap.Int64("user_id", userID),
+		zap.String("conn_id", connID),
+	)
+	reqCtx = loggerctx.With(reqCtx, connLog)
+
 	sub := &subscriber{
 		userID: userID,
 		msgs:   make(chan []byte, s.subscriberMessageBuffer),
@@ -162,8 +189,10 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 	wsConn, err := websocket.Accept(w, r, &websocket.AcceptOptions{})
 	if err != nil {
+		connLog.Error("websocket accept", zap.Error(err))
 		return
 	}
+	connLog.Info("websocket connected")
 
 	sub.conn = wsConn
 
@@ -236,23 +265,26 @@ func (s *ChatServer) Shutdown(ctx context.Context) error {
 }
 
 func (s *ChatServer) writeClientMessages(ctx context.Context, wsConn *websocket.Conn, sub *subscriber) {
+	log := loggerctx.From(ctx)
 	for {
 		select {
 		case msg, ok := <-sub.msgs:
 			if !ok {
 				return
 			}
-			ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, 1*time.Second)
+			ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, wsWriteTimeout)
 			writeErr := wsConn.Write(ctxWithTimeout, websocket.MessageText, msg)
 			timeoutCancel()
 			if writeErr != nil {
 				if errors.Is(writeErr, context.DeadlineExceeded) {
+					log.Debug("ws write deadline", zap.Error(writeErr))
 					return
 				}
 				if websocket.CloseStatus(writeErr) == websocket.StatusGoingAway ||
 					websocket.CloseStatus(writeErr) == websocket.StatusNormalClosure {
 					return
 				}
+				log.Warn("ws write", zap.Error(writeErr))
 				return
 			}
 		case <-ctx.Done():
@@ -267,9 +299,13 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 			sub.cancel()
 		}
 	}()
+	log := loggerctx.From(ctx)
 	for {
 		frameType, data, err := wsConn.Read(ctx)
 		if err != nil {
+			if !errors.Is(err, context.Canceled) {
+				log.Debug("ws read closed", zap.Error(err))
+			}
 			return
 		}
 		if frameType != websocket.MessageText {
@@ -278,6 +314,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 		var env dtoWs.WsRequest
 		if err := json.Unmarshal(data, &env); err != nil || env.Type == "" {
+			log.Debug("ws invalid envelope", zap.Error(err))
 			s.sendErr(sub, dtoWs.WsErrorPayload{
 				Code:    dtoWs.ErrCodeInvalidEnvelope,
 				Message: dtoWs.ErrCodeInvalidEnvelopeMsg,
@@ -312,6 +349,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 			resp, err := s.messageService.SendMessage(ctx, userID, req.ChatID, &req)
 			if err != nil {
+				log.Warn("ws send message", zap.Int64("chat_id", req.ChatID), zap.Error(err))
 				switch {
 				case errors.Is(err, domainChat.ErrMessageEmpty):
 					s.sendErr(sub, dtoWs.WsErrorPayload{
@@ -339,6 +377,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 			out, err := dtoWs.EncodeMessageNew(resp)
 			if err != nil {
+				log.Error("ws encode message new", zap.Error(err))
 				s.sendErr(sub, dtoWs.WsErrorPayload{
 					Code:    dtoWs.ErrCodeInternal,
 					Message: dtoWs.ErrCodeInternalMsg,
@@ -373,6 +412,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 			resp, err := s.messageService.GetMessagesByChatId(ctx, userID, req.ChatID, &req)
 			if err != nil {
+				log.Warn("ws get messages", zap.Int64("chat_id", req.ChatID), zap.Error(err))
 				if errors.Is(err, domainChat.ErrMessageNotMember) {
 					s.sendErr(sub, dtoWs.WsErrorPayload{
 						Code:    dtoWs.ErrCodeNotMemberOfChat,
@@ -389,6 +429,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 			out, err := dtoWs.EncodeMessageGet(resp)
 			if err != nil {
+				log.Error("ws encode message get", zap.Error(err))
 				s.sendErr(sub, dtoWs.WsErrorPayload{
 					Code:    dtoWs.ErrCodeInternal,
 					Message: dtoWs.ErrCodeInternalMsg,
@@ -397,6 +438,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 			}
 			s.enqueueToSubscriber(sub, out)
 		default:
+			log.Debug("ws unknown message type", zap.String("type", string(env.Type)))
 			s.sendErr(sub, dtoWs.WsErrorPayload{
 				Code:    dtoWs.ErrCodeUnknownType,
 				Message: dtoWs.ErrCodeUnknownTypeMsg,
