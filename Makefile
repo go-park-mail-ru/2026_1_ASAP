@@ -1,13 +1,16 @@
-.PHONY: test coverage install-linter lint lint-fix install-mockgen mocks mocks-profile
+.PHONY: test generate coverage install-linter lint lint-fix install-mockgen mocks mocks-contacts mocks-profile
 
-test:
+test: generate mocks
 	go test ./...
 
-coverage:
-	go test ./... -coverprofile=coverage.out
+generate: $(MOCKGEN)
+	PATH="$(shell go env GOPATH)/bin:$${PATH}" go generate ./...
+	@$(MAKE) mocks-contacts
+
+coverage: generate
+	go test $(COVER_PKGS) -coverprofile=coverage.out
 	go tool cover -func=coverage.out
 
-# Получить бинарник линтера (установит в проект, не глобально)
 install-linter:
 	@echo "Устанавливаем golangci-lint..."
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
@@ -23,6 +26,8 @@ lint-fix:
 
 MOCKGEN := $(shell go env GOPATH)/bin/mockgen
 
+COVER_PKGS := $(shell go list ./... | grep -v '/mock$$')
+
 install-mockgen:
 	go install github.com/golang/mock/mockgen@v1.6.0
 
@@ -30,16 +35,11 @@ $(MOCKGEN):
 	@$(MAKE) install-mockgen
 
 
-mocks: mocks-contacts mocks-profile
+mocks: mocks-contacts
 
 
-mocks-profile: internal/services/profile/mock/profile_mock.go
 mocks-contacts: internal/services/contacts/mock/contacts_mock.go
 
-internal/services/profile/mock/profile_mock.go: internal/services/profile/profile.go | $(MOCKGEN)
-	@echo "Generating mocks for profile..."
-	@mkdir -p $(dir $@)
-	$(MOCKGEN) -source=$< -destination=$@ -package=mock_profile
 
 internal/services/contacts/mock/contacts_mock.go: internal/services/contacts/contacts.go | $(MOCKGEN)
 	@echo "Generating mocks for contacts..."

@@ -15,55 +15,53 @@ import (
 )
 
 func TestPositiveContactsService_GetContacts(t *testing.T) {
-	time := time.Now().UTC().Truncate(time.Second)
+	now := time.Now().UTC().Truncate(time.Second)
 
 	type fields struct {
 		contactRepository *mock.MockContactRepositoryInterface
 	}
 
 	type args struct {
-		ctx context.Context
+		ctx    context.Context
 		userID int64
 	}
 
-	tests := []struct{
-		name string
+	tests := []struct {
+		name    string
 		prepare func(*fields)
-		args args
-		want []*dto.ContactResponse
+		args    args
+		want    []*dto.ContactResponse
 	}{
 		{
-			name: "Succesful get contacts",
+			name: "successful get contacts",
 			prepare: func(f *fields) {
 				f.contactRepository.EXPECT().GetAllContactsByUserID(context.Background(), int64(123)).Return([]*domain.Contact{
-					&domain.Contact{
-						UserID: 123, ContactName: "danil_kolbasenko", ContactUserID: 124, ContactAvatarUrl: nil, CreatedAt: time, UpdatedAt: time,
+					{
+						UserID: 123, FirstName: "danil_kolbasenko", LastName: nil, ContactUserID: 124,
+						ContactAvatarUrl: nil, CreatedAt: now, UpdatedAt: now,
 					},
-					&domain.Contact{
-						UserID: 124, ContactName: "daniil_kolbasenko", ContactUserID: 123, ContactAvatarUrl: nil, CreatedAt: time, UpdatedAt: time,
+					{
+						UserID: 124, FirstName: "daniil_kolbasenko", LastName: nil, ContactUserID: 123,
+						ContactAvatarUrl: nil, CreatedAt: now, UpdatedAt: now,
 					},
-				} , nil)
+				}, nil)
 			},
 			args: args{ctx: context.Background(), userID: 123},
 			want: []*dto.ContactResponse{
-				&dto.ContactResponse{
-					UserID: 123,
-					ContactUserID: 124,
-					ContactName: "danil_kolbasenko",
-					ContactAvatarUrl: nil,
-					CreatedAt: time,
+				{
+					UserID: 123, ContactUserID: 124,
+					FirstName: "danil_kolbasenko", LastName: nil,
+					ContactAvatarUrl: nil, CreatedAt: now,
 				},
-				&dto.ContactResponse{
-					UserID: 124,
-					ContactUserID: 123,
-					ContactName: "daniil_kolbasenko",
-					ContactAvatarUrl: nil,
-					CreatedAt: time,
+				{
+					UserID: 124, ContactUserID: 123,
+					FirstName: "daniil_kolbasenko", LastName: nil,
+					ContactAvatarUrl: nil, CreatedAt: now,
 				},
 			},
 		},
 		{
-			name: "Successful get empty contacts",
+			name: "successful get empty contacts",
 			prepare: func(f *fields) {
 				f.contactRepository.EXPECT().GetAllContactsByUserID(context.Background(), int64(123)).Return([]*domain.Contact{}, nil)
 			},
@@ -100,23 +98,23 @@ func TestNegativeContactsService_GetContacts(t *testing.T) {
 	}
 
 	type args struct {
-		ctx context.Context
+		ctx    context.Context
 		userID int64
 	}
 
-	tests := []struct{
+	tests := []struct {
 		name       string
 		prepare    func(*fields)
 		args       args
-		wantErr    error
 		wantAnyErr bool
 	}{
 		{
-			name: "Failed get contacts",
+			name: "failed get contacts",
 			prepare: func(f *fields) {
-				f.contactRepository.EXPECT().GetAllContactsByUserID(context.Background(), int64(123)).Return(([]*domain.Contact)(nil), errors.New("failed to get contacts"))
+				f.contactRepository.EXPECT().GetAllContactsByUserID(context.Background(), int64(123)).
+					Return(([]*domain.Contact)(nil), errors.New("failed to get contacts"))
 			},
-			args: args{ctx: context.Background(), userID: 123},
+			args:       args{ctx: context.Background(), userID: 123},
 			wantAnyErr: true,
 		},
 	}
@@ -148,95 +146,95 @@ func TestPositiveContactsService_AddContact(t *testing.T) {
 
 	type fields struct {
 		contactRepository *mock.MockContactRepositoryInterface
-		userRepository *mock.MockUserRepositoryInterface
+		userRepository    *mock.MockUserRepositoryInterface
 	}
 
 	type args struct {
-		ctx context.Context
+		ctx            context.Context
 		contactRequest dto.AddContactRequest
-		userID int64
+		userID         int64
 	}
 
-	tests := []struct{
-		name string
+	tests := []struct {
+		name    string
 		prepare func(f *fields)
-		args args
-		want *dto.ContactResponse
+		args    args
+		want    *dto.ContactResponse
 	}{
 		{
-			name: "Success add contact",
+			name: "success add contact",
 			prepare: func(f *fields) {
 				f.userRepository.EXPECT().GetUserByID(context.Background(), int64(124)).Return(&domainUser.User{Id: 124, Login: "danil_kolbasenko"}, nil)
 				f.contactRepository.EXPECT().IsContact(context.Background(), int64(123), int64(124)).Return(false, nil)
 
 				f.contactRepository.EXPECT().CreateContact(context.Background(), gomock.Any()).
-                    DoAndReturn(func(ctx context.Context, contact *domain.Contact) (*domain.Contact, error) {
-                        if contact.UserID != 123 {
-                            return nil, errors.New("wrong UserID")
-                        }
-                        if contact.ContactUserID != 124 {
-                            return nil, errors.New("wrong ContactUserID")
-                        }
-                        if contact.ContactName != "danil_kolbasenko" {
-                            return nil, errors.New("wrong ContactName")
-                        }
-                        return &domain.Contact{
-                            UserID:           123,
-                            ContactName:      "danil_kolbasenko",
-                            ContactUserID:    124,
-                            ContactAvatarUrl: nil,
-                            CreatedAt:        fixedTime,
-                            UpdatedAt:        fixedTime,
-                        }, nil
-                    })
+					DoAndReturn(func(ctx context.Context, contact *domain.Contact) (*domain.Contact, error) {
+						if contact.UserID != 123 {
+							return nil, errors.New("wrong UserID")
+						}
+						if contact.ContactUserID != 124 {
+							return nil, errors.New("wrong ContactUserID")
+						}
+						if contact.FirstName != "danil_kolbasenko" {
+							return nil, errors.New("wrong FirstName")
+						}
+						return &domain.Contact{
+							UserID:           123,
+							FirstName:        "danil_kolbasenko",
+							LastName:         nil,
+							ContactUserID:    124,
+							ContactAvatarUrl: nil,
+							CreatedAt:        fixedTime,
+							UpdatedAt:        fixedTime,
+						}, nil
+					})
 			},
-			args: func() args {
-				return args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, ContactName: "danil_kolbasenko"}, userID: 123}
-			}(),
+			args: args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, FirstName: "danil_kolbasenko"}, userID: 123},
 			want: &dto.ContactResponse{
-				UserID: 123,
-				ContactUserID: 124,
-				ContactName: "danil_kolbasenko",
+				UserID:           123,
+				ContactUserID:    124,
+				FirstName:        "danil_kolbasenko",
+				LastName:         nil,
 				ContactAvatarUrl: nil,
-				CreatedAt: fixedTime,
+				CreatedAt:        fixedTime,
 			},
 		},
 		{
-			name: "Success add contact with empty contact name",
+			name: "success add contact with empty first name uses login",
 			prepare: func(f *fields) {
 				f.userRepository.EXPECT().GetUserByID(context.Background(), int64(124)).Return(&domainUser.User{Id: 124, Login: "danil_kolbasenko"}, nil)
 				f.contactRepository.EXPECT().IsContact(context.Background(), int64(123), int64(124)).Return(false, nil)
 
 				f.contactRepository.EXPECT().CreateContact(context.Background(), gomock.Any()).
-                    DoAndReturn(func(ctx context.Context, contact *domain.Contact) (*domain.Contact, error) {
-                        if contact.UserID != 123 {
-                            return nil, errors.New("wrong UserID")
-                        }
-                        if contact.ContactUserID != 124 {
-                            return nil, errors.New("wrong ContactUserID")
-                        }
-                        if contact.ContactName != "" {
-                            return nil, errors.New("wrong ContactName")
-                        }
-                        return &domain.Contact{
-                            UserID:           123,
-                            ContactName:      "",
-                            ContactUserID:    124,
-                            ContactAvatarUrl: nil,
-                            CreatedAt:        fixedTime,
-                            UpdatedAt:        fixedTime,
-                        }, nil
-                    })
+					DoAndReturn(func(ctx context.Context, contact *domain.Contact) (*domain.Contact, error) {
+						if contact.UserID != 123 {
+							return nil, errors.New("wrong UserID")
+						}
+						if contact.ContactUserID != 124 {
+							return nil, errors.New("wrong ContactUserID")
+						}
+						if contact.FirstName != "danil_kolbasenko" {
+							return nil, errors.New("wrong FirstName: expected login fallback")
+						}
+						return &domain.Contact{
+							UserID:           123,
+							FirstName:        "danil_kolbasenko",
+							LastName:         nil,
+							ContactUserID:    124,
+							ContactAvatarUrl: nil,
+							CreatedAt:        fixedTime,
+							UpdatedAt:        fixedTime,
+						}, nil
+					})
 			},
-			args: func() args {
-				return args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, ContactName: ""}, userID: 123}
-			}(),
+			args: args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, FirstName: ""}, userID: 123},
 			want: &dto.ContactResponse{
-				UserID: 123,
-				ContactUserID: 124,
-				ContactName: "",
+				UserID:           123,
+				ContactUserID:    124,
+				FirstName:        "danil_kolbasenko",
+				LastName:         nil,
 				ContactAvatarUrl: nil,
-				CreatedAt: fixedTime,
+				CreatedAt:        fixedTime,
 			},
 		},
 	}
@@ -247,7 +245,7 @@ func TestPositiveContactsService_AddContact(t *testing.T) {
 			defer ctrl.Finish()
 			f := fields{
 				contactRepository: mock.NewMockContactRepositoryInterface(ctrl),
-				userRepository: mock.NewMockUserRepositoryInterface(ctrl),
+				userRepository:    mock.NewMockUserRepositoryInterface(ctrl),
 			}
 
 			if tt.prepare != nil {
@@ -256,7 +254,7 @@ func TestPositiveContactsService_AddContact(t *testing.T) {
 
 			s := &ContactService{
 				contactRepo: f.contactRepository,
-				userRepo: f.userRepository,
+				userRepo:    f.userRepository,
 			}
 			result, err := s.AddContact(tt.args.ctx, tt.args.contactRequest, tt.args.userID)
 			require.NoError(t, err)
@@ -266,20 +264,18 @@ func TestPositiveContactsService_AddContact(t *testing.T) {
 }
 
 func TestNegativeContactService_AddContact(t *testing.T) {
-	//fixedTime := time.Now().UTC().Truncate(time.Second)
-
 	type fields struct {
 		contactRepository *mock.MockContactRepositoryInterface
-		userRepository *mock.MockUserRepositoryInterface
+		userRepository    *mock.MockUserRepositoryInterface
 	}
 
 	type args struct {
-		ctx context.Context
+		ctx            context.Context
 		contactRequest dto.AddContactRequest
-		userID int64
+		userID         int64
 	}
 
-	tests := []struct{
+	tests := []struct {
 		name       string
 		prepare    func(*fields)
 		args       args
@@ -290,9 +286,8 @@ func TestNegativeContactService_AddContact(t *testing.T) {
 			name: "failed add contact: user not found",
 			prepare: func(f *fields) {
 				f.userRepository.EXPECT().GetUserByID(context.Background(), int64(124)).Return((*domainUser.User)(nil), domainUser.ErrNotFound)
-				
 			},
-			args: args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, ContactName: "danil_kolbasenko"}, userID: 123},
+			args:    args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, FirstName: "danil_kolbasenko"}, userID: 123},
 			wantErr: domainUser.ErrNotFound,
 		},
 		{
@@ -301,7 +296,7 @@ func TestNegativeContactService_AddContact(t *testing.T) {
 				f.userRepository.EXPECT().GetUserByID(context.Background(), int64(124)).Return(&domainUser.User{Id: 124, Login: "danil_kolbasenko"}, nil)
 				f.contactRepository.EXPECT().IsContact(context.Background(), int64(123), int64(124)).Return(true, nil)
 			},
-			args: args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, ContactName: "danil_kolbasenko"}, userID: 123},
+			args:    args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, FirstName: "danil_kolbasenko"}, userID: 123},
 			wantErr: domain.ErrContactExists,
 		},
 		{
@@ -310,11 +305,11 @@ func TestNegativeContactService_AddContact(t *testing.T) {
 				f.userRepository.EXPECT().GetUserByID(context.Background(), int64(124)).Return(&domainUser.User{Id: 124, Login: "danil_kolbasenko"}, nil)
 				f.contactRepository.EXPECT().IsContact(context.Background(), int64(123), int64(124)).Return(false, nil)
 				f.contactRepository.EXPECT().CreateContact(context.Background(), gomock.Any()).
-                    DoAndReturn(func(ctx context.Context, contact *domain.Contact) (*domain.Contact, error) {
-                        return nil, errors.New("Uknown error")
-                    })
+					DoAndReturn(func(ctx context.Context, contact *domain.Contact) (*domain.Contact, error) {
+						return nil, errors.New("unknown error")
+					})
 			},
-			args: args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, ContactName: "danil_kolbasenko"}, userID: 123},
+			args:       args{ctx: context.Background(), contactRequest: dto.AddContactRequest{ContactUserID: 124, FirstName: "danil_kolbasenko"}, userID: 123},
 			wantAnyErr: true,
 		},
 	}
@@ -325,7 +320,7 @@ func TestNegativeContactService_AddContact(t *testing.T) {
 			defer ctrl.Finish()
 			f := fields{
 				contactRepository: mock.NewMockContactRepositoryInterface(ctrl),
-				userRepository: mock.NewMockUserRepositoryInterface(ctrl),
+				userRepository:    mock.NewMockUserRepositoryInterface(ctrl),
 			}
 
 			if tt.prepare != nil {
@@ -334,14 +329,14 @@ func TestNegativeContactService_AddContact(t *testing.T) {
 
 			s := &ContactService{
 				contactRepo: f.contactRepository,
-				userRepo: f.userRepository,
+				userRepo:    f.userRepository,
 			}
 			result, err := s.AddContact(tt.args.ctx, tt.args.contactRequest, tt.args.userID)
 			require.Nil(t, result)
 			if tt.wantAnyErr {
 				require.Error(t, err)
 			} else {
-				require.EqualError(t, tt.wantErr, err.Error())
+				require.ErrorIs(t, err, tt.wantErr)
 			}
 		})
 	}
@@ -350,24 +345,21 @@ func TestNegativeContactService_AddContact(t *testing.T) {
 func TestPositiveContactService_DeleteContact(t *testing.T) {
 	type fields struct {
 		contactRepository *mock.MockContactRepositoryInterface
-		userRepository *mock.MockUserRepositoryInterface
+		userRepository    *mock.MockUserRepositoryInterface
 	}
 
 	type args struct {
-		ctx context.Context
+		ctx            context.Context
 		contactRequest dto.DeleteContactRequest
-		userID int64
+		userID         int64
 	}
 
-	contact := &dto.DeleteContactRequest{
-		ContactUserID: 124,
-	}
+	contact := dto.DeleteContactRequest{ContactUserID: 124}
 
-	tests := []struct{
-		name string
+	tests := []struct {
+		name    string
 		prepare func(f *fields)
-		args args
-		wantErr error
+		args    args
 	}{
 		{
 			name: "success delete contact",
@@ -376,8 +368,7 @@ func TestPositiveContactService_DeleteContact(t *testing.T) {
 				f.contactRepository.EXPECT().IsContact(context.Background(), int64(123), int64(124)).Return(true, nil)
 				f.contactRepository.EXPECT().DeleteContact(context.Background(), int64(123), int64(124)).Return(nil)
 			},
-			args: args{ctx: context.Background(), contactRequest: *contact, userID: 123},
-			wantErr: nil,
+			args: args{ctx: context.Background(), contactRequest: contact, userID: 123},
 		},
 	}
 
@@ -387,7 +378,7 @@ func TestPositiveContactService_DeleteContact(t *testing.T) {
 			defer ctrl.Finish()
 			f := fields{
 				contactRepository: mock.NewMockContactRepositoryInterface(ctrl),
-				userRepository: mock.NewMockUserRepositoryInterface(ctrl),
+				userRepository:    mock.NewMockUserRepositoryInterface(ctrl),
 			}
 
 			if tt.prepare != nil {
@@ -396,12 +387,10 @@ func TestPositiveContactService_DeleteContact(t *testing.T) {
 
 			s := &ContactService{
 				contactRepo: f.contactRepository,
-				userRepo: f.userRepository,
+				userRepo:    f.userRepository,
 			}
 			err := s.DeleteContact(tt.args.ctx, tt.args.contactRequest, tt.args.userID)
-			require.Nil(t, err)
 			require.NoError(t, err)
-			require.Equal(t, tt.wantErr, err)
 		})
 	}
 }
@@ -409,32 +398,30 @@ func TestPositiveContactService_DeleteContact(t *testing.T) {
 func TestNegativeContactService_DeleteContact(t *testing.T) {
 	type fields struct {
 		contactRepository *mock.MockContactRepositoryInterface
-		userRepository *mock.MockUserRepositoryInterface
+		userRepository    *mock.MockUserRepositoryInterface
 	}
 
 	type args struct {
-		ctx context.Context
+		ctx            context.Context
 		contactRequest dto.DeleteContactRequest
-		userID int64
+		userID         int64
 	}
 
-	contact := &dto.DeleteContactRequest{
-		ContactUserID: 124,
-	}
+	contact := dto.DeleteContactRequest{ContactUserID: 124}
 
-	tests := []struct{
-		name string
-		prepare func(f *fields)
-		args args
+	tests := []struct {
+		name       string
+		prepare    func(f *fields)
+		args       args
 		wantAnyErr bool
-		wantErr error
+		wantErr    error
 	}{
 		{
 			name: "failed to delete contact: user not found",
 			prepare: func(f *fields) {
 				f.userRepository.EXPECT().GetUserByID(context.Background(), int64(124)).Return((*domainUser.User)(nil), domainUser.ErrNotFound)
 			},
-			args: args{ctx: context.Background(), contactRequest: *contact, userID: 123},
+			args:    args{ctx: context.Background(), contactRequest: contact, userID: 123},
 			wantErr: domainUser.ErrNotFound,
 		},
 		{
@@ -443,7 +430,7 @@ func TestNegativeContactService_DeleteContact(t *testing.T) {
 				f.userRepository.EXPECT().GetUserByID(context.Background(), int64(124)).Return(&domainUser.User{Id: 124, Login: "danil_kolbasenko"}, nil)
 				f.contactRepository.EXPECT().IsContact(context.Background(), int64(123), int64(124)).Return(false, nil)
 			},
-			args: args{ctx: context.Background(), contactRequest: *contact, userID: 123},
+			args:    args{ctx: context.Background(), contactRequest: contact, userID: 123},
 			wantErr: domain.ErrContactNotFound,
 		},
 		{
@@ -451,9 +438,9 @@ func TestNegativeContactService_DeleteContact(t *testing.T) {
 			prepare: func(f *fields) {
 				f.userRepository.EXPECT().GetUserByID(context.Background(), int64(124)).Return(&domainUser.User{Id: 124, Login: "danil_kolbasenko"}, nil)
 				f.contactRepository.EXPECT().IsContact(context.Background(), int64(123), int64(124)).Return(true, nil)
-				f.contactRepository.EXPECT().DeleteContact(context.Background(), int64(123), int64(124)).Return(errors.New("Unknown error"))
+				f.contactRepository.EXPECT().DeleteContact(context.Background(), int64(123), int64(124)).Return(errors.New("unknown error"))
 			},
-			args: args{ctx: context.Background(), contactRequest: *contact, userID: 123},
+			args:       args{ctx: context.Background(), contactRequest: contact, userID: 123},
 			wantAnyErr: true,
 		},
 	}
@@ -464,7 +451,7 @@ func TestNegativeContactService_DeleteContact(t *testing.T) {
 			defer ctrl.Finish()
 			f := fields{
 				contactRepository: mock.NewMockContactRepositoryInterface(ctrl),
-				userRepository: mock.NewMockUserRepositoryInterface(ctrl),
+				userRepository:    mock.NewMockUserRepositoryInterface(ctrl),
 			}
 
 			if tt.prepare != nil {
@@ -473,13 +460,13 @@ func TestNegativeContactService_DeleteContact(t *testing.T) {
 
 			s := &ContactService{
 				contactRepo: f.contactRepository,
-				userRepo: f.userRepository,
+				userRepo:    f.userRepository,
 			}
 			err := s.DeleteContact(tt.args.ctx, tt.args.contactRequest, tt.args.userID)
 			if tt.wantAnyErr {
 				require.Error(t, err)
 			} else {
-				require.EqualError(t, tt.wantErr, err.Error())
+				require.ErrorIs(t, err, tt.wantErr)
 			}
 		})
 	}

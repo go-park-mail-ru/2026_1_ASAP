@@ -10,7 +10,7 @@ import (
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	media "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/profile"
-	mock "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile/mock"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
