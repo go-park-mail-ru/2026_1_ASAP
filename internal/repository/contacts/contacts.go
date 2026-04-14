@@ -15,10 +15,18 @@ import (
 	contactssql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
+type dbPool interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Close()
+}
+
 type ContactsRepository struct {
-	db     *pgxpool.Pool
+	db    	dbPool
 	logger *zap.Logger
 }
 
