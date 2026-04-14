@@ -15,10 +15,19 @@ import (
 	chatssql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
+type dbPool interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
+	Close()
+}
+
 type ChatRepository struct {
-	db     *pgxpool.Pool
+	db     dbPool
 	logger *zap.Logger
 }
 
@@ -103,10 +112,10 @@ func (r *ChatRepository) CreateChat(ctx context.Context, chat *domain.Chat) (*do
 	q := chatssql.InsertChat
 	start := time.Now()
 	err := r.db.QueryRow(ctx, q,
-		chatModel.Type, chatModel.Title, chatModel.Description, chatModel.OwnerId, chatModel.AvatarUrl,
+		string(chatModel.Type), chatModel.Title, chatModel.Description, chatModel.OwnerId, chatModel.AvatarUrl,
 	).Scan(&chatModel.Id, &chatModel.CreatedAt, &chatModel.UpdatedAt)
 	sqllog.LogQuery(ctx, r.log(ctx), "CreateChat", q, start, err, []any{
-		chatModel.Type, chatModel.Title, chatModel.Description, chatModel.OwnerId, chatModel.AvatarUrl,
+		string(chatModel.Type), chatModel.Title, chatModel.Description, chatModel.OwnerId, chatModel.AvatarUrl,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat: %w", err)

@@ -15,6 +15,7 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"github.com/jackc/pgx/v5"
 )
 
 func ptr[T any](v T) *T {
@@ -781,7 +782,9 @@ func TestUserRepository_Create_Positive(t *testing.T) {
 			name: "success",
 			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *userdomain.User) {
-				m.ExpectBegin()
+				m.ExpectBeginTx(pgx.TxOptions{
+					IsoLevel: pgx.Serializable,
+				})
 				m.ExpectQuery(usersql.ExistsLogin).WithArgs("newuser").WillReturnRows(
 					pgxmock.NewRows([]string{"exists"}).AddRow(false),
 				)
@@ -835,7 +838,9 @@ func TestUserRepository_Create_Negative(t *testing.T) {
 			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *userdomain.User) {
 				_ = u
-				m.ExpectBegin()
+				m.ExpectBeginTx(pgx.TxOptions{
+					IsoLevel: pgx.Serializable,
+				})
 				m.ExpectQuery(usersql.ExistsLogin).WithArgs("newuser").WillReturnRows(
 					pgxmock.NewRows([]string{"exists"}).AddRow(true),
 				)
@@ -852,7 +857,9 @@ func TestUserRepository_Create_Negative(t *testing.T) {
 			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *userdomain.User) {
 				_ = u
-				m.ExpectBegin()
+				m.ExpectBeginTx(pgx.TxOptions{
+					IsoLevel: pgx.Serializable,
+				})
 				m.ExpectQuery(usersql.ExistsLogin).WithArgs("newuser").WillReturnRows(
 					pgxmock.NewRows([]string{"exists"}).AddRow(false),
 				)
@@ -871,7 +878,9 @@ func TestUserRepository_Create_Negative(t *testing.T) {
 			name: "unique_login_pg_constraint",
 			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *userdomain.User) {
-				m.ExpectBegin()
+				m.ExpectBeginTx(pgx.TxOptions{
+					IsoLevel: pgx.Serializable,
+				})
 				m.ExpectQuery(usersql.ExistsLogin).WithArgs("newuser").WillReturnRows(
 					pgxmock.NewRows([]string{"exists"}).AddRow(false),
 				)
@@ -897,7 +906,9 @@ func TestUserRepository_Create_Negative(t *testing.T) {
 			name: "unique_email_pg_constraint",
 			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *userdomain.User) {
-				m.ExpectBegin()
+				m.ExpectBeginTx(pgx.TxOptions{
+					IsoLevel: pgx.Serializable,
+				})
 				m.ExpectQuery(usersql.ExistsLogin).WithArgs("newuser").WillReturnRows(
 					pgxmock.NewRows([]string{"exists"}).AddRow(false),
 				)
@@ -924,7 +935,7 @@ func TestUserRepository_Create_Negative(t *testing.T) {
 			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *userdomain.User) {
 				_ = u
-				m.ExpectBegin().WillReturnError(errors.New("no tx"))
+				m.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.Serializable,}).WillReturnError(errors.New("no tx"))
 			},
 			assert: func(t *testing.T, got *userdomain.User, err error) {
 				t.Helper()
