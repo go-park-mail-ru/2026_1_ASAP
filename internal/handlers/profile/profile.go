@@ -17,6 +17,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
 
+//go:generate mockgen -source=profile.go -destination=mock/profile_mock.go -package=mock
 type ProfileServiceInterface interface {
 	GetUserProfile(ctx context.Context, userID int64) (response *dto.ResponseGetProfile, err error)
 	UpdateProfileBio(ctx context.Context, userID int64, request *dto.RequestUpdateBio) (response *dto.ResponseUpdateProfile, err error)
@@ -652,7 +653,7 @@ func (h *ProfileHandler) DeleteUserAvatat(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{					
+			Errors: []dtoApi.ApiError{
 				{
 					Code:    dtoApi.InternalError,
 					Message: dtoApi.InternalErrorMsg,

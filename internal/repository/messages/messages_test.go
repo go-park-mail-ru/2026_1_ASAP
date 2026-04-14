@@ -10,6 +10,7 @@ import (
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	messagessql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/messages/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -29,6 +30,10 @@ func newPGMock(t *testing.T) pgxmock.PgxPoolIface {
 
 func newTestMessageRepository(mock pgxmock.PgxPoolIface) *MessageRepository {
 	return &MessageRepository{db: mock, logger: zap.NewNop()}
+}
+
+func expectCreateMessageBeginTx(m pgxmock.PgxPoolIface) *pgxmock.ExpectedBegin {
+	return m.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.RepeatableRead})
 }
 
 func newMessageRow(t *testing.T, id, chatID, senderID int64, content string, sticker sql.NullInt64, edited bool) *pgxmock.Rows {
@@ -62,7 +67,7 @@ func TestMessageRepository_CreateMessage_Positive(t *testing.T) {
 				}
 			},
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message) {
-				m.ExpectBegin()
+				expectCreateMessageBeginTx(m)
 				m.ExpectQuery(messagessql.InsertMessage).WithArgs(
 					int64(1), int64(2), "hello", null.PtrInt64ToNullInt64(msg.StickerId), false,
 				).WillReturnRows(
@@ -97,7 +102,7 @@ func TestMessageRepository_CreateMessage_Positive(t *testing.T) {
 				}
 			},
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message) {
-				m.ExpectBegin()
+				expectCreateMessageBeginTx(m)
 				m.ExpectQuery(messagessql.InsertMessage).WithArgs(
 					int64(5), int64(9), "st", null.PtrInt64ToNullInt64(msg.StickerId), true,
 				).WillReturnRows(
@@ -159,7 +164,7 @@ func TestMessageRepository_CreateMessage_Negative(t *testing.T) {
 			message: baseMsg,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message) {
 				_ = msg
-				m.ExpectBegin().WillReturnError(errors.New("no connection"))
+				expectCreateMessageBeginTx(m).WillReturnError(errors.New("no connection"))
 			},
 			assert: func(t *testing.T, got *domain.Message, err error) {
 				t.Helper()
@@ -172,7 +177,7 @@ func TestMessageRepository_CreateMessage_Negative(t *testing.T) {
 			name:    "insert_error",
 			message: baseMsg,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message) {
-				m.ExpectBegin()
+				expectCreateMessageBeginTx(m)
 				m.ExpectQuery(messagessql.InsertMessage).WithArgs(
 					int64(1), int64(2), "hello", null.PtrInt64ToNullInt64(msg.StickerId), false,
 				).WillReturnError(errors.New("insert failed"))
@@ -189,7 +194,7 @@ func TestMessageRepository_CreateMessage_Negative(t *testing.T) {
 			name:    "update_chat_error",
 			message: baseMsg,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message) {
-				m.ExpectBegin()
+				expectCreateMessageBeginTx(m)
 				m.ExpectQuery(messagessql.InsertMessage).WithArgs(
 					int64(1), int64(2), "hello", null.PtrInt64ToNullInt64(msg.StickerId), false,
 				).WillReturnRows(
@@ -212,7 +217,7 @@ func TestMessageRepository_CreateMessage_Negative(t *testing.T) {
 			name:    "commit_error",
 			message: baseMsg,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message) {
-				m.ExpectBegin()
+				expectCreateMessageBeginTx(m)
 				m.ExpectQuery(messagessql.InsertMessage).WithArgs(
 					int64(1), int64(2), "hello", null.PtrInt64ToNullInt64(msg.StickerId), false,
 				).WillReturnRows(

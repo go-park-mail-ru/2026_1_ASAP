@@ -12,9 +12,10 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/profile"
 )
 
+//go:generate mockgen -source=profile.go -destination=mock/profile_mock.go -package=mock
 type MediaRepositoryInterface interface {
 	UploadAvatar(ctx context.Context, userId int64, input *media.FileInput) (string, error)
-	DeleteAvatar(ctx context.Context, userID int64) (error)
+	DeleteAvatar(ctx context.Context, userID int64) error
 }
 
 type ProfileRepositoryInterface interface {
@@ -260,7 +261,6 @@ func (p ProfileService) DeleteProfileAvatar(ctx context.Context, userID int64) (
 		LastSeen:  profile.LastSeen,
 	}, nil
 }
-
 
 const maxAvatarSize = 5 * 1024 * 1024
 
