@@ -5,23 +5,23 @@ import (
 )
 
 type User struct {
-	Id           int64
-	Login        string
-	FirstName    string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 	LastName     *string
-	Email        string
-	PasswordHash string
 	AvatarUrl    *string
 	Bio          *string
 	BirthDate    *time.Time
 	LastSeenAt   *time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	Login        string
+	FirstName    string
+	Email        string
+	PasswordHash string
+	Id           int64
 }
 
 func (u User) Username() string {
-    if u.LastName != nil && *u.LastName != "" {
-        return u.FirstName + " " + *u.LastName
-    }
-    return u.FirstName
+	if u.LastName != nil && *u.LastName != "" {
+		return u.FirstName + " " + *u.LastName
+	}
+	return u.FirstName
 }

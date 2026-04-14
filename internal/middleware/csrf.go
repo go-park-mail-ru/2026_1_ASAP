@@ -61,8 +61,8 @@ func CSRFMiddleware(CSRFTokenService CSRFTokenService) func(http.Handler) http.H
 					return
 				}
 				if errors.Is(err, domain.ErrCSRFExpired) {
-					newCsrfToken, err := csrf.GenerateToken()
-					if err != nil {
+					newCsrfToken, tokenErr := csrf.GenerateToken()
+					if tokenErr != nil {
 						response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
 							Status: dtoApi.Error,
 							Errors: []dtoApi.ApiError{
@@ -74,7 +74,7 @@ func CSRFMiddleware(CSRFTokenService CSRFTokenService) func(http.Handler) http.H
 						})
 						return
 					}
-					if err := CSRFTokenService.SetCSRFToken(r.Context(), cookie.Value, newCsrfToken); err != nil {
+					if setErr := CSRFTokenService.SetCSRFToken(r.Context(), cookie.Value, newCsrfToken); setErr != nil {
 						response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
 							Status: dtoApi.Error,
 							Errors: []dtoApi.ApiError{

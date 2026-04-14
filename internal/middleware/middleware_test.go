@@ -7,13 +7,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
-	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
+
+	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
+	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware/mock"
 )
 
 func decodeAPIError(t *testing.T, rr *httptest.ResponseRecorder) dtoApi.ApiErrorResponse {
@@ -29,8 +30,8 @@ func TestPositiveMiddleware_AuthMiddleware(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "sets UserID and SessionID in context",
@@ -78,12 +79,12 @@ func TestNegativeMiddleware_AuthMiddleware(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
-		addCookie  bool
+		name       string
 		cookieVal  string
-		wantCode   int
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
+		addCookie  bool
 		nextCalled bool
 	}{
 		{
@@ -212,14 +213,14 @@ func TestNegativeMiddleware_CSRFMiddleware(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
 		prepare     func(*fields)
-		setHeader   bool
+		name        string
 		headerVal   string
-		addCookie   bool
 		cookieVal   string
-		wantCode    int
 		wantErr     dtoApi.ErrorCode
+		wantCode    int
+		setHeader   bool
+		addCookie   bool
 		wantNewCSRF bool
 		nextCalled  bool
 	}{
@@ -354,8 +355,8 @@ func TestPositiveMiddleware_RequestIDMiddleware(t *testing.T) {
 	type fields struct{}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{name: "injects UUID into context", prepare: nil},
 	}
@@ -389,10 +390,10 @@ func TestPositiveMiddleware_AccessMiddleware(t *testing.T) {
 	type fields struct{}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
-		withReqID  bool
+		name       string
 		wantReqLog string
+		withReqID  bool
 	}{
 		{
 			name:       "logs unknown_request_id without RequestID middleware",

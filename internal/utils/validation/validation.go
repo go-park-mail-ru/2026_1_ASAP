@@ -3,6 +3,7 @@ package validation
 import (
 	"regexp"
 	"unicode"
+	"unicode/utf8"
 
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
@@ -17,6 +18,10 @@ type ValidationError struct {
 }
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+
+func runeLen(s string) int {
+	return utf8.RuneCountInString(s)
+}
 
 func ValidateEmail(email string) []ValidationError {
 	var errs []ValidationError
@@ -53,7 +58,7 @@ func ValidateLogin(login string) []ValidationError {
 		return errs
 	}
 
-	if len(login) < 3 {
+	if runeLen(login) < 3 {
 		errs = append(errs, ValidationError{
 			Field:   "login",
 			Message: "Login must be at least 3 characters",
@@ -76,7 +81,7 @@ func ValidatePassword(password string) []ValidationError {
 		return errs
 	}
 
-	if len(password) < 6 {
+	if runeLen(password) < 6 {
 		errs = append(errs, ValidationError{
 			Field:   "password",
 			Message: "Password must be at least 6 characters",
@@ -84,7 +89,7 @@ func ValidatePassword(password string) []ValidationError {
 		})
 	}
 
-	if len(password) > 64 {
+	if runeLen(password) > 64 {
 		errs = append(errs, ValidationError{
 			Field:   "password",
 			Message: "Password must be less than 64 characters",
@@ -168,13 +173,13 @@ func ValidationRequestLogin(request *dtoAuth.RequestLogin) []ValidationError {
 func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
 	var errs []ValidationError
 
-	if req.Title == "" && req.Type != dtoChat.ChatTypeDialog{
+	if req.Title == "" && req.Type != dtoChat.ChatTypeDialog {
 		errs = append(errs, ValidationError{
 			Field:   "title",
 			Message: "Title is required",
 			Code:    "TITLE_REQUIRED",
 		})
-	} else if len(req.Title) > 100 {
+	} else if runeLen(req.Title) > 100 {
 		errs = append(errs, ValidationError{
 			Field:   "title",
 			Message: "Len of chat title must be less than 100 characters",
@@ -240,19 +245,19 @@ func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
 func ValidationContactCreate(req *dtoContact.AddContactRequest) []ValidationError {
 	var errs []ValidationError
 
-	if req.FirstName != "" && len(req.FirstName) > 100{
+	if req.FirstName != "" && runeLen(req.FirstName) > 100 {
 		errs = append(errs, ValidationError{
-			Field: "first_name",
+			Field:   "first_name",
 			Message: "contact firstname must be less than 100 caracters",
-			Code: "CONTACT_FIRST_NAME_MUST_LESS_100_CHARACTERS",
+			Code:    "CONTACT_FIRST_NAME_MUST_LESS_100_CHARACTERS",
 		})
 	}
 
-	if req.LastName != nil && len(*req.LastName) > 100{
+	if req.LastName != nil && runeLen(*req.LastName) > 100 {
 		errs = append(errs, ValidationError{
-			Field: "last_name",
+			Field:   "last_name",
 			Message: "contact lastname must be less than 100 caracters",
-			Code: "CONTACT_LAST_NAME_MUST_LESS_100_CHARACTERS",
+			Code:    "CONTACT_LAST_NAME_MUST_LESS_100_CHARACTERS",
 		})
 	}
 
@@ -276,13 +281,13 @@ func ValidationContactCreate(req *dtoContact.AddContactRequest) []ValidationErro
 func ValidationRequestTitle(req *dto.RequestUpdateTitle) []ValidationError {
 	var errs []ValidationError
 
-	if req.Title == ""{
+	if req.Title == "" {
 		errs = append(errs, ValidationError{
 			Field:   "title",
 			Message: "Title is required",
 			Code:    "TITLE_REQUIRED",
 		})
-	} else if len(req.Title) > 100 {
+	} else if runeLen(req.Title) > 100 {
 		errs = append(errs, ValidationError{
 			Field:   "title",
 			Message: "Len of chat title must be less than 100 characters",
@@ -323,7 +328,7 @@ func ValidationRequestAddMember(req *dto.RequestAddMember) []ValidationError {
 func ValidationRequestDeleteMember(req *dto.RequestDeleteMember) []ValidationError {
 	var errs []ValidationError
 
-	if req.MemberId == 0 || req.MemberId < 0{
+	if req.MemberId == 0 || req.MemberId < 0 {
 		errs = append(errs, ValidationError{
 			Field:   "member_id",
 			Message: "Invalid id",

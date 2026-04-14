@@ -6,12 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/contacts"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"
 	mock "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/contacts/mock"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPositiveContactsService_GetContacts(t *testing.T) {
@@ -156,10 +157,10 @@ func TestPositiveContactsService_AddContact(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(f *fields)
-		args    args
 		want    *dto.ContactResponse
+		name    string
+		args    args
 	}{
 		{
 			name: "success add contact",
@@ -276,10 +277,10 @@ func TestNegativeContactService_AddContact(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
 		wantAnyErr bool
 	}{
 		{
@@ -410,11 +411,11 @@ func TestNegativeContactService_DeleteContact(t *testing.T) {
 	contact := dto.DeleteContactRequest{ContactUserID: 124}
 
 	tests := []struct {
-		name       string
+		wantErr    error
 		prepare    func(f *fields)
+		name       string
 		args       args
 		wantAnyErr bool
-		wantErr    error
 	}{
 		{
 			name: "failed to delete contact: user not found",

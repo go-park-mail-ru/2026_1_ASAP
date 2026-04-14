@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session/mock"
 )
 
 const testSessionTTL = 2 * time.Hour
@@ -203,10 +204,10 @@ func TestNegativeSessionService_GetUserID(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
+		wantErr    error
 		prepare    func(*fields)
 		args       args
-		wantErr    error
+		name       string
 		wantAnyErr bool
 	}{
 		{
@@ -336,10 +337,10 @@ func TestNegativeSessionService_GetCSRFToken(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
+		wantErr    error
 		prepare    func(*fields)
 		args       args
-		wantErr    error
+		name       string
 		wantAnyErr bool
 	}{
 		{
@@ -506,10 +507,10 @@ func TestNegativeSessionService_SetCSRFToken(t *testing.T) {
 	sid := "session-set"
 
 	tests := []struct {
-		name       string
+		wantErr    error
 		prepare    func(*fields)
 		args       args
-		wantErr    error
+		name       string
 		wantAnyErr bool
 	}{
 		{
@@ -640,10 +641,10 @@ func TestNegativeSessionService_DeleteSession(t *testing.T) {
 	sid := "to-delete"
 
 	tests := []struct {
-		name       string
+		wantErr    error
 		prepare    func(*fields)
 		args       args
-		wantErr    error
+		name       string
 		wantAnyErr bool
 	}{
 		{

@@ -1,12 +1,12 @@
 package message
 
 type RequestSendMessage struct {
-	ChatID int64  `json:"chat_id"`
 	Text   string `json:"text"`
+	ChatID int64  `json:"chat_id"`
 }
 
 type RequestGetMessages struct {
+	BeforeID *int64 `json:"before_id"`
 	ChatID   int64  `json:"chat_id"`
 	Limit    int    `json:"limit"`
-	BeforeID *int64 `json:"before_id"`
 }

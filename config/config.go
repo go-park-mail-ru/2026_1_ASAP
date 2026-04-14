@@ -13,12 +13,12 @@ import (
 )
 
 type Config struct {
-	ServerConfig   ServerConfig
-	SessionConfig  SessionConfig
-	RedisConfig    RedisConfig
-	PostgresConfig PostgresConfig
 	S3Config       S3Config
+	PostgresConfig PostgresConfig
+	ServerConfig   ServerConfig
+	RedisConfig    RedisConfig
 	AppConfig      AppConfig
+	SessionConfig  SessionConfig
 }
 
 type ServerConfig struct {
@@ -50,10 +50,10 @@ type S3Config struct {
 	Bucket       string
 	AccessKey    string
 	SecretKey    string
-	UseSSL       bool
-	PublicUseSSL bool
 	PublicHost   string
 	PublicPort   string
+	UseSSL       bool
+	PublicUseSSL bool
 }
 
 type AppConfig struct {

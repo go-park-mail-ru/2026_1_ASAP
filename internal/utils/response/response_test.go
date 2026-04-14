@@ -6,16 +6,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	"github.com/stretchr/testify/require"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 )
 
 func TestPositiveResponse_Send(t *testing.T) {
 	type fields struct{}
 
 	type args struct {
-		status   int
 		response interface{}
+		status   int
 	}
 
 	tests := []struct {
@@ -67,17 +68,17 @@ func TestNegativeResponse_Send(t *testing.T) {
 	type fields struct{}
 
 	type args struct {
-		status   int
 		response interface{}
+		status   int
 	}
 
 	tests := []struct {
-		name           string
-		prepare        func(*fields)
 		args           args
-		wantStatus     int
+		prepare        func(*fields)
+		name           string
 		wantErrCode    api.ErrorCode
 		wantErrMessage api.ErrorMessage
+		wantStatus     int
 	}{
 		{
 			name:    "Marshal failure returns 500 and internal error JSON",

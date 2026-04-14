@@ -8,6 +8,7 @@ import (
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/message"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sanitize"
 )
 
 const maxMessageRunes = 2000
@@ -64,7 +65,7 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 			ID:        msg.Id,
 			ChatID:    msg.ChatId,
 			SenderID:  msg.SenderId,
-			Text:      msg.Content,
+			Text:      sanitize.Text(msg.Content),
 			CreatedAt: msg.CreatedAt,
 		})
 	}
@@ -119,7 +120,7 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 		ID:        createdMessage.Id,
 		ChatID:    createdMessage.ChatId,
 		SenderID:  createdMessage.SenderId,
-		Text:      createdMessage.Content,
+		Text:      sanitize.Text(createdMessage.Content),
 		CreatedAt: createdMessage.CreatedAt,
 	}, nil
 }

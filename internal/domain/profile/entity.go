@@ -3,13 +3,13 @@ package profile
 import "time"
 
 type Profile struct {
-	UserId    int64
-	Login     string
-	Email     string
-	FirstName string
 	LastName  *string
 	Avatar    *string
 	Bio       *string
 	BirthDate *time.Time
 	LastSeen  *time.Time
+	Login     string
+	Email     string
+	FirstName string
+	UserId    int64
 }

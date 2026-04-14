@@ -12,13 +12,14 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/profile/mock"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 var testAvatarPNG = []byte{
@@ -72,8 +73,8 @@ func TestPositiveProfileHandler_GetMyProfile(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "200 returns profile",
@@ -114,11 +115,11 @@ func TestNegativeProfileHandler_GetMyProfile(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		prepare  func(*fields)
 		ctx      context.Context
-		wantCode int
+		prepare  func(*fields)
+		name     string
 		wantErr  dtoApi.ErrorCode
+		wantCode int
 	}{
 		{
 			name:     "no user id",
@@ -177,8 +178,8 @@ func TestPositiveProfileHandler_GetUserProfile(t *testing.T) {
 	body := dto.ResponseGetProfile{UserId: 3, Login: "p3", FirstName: "P", Email: "p3@x.test"}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "200",
@@ -218,12 +219,12 @@ func TestNegativeProfileHandler_GetUserProfile(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		prepare  func(*fields)
 		ctx      context.Context
+		prepare  func(*fields)
+		name     string
 		idParam  string
-		wantCode int
 		wantErr  dtoApi.ErrorCode
+		wantCode int
 	}{
 		{
 			name:     "unauthorized",
@@ -294,8 +295,8 @@ func TestPositiveProfileHandler_UpdateUserBio(t *testing.T) {
 	upd := dto.ResponseUpdateProfile{UserId: 1, Login: "a", FirstName: "A"}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "200",
@@ -337,12 +338,12 @@ func TestNegativeProfileHandler_UpdateUserBio(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		prepare  func(*fields)
 		ctx      context.Context
+		prepare  func(*fields)
+		name     string
 		body     string
-		wantCode int
 		wantErr  dtoApi.ErrorCode
+		wantCode int
 	}{
 		{
 			name:     "unauthorized",
@@ -417,8 +418,8 @@ func TestPositiveProfileHandler_UpdateProfileBirthDate(t *testing.T) {
 	upd := dto.ResponseUpdateProfile{UserId: 1, Login: "a", FirstName: "A", BirthDate: strPtr("1990-01-01")}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "200",
@@ -457,12 +458,12 @@ func TestNegativeProfileHandler_UpdateProfileBirthDate(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		prepare  func(*fields)
 		ctx      context.Context
+		prepare  func(*fields)
+		name     string
 		body     string
-		wantCode int
 		wantErr  dtoApi.ErrorCode
+		wantCode int
 	}{
 		{
 			name:     "unauthorized",
@@ -549,8 +550,8 @@ func TestPositiveProfileHandler_SearchIdByLogin(t *testing.T) {
 	res := dto.ResponseSearchIdByLogin{UserId: 42, Login: "bob"}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "200",
@@ -590,11 +591,11 @@ func TestNegativeProfileHandler_SearchIdByLogin(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
 		prepare  func(*fields)
+		name     string
 		query    string
-		wantCode int
 		wantErr  dtoApi.ErrorCode
+		wantCode int
 	}{
 		{
 			name:     "missing login",
@@ -660,8 +661,8 @@ func TestPositiveProfileHandler_UpdateProfileName(t *testing.T) {
 	upd := dto.ResponseUpdateProfile{UserId: 1, Login: "a", FirstName: "Ann"}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "200",
@@ -700,12 +701,12 @@ func TestNegativeProfileHandler_UpdateProfileName(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		prepare  func(*fields)
 		ctx      context.Context
+		prepare  func(*fields)
+		name     string
 		body     string
-		wantCode int
 		wantErr  dtoApi.ErrorCode
+		wantCode int
 	}{
 		{
 			name:     "unauthorized",
@@ -780,8 +781,8 @@ func TestPositiveProfileHandler_UpdateUserAvatar(t *testing.T) {
 	upd := dto.ResponseUpdateProfile{UserId: 1, Login: "a", FirstName: "A", Avatar: strPtr("https://cdn/x.png")}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "200",
@@ -819,12 +820,12 @@ func TestNegativeProfileHandler_UpdateUserAvatar(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
+		ctx      context.Context
 		prepare  func(*fields)
 		buildReq func(*testing.T) *http.Request
-		ctx      context.Context
-		wantCode int
+		name     string
 		wantErr  dtoApi.ErrorCode
+		wantCode int
 	}{
 		{
 			name:    "unauthorized",
@@ -908,8 +909,8 @@ func TestPositiveProfileHandler_DeleteUserAvatat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "200",
@@ -945,11 +946,11 @@ func TestNegativeProfileHandler_DeleteUserAvatat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		prepare  func(*fields)
 		ctx      context.Context
-		wantCode int
+		prepare  func(*fields)
+		name     string
 		wantErr  dtoApi.ErrorCode
+		wantCode int
 	}{
 		{
 			name:     "unauthorized",

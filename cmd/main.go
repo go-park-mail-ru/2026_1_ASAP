@@ -11,8 +11,9 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
 	_ "github.com/go-park-mail-ru/2026_1_ASAP/docs"
@@ -33,8 +34,9 @@ import (
 	messageService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/messages"
 	profileService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
 	"go.uber.org/zap"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
 )
 
 // @title API Pulse App

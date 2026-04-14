@@ -15,6 +15,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sanitize"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 )
 
@@ -136,7 +137,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	resp := dtoApi.ApiSuccessResponse[dtoAuth.ResponseLoginSuccess]{
 		Status: dtoApi.Success,
 		Body: dtoAuth.ResponseLoginSuccess{
-			Login: newRequestLogin.Login,
+			Login: sanitize.Text(newRequestLogin.Login),
 		},
 	}
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.CSRFToken)
@@ -245,7 +246,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 		Status: dtoApi.Success,
 		Body: dtoAuth.ResponseRegisterSuccess{
 			Email: newRequestRegister.Email,
-			Login: newRequestRegister.Login,
+			Login: sanitize.Text(newRequestRegister.Login),
 		},
 	}
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.CSRFToken)

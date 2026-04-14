@@ -7,18 +7,19 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
+	"go.uber.org/zap"
+
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/redislog"
-	"github.com/gomodule/redigo/redis"
-	"go.uber.org/zap"
 )
 
 type SessionRepository struct {
 	pool   *redis.Pool
-	TTL    time.Duration
 	logger *zap.Logger
+	TTL    time.Duration
 }
 
 func NewRedisPool(config *config.RedisConfig) *redis.Pool {
@@ -62,7 +63,7 @@ func (s *SessionRepository) CreateSession(ctx context.Context, session *domain.S
 	key := "session:" + session.SessionID
 
 	start := time.Now()
-	ttlSec := int(session.ExpiresAt.Sub(time.Now()).Seconds())
+	ttlSec := int(time.Until(session.ExpiresAt).Seconds())
 	_, err = conn.Do("SET", key, sessionValue, "EX", ttlSec)
 	redislog.LogOp(ctx, s.log(ctx), "CreateSession", fmt.Sprintf("SET %s EX", key), start, err, []any{key, ttlSec, redislog.ArgRedacted})
 

@@ -28,10 +28,10 @@ func TestPositiveNull_NullStringToPtrString(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *string
+		name    string
+		args    args
 	}{
 		{
 			name:    "Valid null string maps to pointer",
@@ -108,10 +108,10 @@ func TestPositiveNull_NullTimeToPtrTime(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *time.Time
+		args    args
+		name    string
 	}{
 		{
 			name:    "Valid null time maps to pointer",
@@ -188,10 +188,10 @@ func TestPositiveNull_NullInt64ToPtrInt64(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *int64
+		name    string
+		args    args
 	}{
 		{
 			name:    "Valid null int64 maps to pointer",
@@ -227,9 +227,9 @@ func TestPositiveNull_PtrInt64ToNullInt64(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
 		args    args
+		name    string
 		want    sql.NullInt64
 	}{
 		{

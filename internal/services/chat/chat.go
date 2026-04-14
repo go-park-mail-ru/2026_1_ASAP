@@ -12,13 +12,14 @@ import (
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sanitize"
 )
 
-//go:generate sh -c "mockgen -destination=mock/chat_mock.go -package=mock . ChatRepositoryInterface,UserRepositoryInterface,MediaRepositoryInterface && sed -i '' 's/chat \\*chat\\.Chat/chat \\*domain\\.Chat/g' mock/chat_mock.go && sed -i '' 's/user \\*user\\.User/u \\*domainUser\\.User/g' mock/chat_mock.go"
+//go:generate mockgen -source=chat.go -destination=mock/chat_mock.go -package=mock
 type ChatRepositoryInterface interface {
 	GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error)
 	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
-	CreateChat(ctx context.Context, chat *domain.Chat) (*domain.Chat, error)
+	CreateChat(ctx context.Context, newChat *domain.Chat) (*domain.Chat, error)
 	GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error)
 	GetLastMessagesOfChats(ctx context.Context, id int64) ([]*domain.Message, error)
 	GetChatMembers(ctx context.Context, chatID int64) ([]int64, error)
@@ -33,7 +34,7 @@ type ChatRepositoryInterface interface {
 }
 
 type UserRepositoryInterface interface {
-	Create(ctx context.Context, user *domainUser.User) (*domainUser.User, error)
+	Create(ctx context.Context, u *domainUser.User) (*domainUser.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*domainUser.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*domainUser.User, error)
 	GetUserByID(ctx context.Context, id int64) (*domainUser.User, error)
@@ -132,7 +133,7 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 		if ok && lastMsg != nil {
 			messageDTO = dto.MessageDTO{
 				SenderId:  lastMsg.SenderId,
-				Text:      lastMsg.Content,
+				Text:      sanitize.Text(lastMsg.Content),
 				CreatedAt: lastMsg.CreatedAt,
 			}
 		}
@@ -153,7 +154,7 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 
 		result = append(result, dto.ChatInformationDTO{
 			ID:          chat.Id,
-			Title:       displayTitle,
+			Title:       sanitize.Text(displayTitle),
 			ChatType:    dto.ChatType(chat.Type),
 			LastMessage: messageDTO,
 			Avatar:      displayAvatar,
@@ -182,7 +183,9 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 
 		existingDialog, err := s.chatRepo.GetDialogBetweenUsers(ctx, user1, user2)
 		if err != nil {
-			return nil, fmt.Errorf("failed to check dialog between users: %w", err)
+			if !errors.Is(err, domain.ErrChatNotFound) {
+				return nil, fmt.Errorf("failed to check dialog between users: %w", err)
+			}
 		}
 
 		if existingDialog != nil {
@@ -247,7 +250,7 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 	return &dto.ChatInformationDTO{
 		ID:          createdChat.Id,
 		ChatType:    dto.ChatType(createdChat.Type),
-		Title:       displayTitle,
+		Title:       sanitize.Text(displayTitle),
 		LastMessage: dto.MessageDTO{},
 		Avatar:      displayAvatar,
 	}, nil
@@ -277,7 +280,7 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 
 	messageDTO := dto.MessageDTO{
 		SenderId:  lastMsg.SenderId,
-		Text:      lastMsg.Content,
+		Text:      sanitize.Text(lastMsg.Content),
 		CreatedAt: lastMsg.CreatedAt,
 	}
 
@@ -300,7 +303,7 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 	return &dto.ChatInformationDTO{
 		ID:          chat.Id,
 		ChatType:    dto.ChatType(chat.Type),
-		Title:       displayTitle,
+		Title:       sanitize.Text(displayTitle),
 		LastMessage: messageDTO,
 		Avatar:      displayAvatar,
 	}, nil
@@ -375,7 +378,7 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 
 		return nil, fmt.Errorf("invalid avatar: %w", err)
 	}
-	
+
 	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check user is member of chat: %w", err)
@@ -414,14 +417,14 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 
 	messageDTO := dto.MessageDTO{
 		SenderId:  lastMsg.SenderId,
-		Text:      lastMsg.Content,
+		Text:      sanitize.Text(lastMsg.Content),
 		CreatedAt: lastMsg.CreatedAt,
 	}
 
 	return &dto.ChatInformationDTO{
 		ID:          result.Id,
 		ChatType:    dto.ChatType(result.Type),
-		Title:       result.Title,
+		Title:       sanitize.Text(result.Title),
 		LastMessage: messageDTO,
 		Avatar:      result.AvatarUrl,
 	}, nil
@@ -464,14 +467,14 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 
 	messageDTO := dto.MessageDTO{
 		SenderId:  lastMsg.SenderId,
-		Text:      lastMsg.Content,
+		Text:      sanitize.Text(lastMsg.Content),
 		CreatedAt: lastMsg.CreatedAt,
 	}
 
 	return &dto.ChatInformationDTO{
 		ID:          result.Id,
 		ChatType:    dto.ChatType(result.Type),
-		Title:       result.Title,
+		Title:       sanitize.Text(result.Title),
 		LastMessage: messageDTO,
 		Avatar:      result.AvatarUrl,
 	}, nil

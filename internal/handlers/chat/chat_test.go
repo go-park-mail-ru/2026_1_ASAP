@@ -13,15 +13,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat/mock"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
-	"github.com/go-chi/chi"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 func decodeAPIErrorChat(t *testing.T, rr *httptest.ResponseRecorder) dtoApi.ApiErrorResponse {
@@ -42,10 +43,10 @@ func TestPositiveChatHandler_GetChats(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
+		name    string
 		want    []dto.ChatInformationDTO
+		args    args
 	}{
 		{
 			name: "success get chats",
@@ -54,9 +55,9 @@ func TestPositiveChatHandler_GetChats(t *testing.T) {
 					GetAllChats(gomock.Any(), int64(100)).
 					Return([]dto.ChatInformationDTO{
 						{
-							ID:        1,
-							ChatType:  dto.ChatTypeGroup,
-							Title:     "Group Chat",
+							ID:       1,
+							ChatType: dto.ChatTypeGroup,
+							Title:    "Group Chat",
 							LastMessage: dto.MessageDTO{
 								Text:      "Hello",
 								CreatedAt: time.Now(),
@@ -68,9 +69,9 @@ func TestPositiveChatHandler_GetChats(t *testing.T) {
 			args: args{userID: 100},
 			want: []dto.ChatInformationDTO{
 				{
-					ID:        1,
-					ChatType:  dto.ChatTypeGroup,
-					Title:     "Group Chat",
+					ID:       1,
+					ChatType: dto.ChatTypeGroup,
+					Title:    "Group Chat",
 					LastMessage: dto.MessageDTO{
 						Text:      "Hello",
 						CreatedAt: time.Now(),
@@ -132,11 +133,11 @@ func TestNegativeChatHandler_GetChats(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
 		args       args
-		wantCode   int
+		prepare    func(*fields)
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -205,10 +206,10 @@ func TestPositiveChatHandler_ChatCreate(t *testing.T) {
 	}
 
 	type args struct {
-		userID   int64
 		chatType dto.ChatType
 		title    string
 		members  []int64
+		userID   int64
 	}
 
 	tests := []struct {
@@ -222,9 +223,9 @@ func TestPositiveChatHandler_ChatCreate(t *testing.T) {
 				f.chatService.EXPECT().
 					CreateChat(gomock.Any(), gomock.Any(), int64(100)).
 					Return(&dto.ChatInformationDTO{
-						ID:        10,
-						ChatType:  dto.ChatTypeGroup,
-						Title:     "New Group",
+						ID:       10,
+						ChatType: dto.ChatTypeGroup,
+						Title:    "New Group",
 					}, nil)
 
 				f.chatService.EXPECT().
@@ -234,9 +235,9 @@ func TestPositiveChatHandler_ChatCreate(t *testing.T) {
 				f.chatService.EXPECT().
 					GetChatByID(gomock.Any(), int64(10), gomock.Any()).
 					Return(&dto.ChatInformationDTO{
-						ID:        10,
-						ChatType:  dto.ChatTypeGroup,
-						Title:     "New Group",
+						ID:       10,
+						ChatType: dto.ChatTypeGroup,
+						Title:    "New Group",
 					}, nil).AnyTimes()
 
 				f.wsPublisher.EXPECT().
@@ -304,19 +305,16 @@ func TestNegativeChatHandler_ChatCreate(t *testing.T) {
 	}
 
 	type args struct {
-		userID   interface{}
-		body     string
-		chatType dto.ChatType
-		title    string
-		members  []int64
+		userID interface{}
+		body   string
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
+		name       string
+		wantErr    dtoApi.ErrorCode
 		args       args
 		wantCode   int
-		wantErr    dtoApi.ErrorCode
 		skipErrCmp bool
 	}{
 		{
@@ -439,8 +437,8 @@ func TestPositiveChatHandler_GetChatByID(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 		args    args
 	}{
 		{
@@ -449,9 +447,9 @@ func TestPositiveChatHandler_GetChatByID(t *testing.T) {
 				f.chatService.EXPECT().
 					GetChatByID(gomock.Any(), int64(1), int64(100)).
 					Return(&dto.ChatInformationDTO{
-						ID:        1,
-						ChatType:  dto.ChatTypeGroup,
-						Title:     "Group Chat",
+						ID:       1,
+						ChatType: dto.ChatTypeGroup,
+						Title:    "Group Chat",
 						LastMessage: dto.MessageDTO{
 							Text:      "Hello",
 							CreatedAt: time.Now(),
@@ -511,17 +509,17 @@ func TestNegativeChatHandler_GetChatByID(t *testing.T) {
 	}
 
 	type args struct {
-		userID   interface{}
-		chatID   string
-		path     string
+		userID interface{}
+		chatID string
+		path   string
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
 		args       args
-		wantCode   int
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -608,8 +606,8 @@ func TestPositiveChatHandler_DeleteChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 		args    args
 	}{
 		{
@@ -683,11 +681,11 @@ func TestNegativeChatHandler_DeleteChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
 		args       args
-		wantCode   int
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -786,11 +784,11 @@ func TestPositiveChatHandler_UpdateChatAvatar(t *testing.T) {
 	}
 
 	type args struct {
-		userID      int64
-		chatID      int64
 		fileName    string
 		fileContent string
 		contentType string
+		userID      int64
+		chatID      int64
 	}
 
 	tests := []struct {
@@ -804,9 +802,9 @@ func TestPositiveChatHandler_UpdateChatAvatar(t *testing.T) {
 				f.chatService.EXPECT().
 					UpdateChatAvatar(gomock.Any(), int64(100), int64(1), gomock.Any()).
 					Return(&dto.ChatInformationDTO{
-						ID:        1,
-						ChatType:  dto.ChatTypeGroup,
-						Title:     "Group Chat",
+						ID:       1,
+						ChatType: dto.ChatTypeGroup,
+						Title:    "Group Chat",
 						LastMessage: dto.MessageDTO{
 							Text:      "Hello",
 							CreatedAt: time.Now(),
@@ -821,9 +819,9 @@ func TestPositiveChatHandler_UpdateChatAvatar(t *testing.T) {
 				f.chatService.EXPECT().
 					GetChatByID(gomock.Any(), int64(1), gomock.Any()).
 					Return(&dto.ChatInformationDTO{
-						ID:        1,
-						ChatType:  dto.ChatTypeGroup,
-						Title:     "Group Chat",
+						ID:       1,
+						ChatType: dto.ChatTypeGroup,
+						Title:    "Group Chat",
 						LastMessage: dto.MessageDTO{
 							Text:      "Hello",
 							CreatedAt: time.Now(),
@@ -901,41 +899,41 @@ func TestNegativeChatHandler_UpdateChatAvatar(t *testing.T) {
 	}
 
 	type args struct {
-		userID   interface{}
-		chatID   string
-		fileName string
+		userID      interface{}
+		chatID      string
+		fileName    string
 		fileContent string
 		contentType string
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
 		args       args
-		wantCode   int
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
-			name:       "unauthorized - no userID",
-			prepare:    nil,
-			args:       args{userID: nil, chatID: "1", fileName: "avatar.jpg", fileContent: "test", contentType: "image/jpeg"},
-			wantCode:   http.StatusUnauthorized,
-			wantErr:    dtoApi.Unauthorized,
+			name:     "unauthorized - no userID",
+			prepare:  nil,
+			args:     args{userID: nil, chatID: "1", fileName: "avatar.jpg", fileContent: "test", contentType: "image/jpeg"},
+			wantCode: http.StatusUnauthorized,
+			wantErr:  dtoApi.Unauthorized,
 		},
 		{
-			name:       "invalid chat id",
-			prepare:    nil,
-			args:       args{userID: int64(100), chatID: "invalid", fileName: "avatar.jpg", fileContent: "test", contentType: "image/jpeg"},
-			wantCode:   http.StatusBadRequest,
-			wantErr:    dtoApi.InvalidID,
+			name:     "invalid chat id",
+			prepare:  nil,
+			args:     args{userID: int64(100), chatID: "invalid", fileName: "avatar.jpg", fileContent: "test", contentType: "image/jpeg"},
+			wantCode: http.StatusBadRequest,
+			wantErr:  dtoApi.InvalidID,
 		},
 		{
-			name:       "no file",
-			prepare:    nil,
-			args:       args{userID: int64(100), chatID: "1", fileName: "", fileContent: "", contentType: ""},
-			wantCode:   http.StatusBadRequest,
-			wantErr:    dtoApi.FileNotFound,
+			name:     "no file",
+			prepare:  nil,
+			args:     args{userID: int64(100), chatID: "1", fileName: "", fileContent: "", contentType: ""},
+			wantCode: http.StatusBadRequest,
+			wantErr:  dtoApi.FileNotFound,
 		},
 		{
 			name: "user not member",
@@ -944,9 +942,9 @@ func TestNegativeChatHandler_UpdateChatAvatar(t *testing.T) {
 					UpdateChatAvatar(gomock.Any(), int64(100), int64(1), gomock.Any()).
 					Return(nil, domain.ErrNotMember)
 			},
-			args:       args{userID: int64(100), chatID: "1", fileName: "avatar.jpg", fileContent: "test", contentType: "image/jpeg"},
-			wantCode:   http.StatusForbidden,
-			wantErr:    dtoApi.NotMemberOfChat,
+			args:     args{userID: int64(100), chatID: "1", fileName: "avatar.jpg", fileContent: "test", contentType: "image/jpeg"},
+			wantCode: http.StatusForbidden,
+			wantErr:  dtoApi.NotMemberOfChat,
 		},
 		{
 			name: "dialog cannot have avatar",
@@ -955,9 +953,9 @@ func TestNegativeChatHandler_UpdateChatAvatar(t *testing.T) {
 					UpdateChatAvatar(gomock.Any(), int64(100), int64(1), gomock.Any()).
 					Return(nil, domain.ErrDialogCannotHaveCustomAvatar)
 			},
-			args:       args{userID: int64(100), chatID: "1", fileName: "avatar.jpg", fileContent: "test", contentType: "image/jpeg"},
-			wantCode:   http.StatusBadRequest,
-			wantErr:    dtoApi.CantChangeAvatar,
+			args:     args{userID: int64(100), chatID: "1", fileName: "avatar.jpg", fileContent: "test", contentType: "image/jpeg"},
+			wantCode: http.StatusBadRequest,
+			wantErr:  dtoApi.CantChangeAvatar,
 		},
 	}
 
@@ -1030,10 +1028,10 @@ func TestPositiveChatHandler_GetChatMembers(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *dto.ResponseGetChatMembers
+		name    string
+		args    args
 	}{
 		{
 			name: "success get chat members",
@@ -1103,11 +1101,11 @@ func TestNegativeChatHandler_GetChatMembers(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
 		args       args
-		wantCode   int
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -1194,8 +1192,8 @@ func TestPositiveChatHandler_QuitChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 		args    args
 	}{
 		{
@@ -1212,9 +1210,9 @@ func TestPositiveChatHandler_QuitChat(t *testing.T) {
 				f.chatService.EXPECT().
 					GetChatByID(gomock.Any(), int64(1), gomock.Any()).
 					Return(&dto.ChatInformationDTO{
-						ID:        1,
-						ChatType:  dto.ChatTypeGroup,
-						Title:     "Group Chat",
+						ID:       1,
+						ChatType: dto.ChatTypeGroup,
+						Title:    "Group Chat",
 					}, nil).AnyTimes()
 
 				f.wsPublisher.EXPECT().
@@ -1277,11 +1275,11 @@ func TestNegativeChatHandler_QuitChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
 		args       args
-		wantCode   int
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -1396,9 +1394,9 @@ func TestPositiveChatHandler_UpdateChatTitle(t *testing.T) {
 	}
 
 	type args struct {
+		title  string
 		userID int64
 		chatID int64
-		title  string
 	}
 
 	tests := []struct {
@@ -1412,9 +1410,9 @@ func TestPositiveChatHandler_UpdateChatTitle(t *testing.T) {
 				f.chatService.EXPECT().
 					UpdateChatTitle(gomock.Any(), int64(100), int64(1), gomock.Any()).
 					Return(&dto.ChatInformationDTO{
-						ID:        1,
-						ChatType:  dto.ChatTypeGroup,
-						Title:     "New Title",
+						ID:       1,
+						ChatType: dto.ChatTypeGroup,
+						Title:    "New Title",
 						LastMessage: dto.MessageDTO{
 							Text:      "Hello",
 							CreatedAt: time.Now(),
@@ -1429,9 +1427,9 @@ func TestPositiveChatHandler_UpdateChatTitle(t *testing.T) {
 				f.chatService.EXPECT().
 					GetChatByID(gomock.Any(), int64(1), gomock.Any()).
 					Return(&dto.ChatInformationDTO{
-						ID:        1,
-						ChatType:  dto.ChatTypeGroup,
-						Title:     "New Title",
+						ID:       1,
+						ChatType: dto.ChatTypeGroup,
+						Title:    "New Title",
 						LastMessage: dto.MessageDTO{
 							Text:      "Hello",
 							CreatedAt: time.Now(),
@@ -1509,11 +1507,11 @@ func TestNegativeChatHandler_UpdateChatTitle(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
 		args       args
-		wantCode   int
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -1532,11 +1530,11 @@ func TestNegativeChatHandler_UpdateChatTitle(t *testing.T) {
 			skipErrCmp: false,
 		},
 		{
-			name:       "invalid chat id",
-			prepare:    nil,
-			args:       args{userID: int64(100), chatID: "invalid", body: `{"title":"New Title"}`},
-			wantCode:   http.StatusBadRequest,
-			wantErr:    dtoApi.InvalidID,
+			name:     "invalid chat id",
+			prepare:  nil,
+			args:     args{userID: int64(100), chatID: "invalid", body: `{"title":"New Title"}`},
+			wantCode: http.StatusBadRequest,
+			wantErr:  dtoApi.InvalidID,
 		},
 		{
 			name:       "validation fails - empty title",
@@ -1633,9 +1631,9 @@ func TestPositiveChatHandler_AddMembersToChat(t *testing.T) {
 	}
 
 	type args struct {
+		memberIDs []int64
 		userID    int64
 		chatID    int64
-		memberIDs []int64
 	}
 
 	tests := []struct {
@@ -1714,11 +1712,11 @@ func TestNegativeChatHandler_AddMembersToChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
 		args       args
-		wantCode   int
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -1737,11 +1735,11 @@ func TestNegativeChatHandler_AddMembersToChat(t *testing.T) {
 			skipErrCmp: false,
 		},
 		{
-			name:       "invalid chat id",
-			prepare:    nil,
-			args:       args{userID: int64(100), chatID: "invalid", body: `{"members_id":[101]}`},
-			wantCode:   http.StatusBadRequest,
-			wantErr:    dtoApi.InvalidID,
+			name:     "invalid chat id",
+			prepare:  nil,
+			args:     args{userID: int64(100), chatID: "invalid", body: `{"members_id":[101]}`},
+			wantCode: http.StatusBadRequest,
+			wantErr:  dtoApi.InvalidID,
 		},
 		{
 			name:       "validation fails - empty members list",
@@ -1860,14 +1858,14 @@ func TestPositiveChatHandler_DeleteMemberFromChat(t *testing.T) {
 	}
 
 	type args struct {
-		userID       int64
-		chatID       int64
+		userID         int64
+		chatID         int64
 		memberToDelete int64
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 		args    args
 	}{
 		{
@@ -1884,9 +1882,9 @@ func TestPositiveChatHandler_DeleteMemberFromChat(t *testing.T) {
 				f.chatService.EXPECT().
 					GetChatByID(gomock.Any(), int64(1), gomock.Any()).
 					Return(&dto.ChatInformationDTO{
-						ID:        1,
-						ChatType:  dto.ChatTypeGroup,
-						Title:     "Group Chat",
+						ID:       1,
+						ChatType: dto.ChatTypeGroup,
+						Title:    "Group Chat",
 					}, nil).AnyTimes()
 
 				f.wsPublisher.EXPECT().
@@ -1895,8 +1893,8 @@ func TestPositiveChatHandler_DeleteMemberFromChat(t *testing.T) {
 					Times(3)
 			},
 			args: args{
-				userID:       100,
-				chatID:       1,
+				userID:         100,
+				chatID:         1,
 				memberToDelete: 101,
 			},
 		},
@@ -1958,11 +1956,11 @@ func TestNegativeChatHandler_DeleteMemberFromChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
 		args       args
-		wantCode   int
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -1981,11 +1979,11 @@ func TestNegativeChatHandler_DeleteMemberFromChat(t *testing.T) {
 			skipErrCmp: false,
 		},
 		{
-			name:       "invalid chat id",
-			prepare:    nil,
-			args:       args{userID: int64(100), chatID: "invalid", body: `{"member_id":101}`},
-			wantCode:   http.StatusBadRequest,
-			wantErr:    dtoApi.InvalidID,
+			name:     "invalid chat id",
+			prepare:  nil,
+			args:     args{userID: int64(100), chatID: "invalid", body: `{"member_id":101}`},
+			wantCode: http.StatusBadRequest,
+			wantErr:  dtoApi.InvalidID,
 		},
 		{
 			name:       "validation fails - missing member_id",
@@ -2109,14 +2107,23 @@ func TestNegativeChatHandler_DeleteMemberFromChat(t *testing.T) {
 }
 
 func TestNewChatHandler(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	svc := mock.NewMockChatService(ctrl)
-	ws := mock.NewMockWsUserPublisher(ctrl)
-	h := NewChatHandler(svc, ws)
-	require.NotNil(t, h)
-	require.Equal(t, svc, h.chatService)
-	require.Equal(t, ws, h.wsPublisher)
+	tests := []struct {
+		name string
+	}{
+		{name: "wires chat service and ws publisher"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			svc := mock.NewMockChatService(ctrl)
+			ws := mock.NewMockWsUserPublisher(ctrl)
+			h := NewChatHandler(svc, ws)
+			require.NotNil(t, h)
+			require.Equal(t, svc, h.chatService)
+			require.Equal(t, ws, h.wsPublisher)
+		})
+	}
 }
 
 func strPtrChat(s string) *string {

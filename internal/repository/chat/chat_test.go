@@ -2,15 +2,16 @@ package chat
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
-	"errors"
+
+	"database/sql"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"database/sql"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	chatssql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat/sql"
@@ -35,10 +36,10 @@ func TestChatRepository_GetChatByID(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name    string
-		chatID  int64
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, chat *domain.Chat, err error)
+		name    string
+		chatID  int64
 	}{
 		{
 			name:   "success",
@@ -89,9 +90,9 @@ func TestChatRepository_CreateChat(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name    string
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, chat *domain.Chat, err error)
+		name    string
 	}{
 		{
 			name: "success",
@@ -100,7 +101,7 @@ func TestChatRepository_CreateChat(t *testing.T) {
 					AddRow(1, time.Now(), time.Now())
 
 				m.ExpectQuery(chatssql.InsertChat).
-					WithArgs("group", "title", sql.NullString{Valid: false}, int64(10), sql.NullString{Valid: false},).
+					WithArgs("group", "title", sql.NullString{Valid: false}, int64(10), sql.NullString{Valid: false}).
 					WillReturnRows(rows)
 			},
 			assert: func(t *testing.T, chat *domain.Chat, err error) {
@@ -146,9 +147,9 @@ func TestChatRepository_AddMember(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name    string
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, err error)
+		name    string
 	}{
 		{
 			name: "success",
@@ -193,9 +194,9 @@ func TestChatRepository_DeleteChat(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name    string
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, err error)
+		name    string
 	}{
 		{
 			name: "success",
@@ -260,10 +261,10 @@ func TestChatRepository_GetAllChatsByUserID(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name    string
-		userID  int64
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, chats []*domain.Chat, err error)
+		name    string
+		userID  int64
 	}{
 		{
 			name:   "success_multiple_rows",
@@ -335,10 +336,10 @@ func TestChatRepository_GetLastMessageOfChat(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name    string
-		chatID  int64
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, msg *domain.Message, err error)
+		name    string
+		chatID  int64
 	}{
 		{
 			name:   "success",
@@ -393,9 +394,9 @@ func TestChatRepository_DeleteMember(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name    string
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, err error)
+		name    string
 	}{
 		{
 			name: "success",
@@ -441,10 +442,10 @@ func TestChatRepository_GetLastMessagesOfChats(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name    string
-		userID  int64
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, msgs []*domain.Message, err error)
+		name    string
+		userID  int64
 	}{
 		{
 			name:   "success with multiple messages",
@@ -518,10 +519,10 @@ func TestChatRepository_GetChatMembers(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name    string
-		chatID  int64
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, members []int64, err error)
+		name    string
+		chatID  int64
 	}{
 		{
 			name:   "success with multiple members",
@@ -593,11 +594,11 @@ func TestChatRepository_IsMember(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
+		prepare func(m pgxmock.PgxPoolIface)
+		assert  func(t *testing.T, isMember bool, err error)
 		name    string
 		chatID  int64
 		userID  int64
-		prepare func(m pgxmock.PgxPoolIface)
-		assert  func(t *testing.T, isMember bool, err error)
 	}{
 		{
 			name:   "user is member",
@@ -667,11 +668,11 @@ func TestChatRepository_GetDialogBetweenUsers(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name     string
-		user1ID  int64
-		user2ID  int64
-		prepare  func(m pgxmock.PgxPoolIface)
-		assert   func(t *testing.T, chat *domain.Chat, err error)
+		prepare func(m pgxmock.PgxPoolIface)
+		assert  func(t *testing.T, chat *domain.Chat, err error)
+		name    string
+		user1ID int64
+		user2ID int64
 	}{
 		{
 			name:    "dialog exists",
@@ -743,11 +744,11 @@ func TestChatRepository_GetMemberRole(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
+		prepare func(m pgxmock.PgxPoolIface)
+		assert  func(t *testing.T, role string, err error)
 		name    string
 		chatID  int64
 		userID  int64
-		prepare func(m pgxmock.PgxPoolIface)
-		assert  func(t *testing.T, role string, err error)
 	}{
 		{
 			name:   "get owner role",
@@ -847,11 +848,11 @@ func TestChatRepository_UploadAvatarUrl(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name      string
-		chatID    int64
-		avatarURL string
 		prepare   func(m pgxmock.PgxPoolIface)
 		assert    func(t *testing.T, chat *domain.Chat, err error)
+		name      string
+		avatarURL string
+		chatID    int64
 	}{
 		{
 			name:      "success upload avatar url",
@@ -921,16 +922,16 @@ func TestChatRepository_UpdateTitle(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name    string
-		chatID  int64
-		title   string
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, chat *domain.Chat, err error)
+		name    string
+		title   string
+		chatID  int64
 	}{
 		{
-			name:    "success update title",
-			chatID:  1,
-			title:   "New Title",
+			name:   "success update title",
+			chatID: 1,
+			title:  "New Title",
 			prepare: func(m pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{
 					"id", "type", "title", "description", "owner_id", "avatar_url", "created_at", "updated_at",
@@ -947,9 +948,9 @@ func TestChatRepository_UpdateTitle(t *testing.T) {
 			},
 		},
 		{
-			name:    "chat not found",
-			chatID:  999,
-			title:   "New Title",
+			name:   "chat not found",
+			chatID: 999,
+			title:  "New Title",
 			prepare: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery(chatssql.UpdateChatTitle).
 					WithArgs(int64(999), "New Title").
@@ -960,9 +961,9 @@ func TestChatRepository_UpdateTitle(t *testing.T) {
 			},
 		},
 		{
-			name:    "db error",
-			chatID:  1,
-			title:   "New Title",
+			name:   "db error",
+			chatID: 1,
+			title:  "New Title",
 			prepare: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery(chatssql.UpdateChatTitle).
 					WithArgs(int64(1), "New Title").

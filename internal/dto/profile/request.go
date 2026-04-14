@@ -18,8 +18,8 @@ type RequestUpdateBirthDate struct {
 }
 
 type RequestUpdateName struct {
-	FirstName string  `json:"first_name"`
 	LastName  *string `json:"last_name,omitempty"`
+	FirstName string  `json:"first_name"`
 }
 
 type RequestUpdateEmail struct {

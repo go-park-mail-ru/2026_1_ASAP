@@ -2,11 +2,14 @@
 package chat
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"testing"
 	"time"
-	"bytes"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	domainProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
@@ -14,16 +17,10 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat/mock"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 func strPtr(s string) *string {
 	return &s
-}
-
-func timePtr(t time.Time) *time.Time {
-	return &t
 }
 
 func TestPositiveChatService_GetChatByID(t *testing.T) {
@@ -42,10 +39,10 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *dto.ChatInformationDTO
+		name    string
+		args    args
 	}{
 		{
 			name: "Get group chat by id",
@@ -174,10 +171,10 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
 		wantAnyErr bool
 	}{
 		{
@@ -268,10 +265,10 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *dto.ChatInformationDTO
+		name    string
+		args    args
 	}{
 		{
 			name: "Create group chat",
@@ -395,10 +392,10 @@ func TestNegativeChatService_CreateChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
 		wantAnyErr bool
 	}{
 		{
@@ -578,10 +575,10 @@ func TestNegativeChatService_DeleteChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
 		wantAnyErr bool
 	}{
 		{
@@ -648,9 +645,9 @@ func TestPositiveChatService_UpdateChatAvatar(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
+		request *dto.RequestUpdateAvatar
 		userID  int64
 		chatID  int64
-		request *dto.RequestUpdateAvatar
 	}
 
 	fileInput := &media.FileInput{
@@ -662,10 +659,10 @@ func TestPositiveChatService_UpdateChatAvatar(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *dto.ChatInformationDTO
+		name    string
+		args    args
 	}{
 		{
 			name: "Update group chat avatar",
@@ -737,155 +734,155 @@ func TestPositiveChatService_UpdateChatAvatar(t *testing.T) {
 }
 
 func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
-    type fields struct {
-        chatRepo  *mock.MockChatRepositoryInterface
-        userRepo  *mock.MockUserRepositoryInterface
-        mediaRepo *mock.MockMediaRepositoryInterface
-    }
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userRepo  *mock.MockUserRepositoryInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+	}
 
-    type args struct {
-        ctx     context.Context
-        userID  int64
-        chatID  int64
-        request *dto.RequestUpdateAvatar
-    }
+	type args struct {
+		ctx     context.Context
+		request *dto.RequestUpdateAvatar
+		userID  int64
+		chatID  int64
+	}
 
-    tests := []struct {
-        name       string
-        prepare    func(*fields)
-        args       args
-        wantErr    error
-        wantAnyErr bool
-    }{
-        {
-            name:    "Empty file - nil request",
-            args: args{
-                ctx:     context.Background(),
-                userID:  100,
-                chatID:  1,
-                request: nil,
-            },
-            wantErr: errors.New("update profile avatar nil request"),
-        },
-        {
-            name: "Empty file - nil file input",
-            args: args{
-                ctx:     context.Background(),
-                userID:  100,
-                chatID:  1,
-                request: &dto.RequestUpdateAvatar{File: nil},
-            },
-            wantErr: domainProfile.ErrEmptyAvatar,
-        },
-        {
-            name: "Empty file - nil body",
-            args: args{
-                ctx:    context.Background(),
-                userID: 100,
-                chatID: 1,
-                request: &dto.RequestUpdateAvatar{File: &media.FileInput{
-                    Body:        nil,
-                    ContentType: "image/png",
-                    Size:        1024,
-                }},
-            },
-            wantErr: domainProfile.ErrEmptyAvatar,
-        },
-        {
-            name: "Empty file - zero size",
-            args: args{
-                ctx:    context.Background(),
-                userID: 100,
-                chatID: 1,
-                request: &dto.RequestUpdateAvatar{File: &media.FileInput{
-                    Body:        bytes.NewBufferString("test"),
-                    ContentType: "image/png",
-                    Size:        0,
-                }},
-            },
-            wantErr: domainProfile.ErrEmptyAvatar,
-        },
-        {
-            name: "Invalid file type",
-            args: args{
-                ctx:    context.Background(),
-                userID: 100,
-                chatID: 1,
-                request: &dto.RequestUpdateAvatar{File: &media.FileInput{
-                    Body:        bytes.NewBufferString("test"),
-                    ContentType: "text/plain",
-                    Size:        1024,
-                }},
-            },
-            wantErr: domainProfile.ErrInvalidAvatarType,
-        },
-        {
-            name: "File too large",
-            args: args{
-                ctx:    context.Background(),
-                userID: 100,
-                chatID: 1,
-                request: &dto.RequestUpdateAvatar{File: &media.FileInput{
-                    Body:        bytes.NewBufferString("test"),
-                    ContentType: "image/png",
-                    Size:        6 * 1024 * 1024,
-                }},
-            },
-            wantErr: domainProfile.ErrAvatarTooLarge,
-        },
-        {
-            name: "Cannot update dialog avatar",
-            prepare: func(f *fields) {
-                f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
-                f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
-                    Id:   1,
-                    Type: domain.ChatTypeDialog,
-                }, nil)
-            },
-            args: args{
-                ctx:    context.Background(),
-                userID: 100,
-                chatID: 1,
-                request: &dto.RequestUpdateAvatar{File: &media.FileInput{
-                    Body:        bytes.NewBufferString("test"),
-                    ContentType: "image/png",
-                    Size:        1024,
-                }},
-            },
-            wantErr: domain.ErrDialogCannotHaveCustomAvatar,
-        },
-    }
+	tests := []struct {
+		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
+		wantAnyErr bool
+	}{
+		{
+			name: "Empty file - nil request",
+			args: args{
+				ctx:     context.Background(),
+				userID:  100,
+				chatID:  1,
+				request: nil,
+			},
+			wantErr: errors.New("update profile avatar nil request"),
+		},
+		{
+			name: "Empty file - nil file input",
+			args: args{
+				ctx:     context.Background(),
+				userID:  100,
+				chatID:  1,
+				request: &dto.RequestUpdateAvatar{File: nil},
+			},
+			wantErr: domainProfile.ErrEmptyAvatar,
+		},
+		{
+			name: "Empty file - nil body",
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+				request: &dto.RequestUpdateAvatar{File: &media.FileInput{
+					Body:        nil,
+					ContentType: "image/png",
+					Size:        1024,
+				}},
+			},
+			wantErr: domainProfile.ErrEmptyAvatar,
+		},
+		{
+			name: "Empty file - zero size",
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+				request: &dto.RequestUpdateAvatar{File: &media.FileInput{
+					Body:        bytes.NewBufferString("test"),
+					ContentType: "image/png",
+					Size:        0,
+				}},
+			},
+			wantErr: domainProfile.ErrEmptyAvatar,
+		},
+		{
+			name: "Invalid file type",
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+				request: &dto.RequestUpdateAvatar{File: &media.FileInput{
+					Body:        bytes.NewBufferString("test"),
+					ContentType: "text/plain",
+					Size:        1024,
+				}},
+			},
+			wantErr: domainProfile.ErrInvalidAvatarType,
+		},
+		{
+			name: "File too large",
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+				request: &dto.RequestUpdateAvatar{File: &media.FileInput{
+					Body:        bytes.NewBufferString("test"),
+					ContentType: "image/png",
+					Size:        6 * 1024 * 1024,
+				}},
+			},
+			wantErr: domainProfile.ErrAvatarTooLarge,
+		},
+		{
+			name: "Cannot update dialog avatar",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+					Id:   1,
+					Type: domain.ChatTypeDialog,
+				}, nil)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+				request: &dto.RequestUpdateAvatar{File: &media.FileInput{
+					Body:        bytes.NewBufferString("test"),
+					ContentType: "image/png",
+					Size:        1024,
+				}},
+			},
+			wantErr: domain.ErrDialogCannotHaveCustomAvatar,
+		},
+	}
 
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            ctrl := gomock.NewController(t)
-            defer ctrl.Finish()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-            f := fields{
-                chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-                userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
-                mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
-            }
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+			}
 
-            if tt.prepare != nil {
-                tt.prepare(&f)
-            }
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
 
-            s := &ChatService{
-                chatRepo:  f.chatRepo,
-                userRepo:  f.userRepo,
-                mediaRepo: f.mediaRepo,
-            }
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userRepo:  f.userRepo,
+				mediaRepo: f.mediaRepo,
+			}
 
-            result, err := s.UpdateChatAvatar(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.request)
-            require.Nil(t, result)
-            if tt.wantAnyErr {
-                require.Error(t, err)
-            } else {
-                require.EqualError(t, err, tt.wantErr.Error())
-            }
-        })
-    }
+			result, err := s.UpdateChatAvatar(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.request)
+			require.Nil(t, result)
+			if tt.wantAnyErr {
+				require.Error(t, err)
+			} else {
+				require.EqualError(t, err, tt.wantErr.Error())
+			}
+		})
+	}
 }
 
 func TestPositiveChatService_QuitChat(t *testing.T) {
@@ -962,10 +959,10 @@ func TestNegativeChatService_QuitChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
 		wantAnyErr bool
 	}{
 		{
@@ -1110,9 +1107,9 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 			args: args{ctx: context.Background(), userID: 100},
 			want: []dto.ChatInformationDTO{
 				{
-					ID:        1,
-					ChatType:  dto.ChatTypeGroup,
-					Title:     "Group Chat",
+					ID:       1,
+					ChatType: dto.ChatTypeGroup,
+					Title:    "Group Chat",
 					LastMessage: dto.MessageDTO{
 						SenderId:  101,
 						Text:      "Hello group!",
@@ -1121,9 +1118,9 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 					Avatar: strPtr("group_avatar.jpg"),
 				},
 				{
-					ID:        2,
-					ChatType:  dto.ChatTypeDialog,
-					Title:     "Friend User",
+					ID:       2,
+					ChatType: dto.ChatTypeDialog,
+					Title:    "Friend User",
 					LastMessage: dto.MessageDTO{
 						SenderId:  102,
 						Text:      "Hi in dialog!",
@@ -1253,6 +1250,106 @@ func TestNegativeChatService_GetAllChats(t *testing.T) {
 	}
 }
 
+func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userRepo  *mock.MockUserRepositoryInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+	}
+
+	type args struct {
+		ctx     context.Context
+		payload dto.ChatCreate
+		ownerID int64
+	}
+
+	tests := []struct {
+		name      string
+		prepare   func(*fields)
+		args      args
+		wantTitle string
+	}{
+		{
+			name: "bold markup",
+			prepare: func(f *fields) {
+				rawTitle := `<b>Group</b>`
+				f.chatRepo.EXPECT().
+					CreateChat(gomock.Any(), gomock.AssignableToTypeOf(&domain.Chat{})).
+					DoAndReturn(func(_ context.Context, c *domain.Chat) (*domain.Chat, error) {
+						require.Equal(t, rawTitle, c.Title)
+						return &domain.Chat{Id: 77, Type: domain.ChatTypeGroup, Title: rawTitle}, nil
+					})
+				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(100)).Return(&domainUser.User{Id: 100}, nil)
+				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&domainUser.User{Id: 101}, nil)
+				f.chatRepo.EXPECT().AddMember(context.Background(), int64(77), int64(100), "owner").Return(nil)
+				f.chatRepo.EXPECT().AddMember(context.Background(), int64(77), int64(101), "member").Return(nil)
+			},
+			args: args{
+				ctx: context.Background(),
+				payload: dto.ChatCreate{
+					Type:      dto.ChatTypeGroup,
+					Title:     `<b>Group</b>`,
+					MembersID: []int64{101},
+				},
+				ownerID: 100,
+			},
+			wantTitle: `&lt;b&gt;Group&lt;/b&gt;`,
+		},
+		{
+			name: "ampersand in title",
+			prepare: func(f *fields) {
+				rawTitle := `A & B team`
+				f.chatRepo.EXPECT().
+					CreateChat(gomock.Any(), gomock.AssignableToTypeOf(&domain.Chat{})).
+					DoAndReturn(func(_ context.Context, c *domain.Chat) (*domain.Chat, error) {
+						require.Equal(t, rawTitle, c.Title)
+						return &domain.Chat{Id: 78, Type: domain.ChatTypeGroup, Title: rawTitle}, nil
+					})
+				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(10)).Return(&domainUser.User{Id: 10}, nil)
+				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(11)).Return(&domainUser.User{Id: 11}, nil)
+				f.chatRepo.EXPECT().AddMember(context.Background(), int64(78), int64(10), "owner").Return(nil)
+				f.chatRepo.EXPECT().AddMember(context.Background(), int64(78), int64(11), "member").Return(nil)
+			},
+			args: args{
+				ctx: context.Background(),
+				payload: dto.ChatCreate{
+					Type:      dto.ChatTypeGroup,
+					Title:     `A & B team`,
+					MembersID: []int64{11},
+				},
+				ownerID: 10,
+			},
+			wantTitle: `A &amp; B team`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userRepo:  f.userRepo,
+				mediaRepo: f.mediaRepo,
+			}
+			resp, err := s.CreateChat(tt.args.ctx, tt.args.payload, tt.args.ownerID)
+			require.NoError(t, err)
+			require.Equal(t, tt.wantTitle, resp.Title)
+		})
+	}
+}
+
 func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
@@ -1262,18 +1359,18 @@ func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
+		request *dto.RequestUpdateTitle
 		userID  int64
 		chatID  int64
-		request *dto.RequestUpdateTitle
 	}
 
 	now := time.Now()
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *dto.ChatInformationDTO
+		name    string
+		args    args
 	}{
 		{
 			name: "Update group chat title successfully",
@@ -1343,7 +1440,7 @@ func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 	}
 }
 
-func TestNegativeChatService_UpdateChatTitle(t *testing.T) {
+func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
 		userRepo  *mock.MockUserRepositoryInterface
@@ -1358,10 +1455,107 @@ func TestNegativeChatService_UpdateChatTitle(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		args       args
+		name      string
+		prepare   func(*fields)
+		args      args
+		wantTitle string
+	}{
+		{
+			name: "script in title",
+			prepare: func(f *fields) {
+				rawTitle := `<script>alert(1)</script>`
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(11), int64(100)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(11)).Return(&domain.Chat{
+					Id:   11,
+					Type: domain.ChatTypeGroup,
+				}, nil)
+				f.chatRepo.EXPECT().UpdateTitle(context.Background(), int64(11), rawTitle).Return(&domain.Chat{
+					Id:    11,
+					Type:  domain.ChatTypeGroup,
+					Title: rawTitle,
+				}, nil)
+				f.chatRepo.EXPECT().GetLastMessageOfChat(context.Background(), int64(11)).Return(&domain.Message{}, domain.ErrNoMessage)
+			},
+			args: args{
+				ctx:     context.Background(),
+				userID:  100,
+				chatID:  11,
+				request: &dto.RequestUpdateTitle{Title: `<script>alert(1)</script>`},
+			},
+			wantTitle: `&lt;script&gt;alert(1)&lt;/script&gt;`,
+		},
+		{
+			name: "ampersand",
+			prepare: func(f *fields) {
+				rawTitle := `X & Y`
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(12), int64(200)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(12)).Return(&domain.Chat{
+					Id:   12,
+					Type: domain.ChatTypeGroup,
+				}, nil)
+				f.chatRepo.EXPECT().UpdateTitle(context.Background(), int64(12), rawTitle).Return(&domain.Chat{
+					Id:    12,
+					Type:  domain.ChatTypeGroup,
+					Title: rawTitle,
+				}, nil)
+				f.chatRepo.EXPECT().GetLastMessageOfChat(context.Background(), int64(12)).Return(&domain.Message{}, domain.ErrNoMessage)
+			},
+			args: args{
+				ctx:     context.Background(),
+				userID:  200,
+				chatID:  12,
+				request: &dto.RequestUpdateTitle{Title: `X & Y`},
+			},
+			wantTitle: `X &amp; Y`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userRepo:  f.userRepo,
+				mediaRepo: f.mediaRepo,
+			}
+			resp, err := s.UpdateChatTitle(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.request)
+			require.NoError(t, err)
+			require.Equal(t, tt.wantTitle, resp.Title)
+		})
+	}
+}
+
+func TestNegativeChatService_UpdateChatTitle(t *testing.T) {
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userRepo  *mock.MockUserRepositoryInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+	}
+
+	type args struct {
+		ctx     context.Context
+		request *dto.RequestUpdateTitle
+		userID  int64
+		chatID  int64
+	}
+
+	tests := []struct {
 		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
 		wantAnyErr bool
 	}{
 		{
@@ -1451,14 +1645,14 @@ func TestPositiveChatService_AddMembersToChat(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
+		request *dto.RequestAddMember
 		userID  int64
 		chatID  int64
-		request *dto.RequestAddMember
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 		args    args
 	}{
 		{
@@ -1539,16 +1733,16 @@ func TestNegativeChatService_AddMembersToChat(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
+		request *dto.RequestAddMember
 		userID  int64
 		chatID  int64
-		request *dto.RequestAddMember
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
 		wantAnyErr bool
 	}{
 		{
@@ -1660,14 +1854,14 @@ func TestPositiveChatService_DeleteMemberFromChat(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
+		request *dto.RequestDeleteMember
 		userID  int64
 		chatID  int64
-		request *dto.RequestDeleteMember
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 		args    args
 	}{
 		{
@@ -1727,16 +1921,16 @@ func TestNegativeChatService_DeleteMemberFromChat(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
+		request *dto.RequestDeleteMember
 		userID  int64
 		chatID  int64
-		request *dto.RequestDeleteMember
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
 		wantAnyErr bool
 	}{
 		{
@@ -1871,10 +2065,10 @@ func TestPositiveChatService_GetAllChatMembers(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *dto.ResponseGetChatMembers
+		name    string
+		args    args
 	}{
 		{
 			name: "Get chat members successfully",
@@ -1931,10 +2125,10 @@ func TestNegativeChatService_GetAllChatMembers(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
 		wantAnyErr bool
 	}{
 		{

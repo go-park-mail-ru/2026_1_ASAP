@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	media "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile/mock"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 func strPtr(s string) *string {
@@ -35,10 +36,10 @@ func TestPositiveProfileService_GetUserProfile(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *dto.ResponseGetProfile
+		args    args
+		name    string
 	}{
 		{
 			name: "Base profile information",
@@ -135,10 +136,10 @@ func TestNegativeProfileService_GetUserProfile(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
+		wantErr    error
 		prepare    func(*fields)
 		args       args
-		wantErr    error
+		name       string
 		wantAnyErr bool
 	}{
 		{
@@ -195,22 +196,22 @@ func TestPositiveProfileService_UpdateBio(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
-		userID  int64
 		request *dto.RequestUpdateBio
+		userID  int64
 	}
 
 	tests := []struct {
-		name    string
-		prepare func(*fields)
 		args    args
+		prepare func(*fields)
 		want    *dto.ResponseUpdateProfile
+		name    string
 	}{
 		{
 			name: "Usual bio",
 			prepare: func(f *fields) {
 				f.profileRepository.EXPECT().UploadBio(context.Background(), int64(123), "sample bio").Return(&domain.Profile{UserId: 123, Login: "danil_kolbasenko", Bio: strPtr("sample bio")}, nil)
 			},
-			args: args{ctx: context.Background(), userID: 123, request: &dto.RequestUpdateBio{strPtr("sample bio")}},
+			args: args{ctx: context.Background(), userID: 123, request: &dto.RequestUpdateBio{Bio: strPtr("sample bio")}},
 			want: &dto.ResponseUpdateProfile{
 				UserId: 123,
 				Login:  "danil_kolbasenko",
@@ -251,15 +252,15 @@ func TestNegativeProfileService_UpdateBio(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
-		userID  int64
 		request *dto.RequestUpdateBio
+		userID  int64
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
 		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
 		wantAnyErr bool
 	}{
 		{
@@ -313,7 +314,7 @@ func TestNegativeProfileService_UpdateBio(t *testing.T) {
 	}
 }
 
-func TestPositiveProfileService_UpdateAvatar(t *testing.T) {
+func TestPositiveProfileService_UpdateBioEscapesHTML(t *testing.T) {
 	type fields struct {
 		profileRepository *mock.MockProfileRepositoryInterface
 		mediaRepository   *mock.MockMediaRepositoryInterface
@@ -322,7 +323,265 @@ func TestPositiveProfileService_UpdateAvatar(t *testing.T) {
 	type args struct {
 		ctx     context.Context
 		userID  int64
+		request *dto.RequestUpdateBio
+	}
+
+	tests := []struct {
+		name    string
+		prepare func(*fields)
+		args    args
+		wantBio string
+	}{
+		{
+			name: "script and quotes",
+			prepare: func(f *fields) {
+				raw := `<script>alert("xss")</script>`
+				f.profileRepository.EXPECT().
+					UploadBio(context.Background(), int64(123), raw).
+					Return(&domain.Profile{
+						UserId: 123,
+						Login:  "user",
+						Bio:    strPtr(raw),
+					}, nil)
+			},
+			args: args{
+				ctx:     context.Background(),
+				userID:  123,
+				request: &dto.RequestUpdateBio{Bio: strPtr(`<script>alert("xss")</script>`)},
+			},
+			wantBio: `&lt;script&gt;alert(&#34;xss&#34;)&lt;/script&gt;`,
+		},
+		{
+			name: "ampersand",
+			prepare: func(f *fields) {
+				raw := `Tom & Jerry`
+				f.profileRepository.EXPECT().
+					UploadBio(context.Background(), int64(123), raw).
+					Return(&domain.Profile{
+						UserId: 123,
+						Login:  "user",
+						Bio:    strPtr(raw),
+					}, nil)
+			},
+			args: args{
+				ctx:     context.Background(),
+				userID:  123,
+				request: &dto.RequestUpdateBio{Bio: strPtr(`Tom & Jerry`)},
+			},
+			wantBio: `Tom &amp; Jerry`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				profileRepository: mock.NewMockProfileRepositoryInterface(ctrl),
+				mediaRepository:   mock.NewMockMediaRepositoryInterface(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ProfileService{
+				profileRepository: f.profileRepository,
+				mediaRepository:   f.mediaRepository,
+			}
+			resp, err := s.UpdateProfileBio(tt.args.ctx, tt.args.userID, tt.args.request)
+			require.NoError(t, err)
+			require.Equal(t, tt.wantBio, *resp.Bio)
+		})
+	}
+}
+
+func TestPositiveProfileService_UpdateNameEscapesHTML(t *testing.T) {
+	type fields struct {
+		profileRepository *mock.MockProfileRepositoryInterface
+		mediaRepository   *mock.MockMediaRepositoryInterface
+	}
+
+	type args struct {
+		ctx     context.Context
+		userID  int64
+		request *dto.RequestUpdateName
+	}
+
+	tests := []struct {
+		name        string
+		prepare     func(*fields)
+		args        args
+		wantFirst   string
+		wantLast    string
+		wantNilLast bool
+	}{
+		{
+			name: "markup in first and last name",
+			prepare: func(f *fields) {
+				first := `<b>Ann</b>`
+				last := `<img src=x onerror=alert(1)>`
+				lastPtr := &last
+				f.profileRepository.EXPECT().
+					UploadName(context.Background(), int64(321), first, lastPtr).
+					Return(&domain.Profile{
+						UserId:    321,
+						Login:     "ann",
+						FirstName: first,
+						LastName:  lastPtr,
+					}, nil)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 321,
+				request: &dto.RequestUpdateName{
+					FirstName: `<b>Ann</b>`,
+					LastName:  strPtr(`<img src=x onerror=alert(1)>`),
+				},
+			},
+			wantFirst:   `&lt;b&gt;Ann&lt;/b&gt;`,
+			wantLast:    `&lt;img src=x onerror=alert(1)&gt;`,
+			wantNilLast: false,
+		},
+		{
+			name: "ampersand in first name only",
+			prepare: func(f *fields) {
+				first := `A & B`
+				f.profileRepository.EXPECT().
+					UploadName(context.Background(), int64(500), first, nil).
+					Return(&domain.Profile{
+						UserId:    500,
+						Login:     "bob",
+						FirstName: first,
+						LastName:  nil,
+					}, nil)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 500,
+				request: &dto.RequestUpdateName{
+					FirstName: `A & B`,
+					LastName:  nil,
+				},
+			},
+			wantFirst:   `A &amp; B`,
+			wantNilLast: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				profileRepository: mock.NewMockProfileRepositoryInterface(ctrl),
+				mediaRepository:   mock.NewMockMediaRepositoryInterface(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ProfileService{
+				profileRepository: f.profileRepository,
+				mediaRepository:   f.mediaRepository,
+			}
+			resp, err := s.UpdateProfileName(tt.args.ctx, tt.args.userID, tt.args.request)
+			require.NoError(t, err)
+			require.Equal(t, tt.wantFirst, resp.FirstName)
+			if tt.wantNilLast {
+				require.Nil(t, resp.LastName)
+			} else {
+				require.Equal(t, tt.wantLast, *resp.LastName)
+			}
+		})
+	}
+}
+
+func TestPositiveProfileService_GetUserProfileEscapesLogin(t *testing.T) {
+	type fields struct {
+		profileRepository *mock.MockProfileRepositoryInterface
+		mediaRepository   *mock.MockMediaRepositoryInterface
+	}
+
+	type args struct {
+		ctx    context.Context
+		userID int64
+	}
+
+	tests := []struct {
+		name      string
+		prepare   func(*fields)
+		args      args
+		wantLogin string
+	}{
+		{
+			name: "angle brackets",
+			prepare: func(f *fields) {
+				f.profileRepository.EXPECT().
+					GetProfileById(context.Background(), int64(7)).
+					Return(&domain.Profile{
+						UserId:    7,
+						Login:     `<alice>`,
+						FirstName: "f",
+					}, nil)
+			},
+			args:      args{ctx: context.Background(), userID: 7},
+			wantLogin: `&lt;alice&gt;`,
+		},
+		{
+			name: "ampersand",
+			prepare: func(f *fields) {
+				f.profileRepository.EXPECT().
+					GetProfileById(context.Background(), int64(8)).
+					Return(&domain.Profile{
+						UserId:    8,
+						Login:     `a & b`,
+						FirstName: "x",
+					}, nil)
+			},
+			args:      args{ctx: context.Background(), userID: 8},
+			wantLogin: `a &amp; b`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				profileRepository: mock.NewMockProfileRepositoryInterface(ctrl),
+				mediaRepository:   mock.NewMockMediaRepositoryInterface(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ProfileService{
+				profileRepository: f.profileRepository,
+				mediaRepository:   f.mediaRepository,
+			}
+			resp, err := s.GetUserProfile(tt.args.ctx, tt.args.userID)
+			require.NoError(t, err)
+			require.Equal(t, tt.wantLogin, resp.Login)
+		})
+	}
+}
+
+func TestPositiveProfileService_UpdateAvatar(t *testing.T) {
+	type fields struct {
+		profileRepository *mock.MockProfileRepositoryInterface
+		mediaRepository   *mock.MockMediaRepositoryInterface
+	}
+
+	type args struct {
+		ctx     context.Context
 		request *dto.RequestUpdateAvatar
+		userID  int64
 	}
 
 	fileInput := &media.FileInput{
@@ -332,10 +591,10 @@ func TestPositiveProfileService_UpdateAvatar(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		prepare func(*fields)
 		args    args
+		prepare func(*fields)
 		want    *dto.ResponseUpdateProfile
+		name    string
 	}{
 		{
 			name: "Usual avatar",
@@ -397,8 +656,8 @@ func TestNegativeProfileService_UpdateAvatar(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
-		userID  int64
 		request *dto.RequestUpdateAvatar
+		userID  int64
 	}
 
 	fileInputUploadErr := &media.FileInput{
@@ -413,10 +672,10 @@ func TestNegativeProfileService_UpdateAvatar(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
 		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
 		wantAnyErr bool
 	}{
 		{
@@ -533,18 +792,18 @@ func TestPositiveProfileService_UpdateBirthDate(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
-		userID  int64
 		request *dto.RequestUpdateBirthDate
+		userID  int64
 	}
 
 	wantBirthParsed, err := time.Parse(time.DateOnly, "1995-03-10")
 	require.NoError(t, err)
 
 	tests := []struct {
-		name    string
-		prepare func(*fields)
 		args    args
+		prepare func(*fields)
 		want    *dto.ResponseUpdateProfile
+		name    string
 	}{
 		{
 			name: "Sets birth date",
@@ -636,8 +895,8 @@ func TestNegativeProfileService_UpdateBirthDate(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
-		userID  int64
 		request *dto.RequestUpdateBirthDate
+		userID  int64
 	}
 
 	futureDate := time.Now().UTC().AddDate(0, 0, 2).Format(time.DateOnly)
@@ -646,10 +905,10 @@ func TestNegativeProfileService_UpdateBirthDate(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
 		args       args
 		wantErr    error
+		prepare    func(*fields)
+		name       string
 		wantAnyErr bool
 	}{
 		{
@@ -739,10 +998,10 @@ func TestPositiveProfileService_SearchIdByLogin(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		prepare func(*fields)
 		args    args
+		prepare func(*fields)
 		want    *dto.ResponseSearchIdByLogin
+		name    string
 	}{
 		{
 			name: "found by login",

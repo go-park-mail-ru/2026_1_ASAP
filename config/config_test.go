@@ -50,12 +50,12 @@ func TestNegativeConfig_ParseZapLevel(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
+		name       string
 		args       args
+		wantSubstr string
 		wantErr    bool
 		wantLevel  zapcore.Level
-		wantSubstr string
 	}{
 		{
 			name:       "unknown level",
@@ -145,18 +145,18 @@ func TestPositiveConfig_ServerInfo(t *testing.T) {
 	type fields struct{}
 
 	type args struct {
+		postgres PostgresConfig
 		server   ServerConfig
 		redis    RedisConfig
-		postgres PostgresConfig
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
-		args       args
+		name       string
 		wantServer string
 		wantRedis  string
 		wantPG     string
+		args       args
 	}{
 		{
 			name:    "concatenates host and port",
@@ -189,10 +189,10 @@ func TestPositiveConfig_S3ConfigURLs(t *testing.T) {
 	type fields struct{}
 
 	type args struct {
-		cfg      S3Config
 		endpoint string
 		url      string
 		public   string
+		cfg      S3Config
 	}
 
 	tests := []struct {
@@ -260,10 +260,10 @@ func TestPositiveConfig_LoadConfigFromEnv(t *testing.T) {
 	type args struct{}
 
 	tests := []struct {
-		name    string
-		prepare func(*fields, *testing.T)
 		args    args
+		prepare func(*fields, *testing.T)
 		assert  func(*testing.T, *Config)
+		name    string
 	}{
 		{
 			name: "Defaults when optional secrets empty in env",
@@ -395,10 +395,10 @@ func TestPositiveConfig_GetEnvVariable(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields, *testing.T)
-		args    args
+		name    string
 		want    string
+		args    args
 	}{
 		{
 			name:    "Uses default when unset",

@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
+
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	messagessql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/messages/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"go.uber.org/zap"
 )
 
 type dbPool interface {
@@ -42,12 +43,12 @@ func (m *MessageRepository) CreateMessage(ctx context.Context, message *domain.M
 	start := time.Now()
 	messageModel := toModel(message)
 	trx, err := m.db.BeginTx(ctx, pgx.TxOptions{
-        IsoLevel: pgx.RepeatableRead,
-    })
-    if err != nil {
-        return nil, fmt.Errorf("begin tx: %w", err)
-    }
-    defer func() { _ = trx.Rollback(ctx) }()
+		IsoLevel: pgx.RepeatableRead,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = trx.Rollback(ctx) }()
 
 	err = trx.QueryRow(ctx, messagessql.InsertMessage,
 		messageModel.ChatId,
