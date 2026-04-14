@@ -14,6 +14,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 )
 
+//go:generate sh -c "mockgen -destination=mock/chat_mock.go -package=mock . ChatRepositoryInterface,UserRepositoryInterface,MediaRepositoryInterface && sed -i '' 's/chat \\*chat\\.Chat/chat \\*domain\\.Chat/g' mock/chat_mock.go && sed -i '' 's/user \\*user\\.User/u \\*domainUser\\.User/g' mock/chat_mock.go"
 type ChatRepositoryInterface interface {
 	GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error)
 	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
@@ -358,6 +359,23 @@ func (s *ChatService) IsMember(ctx context.Context, userID, chatID int64) (bool,
 }
 
 func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateAvatar) (*dto.ChatInformationDTO, error) {
+	if request == nil {
+		return nil, errors.New("update profile avatar nil request")
+	}
+	err := checkAvatar(request.File)
+	if err != nil {
+		switch {
+		case errors.Is(err, media.ErrFileTooLarge):
+			return nil, domainProfile.ErrAvatarTooLarge
+		case errors.Is(err, media.ErrInvalidFileType):
+			return nil, domainProfile.ErrInvalidAvatarType
+		case errors.Is(err, media.ErrEmptyFile):
+			return nil, domainProfile.ErrEmptyAvatar
+		}
+
+		return nil, fmt.Errorf("invalid avatar: %w", err)
+	}
+	
 	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check user is member of chat: %w", err)
@@ -377,23 +395,6 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 
 	if chat.Type == domain.ChatTypeDialog {
 		return nil, domain.ErrDialogCannotHaveCustomAvatar
-	}
-
-	if request == nil {
-		return nil, errors.New("update profile avatar nil request")
-	}
-	err = checkAvatar(request.File)
-	if err != nil {
-		switch {
-		case errors.Is(err, media.ErrFileTooLarge):
-			return nil, domainProfile.ErrAvatarTooLarge
-		case errors.Is(err, media.ErrInvalidFileType):
-			return nil, domainProfile.ErrInvalidAvatarType
-		case errors.Is(err, media.ErrEmptyFile):
-			return nil, domainProfile.ErrEmptyAvatar
-		}
-
-		return nil, fmt.Errorf("invalid avatar: %w", err)
 	}
 
 	avatarURL, err := s.mediaRepo.UploadChatAvatar(ctx, chatID, request.File)

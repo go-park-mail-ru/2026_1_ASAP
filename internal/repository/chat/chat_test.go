@@ -435,3 +435,557 @@ func TestChatRepository_DeleteMember(t *testing.T) {
 		})
 	}
 }
+
+func TestChatRepository_GetLastMessagesOfChats(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now()
+
+	tests := []struct {
+		name    string
+		userID  int64
+		prepare func(m pgxmock.PgxPoolIface)
+		assert  func(t *testing.T, msgs []*domain.Message, err error)
+	}{
+		{
+			name:   "success with multiple messages",
+			userID: 100,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{
+					"id", "chat_id", "sender_id", "content", "sticker_id", "edited", "created_at", "updated_at", "deleted_at",
+				}).
+					AddRow(1, 10, 100, "Hello", nil, false, now, now, nil).
+					AddRow(2, 20, 101, "Hi", nil, false, now, now, nil)
+
+				m.ExpectQuery(chatssql.GetLastMessagesOfChats).
+					WithArgs(int64(100)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, msgs []*domain.Message, err error) {
+				require.NoError(t, err)
+				require.Len(t, msgs, 2)
+				require.Equal(t, int64(1), msgs[0].Id)
+				require.Equal(t, int64(2), msgs[1].Id)
+			},
+		},
+		{
+			name:   "empty result",
+			userID: 200,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{
+					"id", "chat_id", "sender_id", "content", "sticker_id", "edited", "created_at", "updated_at", "deleted_at",
+				})
+
+				m.ExpectQuery(chatssql.GetLastMessagesOfChats).
+					WithArgs(int64(200)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, msgs []*domain.Message, err error) {
+				require.NoError(t, err)
+				require.Empty(t, msgs)
+			},
+		},
+		{
+			name:   "db error",
+			userID: 300,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.GetLastMessagesOfChats).
+					WithArgs(int64(300)).
+					WillReturnError(errors.New("database error"))
+			},
+			assert: func(t *testing.T, msgs []*domain.Message, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to get last messages")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := newPGMock(t)
+			tt.prepare(mock)
+
+			repo := newTestChatRepository(mock)
+
+			msgs, err := repo.GetLastMessagesOfChats(ctx, tt.userID)
+
+			tt.assert(t, msgs, err)
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestChatRepository_GetChatMembers(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name    string
+		chatID  int64
+		prepare func(m pgxmock.PgxPoolIface)
+		assert  func(t *testing.T, members []int64, err error)
+	}{
+		{
+			name:   "success with multiple members",
+			chatID: 1,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{"user_id"}).
+					AddRow(100).
+					AddRow(101).
+					AddRow(102)
+
+				m.ExpectQuery(chatssql.GetChatMembers).
+					WithArgs(int64(1)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, members []int64, err error) {
+				require.NoError(t, err)
+				require.Len(t, members, 3)
+				require.Contains(t, members, int64(100))
+				require.Contains(t, members, int64(101))
+				require.Contains(t, members, int64(102))
+			},
+		},
+		{
+			name:   "empty result",
+			chatID: 2,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{"user_id"})
+
+				m.ExpectQuery(chatssql.GetChatMembers).
+					WithArgs(int64(2)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, members []int64, err error) {
+				require.NoError(t, err)
+				require.Empty(t, members)
+			},
+		},
+		{
+			name:   "db error",
+			chatID: 3,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.GetChatMembers).
+					WithArgs(int64(3)).
+					WillReturnError(errors.New("database error"))
+			},
+			assert: func(t *testing.T, members []int64, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to get chat members")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := newPGMock(t)
+			tt.prepare(mock)
+
+			repo := newTestChatRepository(mock)
+
+			members, err := repo.GetChatMembers(ctx, tt.chatID)
+
+			tt.assert(t, members, err)
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestChatRepository_IsMember(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name    string
+		chatID  int64
+		userID  int64
+		prepare func(m pgxmock.PgxPoolIface)
+		assert  func(t *testing.T, isMember bool, err error)
+	}{
+		{
+			name:   "user is member",
+			chatID: 1,
+			userID: 100,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{"exists"}).AddRow(true)
+
+				m.ExpectQuery(chatssql.IsMember).
+					WithArgs(int64(1), int64(100)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, isMember bool, err error) {
+				require.NoError(t, err)
+				require.True(t, isMember)
+			},
+		},
+		{
+			name:   "user is not member",
+			chatID: 1,
+			userID: 200,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{"exists"}).AddRow(false)
+
+				m.ExpectQuery(chatssql.IsMember).
+					WithArgs(int64(1), int64(200)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, isMember bool, err error) {
+				require.NoError(t, err)
+				require.False(t, isMember)
+			},
+		},
+		{
+			name:   "db error",
+			chatID: 1,
+			userID: 100,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.IsMember).
+					WithArgs(int64(1), int64(100)).
+					WillReturnError(errors.New("database error"))
+			},
+			assert: func(t *testing.T, isMember bool, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to check if member exists")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := newPGMock(t)
+			tt.prepare(mock)
+
+			repo := newTestChatRepository(mock)
+
+			isMember, err := repo.IsMember(ctx, tt.chatID, tt.userID)
+
+			tt.assert(t, isMember, err)
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestChatRepository_GetDialogBetweenUsers(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now()
+
+	tests := []struct {
+		name     string
+		user1ID  int64
+		user2ID  int64
+		prepare  func(m pgxmock.PgxPoolIface)
+		assert   func(t *testing.T, chat *domain.Chat, err error)
+	}{
+		{
+			name:    "dialog exists",
+			user1ID: 100,
+			user2ID: 101,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{
+					"id", "type", "title", "description", "owner_id", "avatar_url", "created_at", "updated_at",
+				}).AddRow(1, "dialog", "", sql.NullString{Valid: false}, 100, sql.NullString{Valid: false}, now, now)
+
+				m.ExpectQuery(chatssql.GetDialogBetweenUsers).
+					WithArgs(int64(100), int64(101)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, chat *domain.Chat, err error) {
+				require.NoError(t, err)
+				require.NotNil(t, chat)
+				require.Equal(t, int64(1), chat.Id)
+				require.Equal(t, domain.ChatTypeDialog, chat.Type)
+			},
+		},
+		{
+			name:    "dialog does not exist - returns nil chat",
+			user1ID: 100,
+			user2ID: 200,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.GetDialogBetweenUsers).
+					WithArgs(int64(100), int64(200)).
+					WillReturnError(pgx.ErrNoRows)
+			},
+			assert: func(t *testing.T, chat *domain.Chat, err error) {
+				// Метод возвращает nil, nil когда диалог не найден
+				require.NoError(t, err)
+				require.Nil(t, chat)
+			},
+		},
+		{
+			name:    "db error",
+			user1ID: 100,
+			user2ID: 101,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.GetDialogBetweenUsers).
+					WithArgs(int64(100), int64(101)).
+					WillReturnError(errors.New("database error"))
+			},
+			assert: func(t *testing.T, chat *domain.Chat, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to get dialog between users")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := newPGMock(t)
+			tt.prepare(mock)
+
+			repo := newTestChatRepository(mock)
+
+			chat, err := repo.GetDialogBetweenUsers(ctx, tt.user1ID, tt.user2ID)
+
+			tt.assert(t, chat, err)
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestChatRepository_GetMemberRole(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name    string
+		chatID  int64
+		userID  int64
+		prepare func(m pgxmock.PgxPoolIface)
+		assert  func(t *testing.T, role string, err error)
+	}{
+		{
+			name:   "get owner role",
+			chatID: 1,
+			userID: 100,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{"role"}).AddRow("owner")
+
+				m.ExpectQuery(chatssql.GetMemberRole).
+					WithArgs(int64(1), int64(100)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, role string, err error) {
+				require.NoError(t, err)
+				require.Equal(t, "owner", role)
+			},
+		},
+		{
+			name:   "get admin role",
+			chatID: 1,
+			userID: 101,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{"role"}).AddRow("admin")
+
+				m.ExpectQuery(chatssql.GetMemberRole).
+					WithArgs(int64(1), int64(101)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, role string, err error) {
+				require.NoError(t, err)
+				require.Equal(t, "admin", role)
+			},
+		},
+		{
+			name:   "get member role",
+			chatID: 1,
+			userID: 102,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{"role"}).AddRow("member")
+
+				m.ExpectQuery(chatssql.GetMemberRole).
+					WithArgs(int64(1), int64(102)).
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, role string, err error) {
+				require.NoError(t, err)
+				require.Equal(t, "member", role)
+			},
+		},
+		{
+			name:   "user not member - returns empty string",
+			chatID: 1,
+			userID: 999,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.GetMemberRole).
+					WithArgs(int64(1), int64(999)).
+					WillReturnError(pgx.ErrNoRows)
+			},
+			assert: func(t *testing.T, role string, err error) {
+				require.NoError(t, err)
+				require.Empty(t, role)
+			},
+		},
+		{
+			name:   "db error",
+			chatID: 1,
+			userID: 100,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.GetMemberRole).
+					WithArgs(int64(1), int64(100)).
+					WillReturnError(errors.New("database error"))
+			},
+			assert: func(t *testing.T, role string, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to get user role")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := newPGMock(t)
+			tt.prepare(mock)
+
+			repo := newTestChatRepository(mock)
+
+			role, err := repo.GetMemberRole(ctx, tt.userID, tt.chatID)
+
+			tt.assert(t, role, err)
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestChatRepository_UploadAvatarUrl(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now()
+
+	tests := []struct {
+		name      string
+		chatID    int64
+		avatarURL string
+		prepare   func(m pgxmock.PgxPoolIface)
+		assert    func(t *testing.T, chat *domain.Chat, err error)
+	}{
+		{
+			name:      "success upload avatar url",
+			chatID:    1,
+			avatarURL: "https://cdn.example.com/avatar.jpg",
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{
+					"id", "type", "title", "description", "owner_id", "avatar_url", "created_at", "updated_at",
+				}).AddRow(1, "group", "Chat", sql.NullString{Valid: false}, 100, sql.NullString{String: "https://cdn.example.com/avatar.jpg", Valid: true}, now, now)
+
+				m.ExpectQuery(chatssql.UpdateChatAvatarURL).
+					WithArgs(int64(1), "https://cdn.example.com/avatar.jpg").
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, chat *domain.Chat, err error) {
+				require.NoError(t, err)
+				require.Equal(t, int64(1), chat.Id)
+				require.Equal(t, "https://cdn.example.com/avatar.jpg", *chat.AvatarUrl)
+			},
+		},
+		{
+			name:      "chat not found",
+			chatID:    999,
+			avatarURL: "https://cdn.example.com/avatar.jpg",
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.UpdateChatAvatarURL).
+					WithArgs(int64(999), "https://cdn.example.com/avatar.jpg").
+					WillReturnError(pgx.ErrNoRows)
+			},
+			assert: func(t *testing.T, chat *domain.Chat, err error) {
+				require.ErrorIs(t, err, domain.ErrChatNotFound)
+			},
+		},
+		{
+			name:      "db error",
+			chatID:    1,
+			avatarURL: "https://cdn.example.com/avatar.jpg",
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.UpdateChatAvatarURL).
+					WithArgs(int64(1), "https://cdn.example.com/avatar.jpg").
+					WillReturnError(errors.New("database error"))
+			},
+			assert: func(t *testing.T, chat *domain.Chat, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "chatRepo failed upload avatar url")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := newPGMock(t)
+			tt.prepare(mock)
+
+			repo := newTestChatRepository(mock)
+
+			chat, err := repo.UploadAvatarUrl(ctx, tt.chatID, tt.avatarURL)
+
+			tt.assert(t, chat, err)
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestChatRepository_UpdateTitle(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now()
+
+	tests := []struct {
+		name    string
+		chatID  int64
+		title   string
+		prepare func(m pgxmock.PgxPoolIface)
+		assert  func(t *testing.T, chat *domain.Chat, err error)
+	}{
+		{
+			name:    "success update title",
+			chatID:  1,
+			title:   "New Title",
+			prepare: func(m pgxmock.PgxPoolIface) {
+				rows := pgxmock.NewRows([]string{
+					"id", "type", "title", "description", "owner_id", "avatar_url", "created_at", "updated_at",
+				}).AddRow(1, "group", "New Title", sql.NullString{Valid: false}, 100, sql.NullString{Valid: false}, now, now)
+
+				m.ExpectQuery(chatssql.UpdateChatTitle).
+					WithArgs(int64(1), "New Title").
+					WillReturnRows(rows)
+			},
+			assert: func(t *testing.T, chat *domain.Chat, err error) {
+				require.NoError(t, err)
+				require.Equal(t, int64(1), chat.Id)
+				require.Equal(t, "New Title", chat.Title)
+			},
+		},
+		{
+			name:    "chat not found",
+			chatID:  999,
+			title:   "New Title",
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.UpdateChatTitle).
+					WithArgs(int64(999), "New Title").
+					WillReturnError(pgx.ErrNoRows)
+			},
+			assert: func(t *testing.T, chat *domain.Chat, err error) {
+				require.ErrorIs(t, err, domain.ErrChatNotFound)
+			},
+		},
+		{
+			name:    "db error",
+			chatID:  1,
+			title:   "New Title",
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.UpdateChatTitle).
+					WithArgs(int64(1), "New Title").
+					WillReturnError(errors.New("database error"))
+			},
+			assert: func(t *testing.T, chat *domain.Chat, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "chatRepo failed update title")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := newPGMock(t)
+			tt.prepare(mock)
+
+			repo := newTestChatRepository(mock)
+
+			chat, err := repo.UpdateTitle(ctx, tt.chatID, tt.title)
+
+			tt.assert(t, chat, err)
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
