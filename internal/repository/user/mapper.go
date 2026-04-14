@@ -53,17 +53,3 @@ func toDomainProfile(profileModel *ProfileModel) *profile.Profile {
 		LastSeen:  null.NullTimeToPtrTime(profileModel.LastSeen),
 	}
 }
-
-func toModelProfile(profile *profile.Profile) *ProfileModel {
-	return &ProfileModel{
-		UserId:    profile.UserId,
-		Login:     profile.Login,
-		FirstName: profile.FirstName,
-		Email:     profile.Email,
-		LastName:  null.StringPtrToNullString(profile.LastName),
-		Avatar:    null.StringPtrToNullString(profile.Avatar),
-		Bio:       null.StringPtrToNullString(profile.Bio),
-		BirthDate: null.TimePtrToNullTime(profile.BirthDate),
-		LastSeen:  null.TimePtrToNullTime(profile.LastSeen),
-	}
-}

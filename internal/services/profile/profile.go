@@ -10,6 +10,7 @@ import (
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/profile"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sanitize"
 )
 
 //go:generate mockgen -source=profile.go -destination=mock/profile_mock.go -package=mock
@@ -44,7 +45,7 @@ func (p ProfileService) SearchIdByLogin(ctx context.Context, login *dto.RequestS
 	}
 
 	return &dto.ResponseSearchIdByLogin{
-		Login:  login.Login,
+		Login:  sanitize.Text(login.Login),
 		UserId: userID,
 	}, nil
 }
@@ -83,11 +84,11 @@ func (p ProfileService) UpdateProfileBirthDate(ctx context.Context, userID int64
 	}
 	return &dto.ResponseUpdateProfile{
 		UserId:    profile.UserId,
-		Login:     profile.Login,
-		FirstName: profile.FirstName,
-		LastName:  profile.LastName,
+		Login:     sanitize.Text(profile.Login),
+		FirstName: sanitize.Text(profile.FirstName),
+		LastName:  sanitize.TextPtr(profile.LastName),
 		Avatar:    profile.Avatar,
-		Bio:       profile.Bio,
+		Bio:       sanitize.TextPtr(profile.Bio),
 		LastSeen:  profile.LastSeen,
 		BirthDate: birthDate,
 	}, nil
@@ -113,11 +114,11 @@ func (p ProfileService) UpdateProfileBio(ctx context.Context, userID int64, requ
 	}
 	return &dto.ResponseUpdateProfile{
 		UserId:    profile.UserId,
-		Login:     profile.Login,
-		FirstName: profile.FirstName,
-		LastName:  profile.LastName,
+		Login:     sanitize.Text(profile.Login),
+		FirstName: sanitize.Text(profile.FirstName),
+		LastName:  sanitize.TextPtr(profile.LastName),
 		Avatar:    profile.Avatar,
-		Bio:       profile.Bio,
+		Bio:       sanitize.TextPtr(profile.Bio),
 		LastSeen:  profile.LastSeen,
 		BirthDate: birthDate,
 	}, nil
@@ -159,12 +160,12 @@ func (p ProfileService) UpdateProfileAvatar(ctx context.Context, userID int64, r
 
 	return &dto.ResponseUpdateProfile{
 		UserId:    profile.UserId,
-		Login:     profile.Login,
-		FirstName: profile.FirstName,
-		LastName:  profile.LastName,
+		Login:     sanitize.Text(profile.Login),
+		FirstName: sanitize.Text(profile.FirstName),
+		LastName:  sanitize.TextPtr(profile.LastName),
 		Avatar:    profile.Avatar,
 		BirthDate: birthDate,
-		Bio:       profile.Bio,
+		Bio:       sanitize.TextPtr(profile.Bio),
 		LastSeen:  profile.LastSeen,
 	}, nil
 }
@@ -191,13 +192,13 @@ func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (respo
 
 	return &dto.ResponseGetProfile{
 		UserId:    profile.UserId,
-		Login:     profile.Login,
-		FirstName: profile.FirstName,
-		LastName:  profile.LastName,
+		Login:     sanitize.Text(profile.Login),
+		FirstName: sanitize.Text(profile.FirstName),
+		LastName:  sanitize.TextPtr(profile.LastName),
 		Email:     profile.Email,
 		Avatar:    profile.Avatar,
 		BirthDate: birthDate,
-		Bio:       profile.Bio,
+		Bio:       sanitize.TextPtr(profile.Bio),
 		LastSeen:  profile.LastSeen,
 	}, nil
 }
@@ -223,11 +224,11 @@ func (p ProfileService) UpdateProfileName(ctx context.Context, userID int64, req
 	}
 	return &dto.ResponseUpdateProfile{
 		UserId:    profile.UserId,
-		Login:     profile.Login,
-		FirstName: profile.FirstName,
-		LastName:  profile.LastName,
+		Login:     sanitize.Text(profile.Login),
+		FirstName: sanitize.Text(profile.FirstName),
+		LastName:  sanitize.TextPtr(profile.LastName),
 		Avatar:    profile.Avatar,
-		Bio:       profile.Bio,
+		Bio:       sanitize.TextPtr(profile.Bio),
 		LastSeen:  profile.LastSeen,
 		BirthDate: birthDate,
 	}, nil
@@ -252,17 +253,15 @@ func (p ProfileService) DeleteProfileAvatar(ctx context.Context, userID int64) (
 
 	return &dto.ResponseDeleteProfile{
 		UserId:    profile.UserId,
-		Login:     profile.Login,
-		FirstName: profile.FirstName,
-		LastName:  profile.LastName,
+		Login:     sanitize.Text(profile.Login),
+		FirstName: sanitize.Text(profile.FirstName),
+		LastName:  sanitize.TextPtr(profile.LastName),
 		Avatar:    profile.Avatar,
 		BirthDate: birthDate,
-		Bio:       profile.Bio,
+		Bio:       sanitize.TextPtr(profile.Bio),
 		LastSeen:  profile.LastSeen,
 	}, nil
 }
-
-const maxAvatarSize = 5 * 1024 * 1024
 
 var allowedAvatarTypes = map[string]bool{
 	"image/jpeg": true,

@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	sessionDTO "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	utils "github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/csrf"
-	"github.com/google/uuid"
 )
 
 //go:generate mockgen -source=session.go -destination=mock/session_mock.go -package=mock

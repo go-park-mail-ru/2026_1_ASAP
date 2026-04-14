@@ -10,12 +10,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/contacts"
 	contactssql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type dbPool interface {
@@ -26,7 +27,7 @@ type dbPool interface {
 }
 
 type ContactsRepository struct {
-	db    	dbPool
+	db     dbPool
 	logger *zap.Logger
 }
 

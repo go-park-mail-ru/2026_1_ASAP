@@ -23,7 +23,7 @@ import (
 type ContactService interface {
 	GetContacts(ctx context.Context, userID int64) ([]*dto.ContactResponse, error)
 	AddContact(ctx context.Context, contactRequest dto.AddContactRequest, userID int64) (*dto.ContactResponse, error)
-	DeleteContact(ctx context.Context, contactRequest dto.DeleteContactRequest, userID int64) (error)
+	DeleteContact(ctx context.Context, contactRequest dto.DeleteContactRequest, userID int64) error
 }
 
 type ContactHandler struct {
@@ -80,7 +80,7 @@ func (h *ContactHandler) GetContacts(w http.ResponseWriter, r *http.Request) {
 
 	resp := dtoApi.ApiSuccessResponse[[]*dto.ContactResponse]{
 		Status: dtoApi.Success,
-		Body: contacts,
+		Body:   contacts,
 	}
 	response.Send(w, http.StatusOK, resp)
 }
@@ -166,7 +166,7 @@ func (h *ContactHandler) CreateContact(w http.ResponseWriter, r *http.Request) {
 				Status: dtoApi.Error,
 				Errors: []dtoApi.ApiError{
 					{
-						Code: dtoApi.ContactAlreadyExists,
+						Code:    dtoApi.ContactAlreadyExists,
 						Message: dtoApi.ContactAlreadyExistsMsg,
 					},
 				},
@@ -178,7 +178,7 @@ func (h *ContactHandler) CreateContact(w http.ResponseWriter, r *http.Request) {
 				Status: dtoApi.Error,
 				Errors: []dtoApi.ApiError{
 					{
-						Code: dtoApi.ContactWithYourself,
+						Code:    dtoApi.ContactWithYourself,
 						Message: dtoApi.ContactWithYourselfMsg,
 					},
 				},
@@ -200,9 +200,9 @@ func (h *ContactHandler) CreateContact(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	resp := dtoApi.ApiSuccessResponse[*dto.ContactResponse]{
-			Status: dtoApi.Success,
-			Body: createdContact,
-		}
+		Status: dtoApi.Success,
+		Body:   createdContact,
+	}
 	response.Send(w, http.StatusCreated, resp)
 }
 
@@ -219,7 +219,7 @@ func (h *ContactHandler) CreateContact(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} dtoApi.ApiErrorResponse "Контакт не найден"
 // @Failure 500 {object} dtoApi.ApiErrorResponse "Внутренняя ошибка сервера"
 // @Router /api/v1/contacts/{contact_user_id} [delete]
-func(h *ContactHandler) DeleteContact(w http.ResponseWriter, r *http.Request) {
+func (h *ContactHandler) DeleteContact(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID, ok := r.Context().Value(middleware.UserID).(int64)
 	if !ok {
@@ -275,7 +275,7 @@ func(h *ContactHandler) DeleteContact(w http.ResponseWriter, r *http.Request) {
 				Status: dtoApi.Error,
 				Errors: []dtoApi.ApiError{
 					{
-						Code: dtoApi.ContactNotFound,
+						Code:    dtoApi.ContactNotFound,
 						Message: dtoApi.ContactNotFoundMsg,
 					},
 				},
@@ -296,9 +296,8 @@ func(h *ContactHandler) DeleteContact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := dtoApi.ApiSuccessResponse[any]{
-			Status: dtoApi.Success,
-			Body: string("Contact successful delete"),
-		}
+		Status: dtoApi.Success,
+		Body:   string("Contact successful delete"),
+	}
 	response.Send(w, http.StatusOK, resp)
 }
- 

@@ -22,9 +22,9 @@ func TestPositiveCSRF_GenerateToken(t *testing.T) {
 	type args struct{}
 
 	tests := []struct {
-		name    string
-		prepare func(*fields)
 		args    args
+		prepare func(*fields)
+		name    string
 	}{
 		{
 			name:    "Generates URL-safe opaque token",

@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth/mock"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPositiveAuthService_Register(t *testing.T) {
@@ -30,10 +31,10 @@ func TestPositiveAuthService_Register(t *testing.T) {
 	sessionExpire := time.Date(2030, 6, 1, 12, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name    string
-		prepare func(*fields)
 		args    args
+		prepare func(*fields)
 		want    *dtoSession.SessionDTO
+		name    string
 	}{
 		{
 			name: "Registers user and returns session",
@@ -117,12 +118,12 @@ func TestNegativeAuthService_Register(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
 		args       args
 		wantErr    error
-		wantAnyErr bool
+		prepare    func(*fields)
+		name       string
 		wantSubstr string
+		wantAnyErr bool
 	}{
 		{
 			name: "Login already exists",
@@ -218,10 +219,10 @@ func TestPositiveAuthService_Login(t *testing.T) {
 	sessionExpire := time.Date(2030, 7, 1, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name    string
-		prepare func(*fields)
 		args    args
+		prepare func(*fields)
 		want    *dtoSession.SessionDTO
+		name    string
 	}{
 		{
 			name: "Valid credentials",
@@ -296,12 +297,12 @@ func TestNegativeAuthService_Login(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
 		args       args
 		wantErr    error
-		wantAnyErr bool
+		prepare    func(*fields)
+		name       string
 		wantSubstr string
+		wantAnyErr bool
 	}{
 		{
 			name: "User not found",
@@ -411,9 +412,9 @@ func TestPositiveAuthService_Logout(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		prepare func(*fields)
 		args    args
+		prepare func(*fields)
+		name    string
 	}{
 		{
 			name: "Deletes session",
@@ -466,12 +467,12 @@ func TestNegativeAuthService_Logout(t *testing.T) {
 	sid := "missing-sid"
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
 		args       args
 		wantErr    error
-		wantAnyErr bool
+		prepare    func(*fields)
+		name       string
 		wantSubstr string
+		wantAnyErr bool
 	}{
 		{
 			name: "Session not found",

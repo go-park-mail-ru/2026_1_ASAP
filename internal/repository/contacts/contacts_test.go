@@ -36,10 +36,10 @@ func TestContactsRepository_GetAllContactsByUserID(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name    string
-		userID  int64
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, contacts []*domain.Contact, err error)
+		name    string
+		userID  int64
 	}{
 		{
 			name:   "success_multiple_contacts",
@@ -116,10 +116,10 @@ func TestContactsRepository_CreateContact(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name    string
 		contact *domain.Contact
 		prepare func(m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, contact *domain.Contact, err error)
+		name    string
 	}{
 		{
 			name: "success_with_last_name",
@@ -251,11 +251,11 @@ func TestContactsRepository_DeleteContact(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
+		prepare       func(m pgxmock.PgxPoolIface)
+		assert        func(t *testing.T, err error)
 		name          string
 		userID        int64
 		contactUserID int64
-		prepare       func(m pgxmock.PgxPoolIface)
-		assert        func(t *testing.T, err error)
 	}{
 		{
 			name:          "success",
@@ -318,11 +318,11 @@ func TestContactsRepository_IsContact(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
+		prepare       func(m pgxmock.PgxPoolIface)
+		assert        func(t *testing.T, exists bool, err error)
 		name          string
 		userID        int64
 		contactUserID int64
-		prepare       func(m pgxmock.PgxPoolIface)
-		assert        func(t *testing.T, exists bool, err error)
 	}{
 		{
 			name:          "contact_exists",

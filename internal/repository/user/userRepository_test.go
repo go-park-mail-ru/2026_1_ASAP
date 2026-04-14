@@ -7,15 +7,16 @@ import (
 	"testing"
 	"time"
 
-	profiledomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
-	userdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
-	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user/sql"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	profiledomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
+	userdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
+	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user/sql"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
 )
 
 func ptr[T any](v T) *T {
@@ -100,10 +101,10 @@ func newBaseUserForCreate() *userdomain.User {
 func TestUserRepository_GetUserByEmail_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name       string
-		email      string
 		prepare    func(t *testing.T, m pgxmock.PgxPoolIface)
 		assertUser func(t *testing.T, u *userdomain.User)
+		name       string
+		email      string
 	}{
 		{
 			name:  "returns_user",
@@ -141,10 +142,10 @@ func TestUserRepository_GetUserByEmail_Positive(t *testing.T) {
 func TestUserRepository_GetUserByEmail_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name    string
-		email   string
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, err error)
+		name    string
+		email   string
 	}{
 		{
 			name:  "not_found",
@@ -187,9 +188,9 @@ func TestUserRepository_GetUserByEmail_Negative(t *testing.T) {
 func TestUserRepository_GetUserByLogin_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		name    string
 		login   string
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name:  "returns_user",
@@ -217,10 +218,10 @@ func TestUserRepository_GetUserByLogin_Positive(t *testing.T) {
 func TestUserRepository_GetUserByLogin_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name    string
-		login   string
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		assert  func(t *testing.T, err error)
+		name    string
+		login   string
 	}{
 		{
 			name:  "not_found",
@@ -263,9 +264,9 @@ func TestUserRepository_GetUserByLogin_Negative(t *testing.T) {
 func TestUserRepository_GetUserByID_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		name    string
 		id      int64
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name: "returns_user",
@@ -293,9 +294,9 @@ func TestUserRepository_GetUserByID_Positive(t *testing.T) {
 func TestUserRepository_GetUserByID_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		name    string
 		id      int64
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name: "not_found",
@@ -322,10 +323,10 @@ func TestUserRepository_GetUserByID_Negative(t *testing.T) {
 func TestUserRepository_GetProfileById_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name       string
-		profileID  int64
 		prepare    func(t *testing.T, m pgxmock.PgxPoolIface)
 		assertProf func(t *testing.T, p *profiledomain.Profile)
+		name       string
+		profileID  int64
 	}{
 		{
 			name:      "returns_profile",
@@ -358,9 +359,9 @@ func TestUserRepository_GetProfileById_Positive(t *testing.T) {
 func TestUserRepository_GetProfileById_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		prepare   func(t *testing.T, m pgxmock.PgxPoolIface)
 		name      string
 		profileID int64
-		prepare   func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name:      "not_found",
@@ -387,10 +388,10 @@ func TestUserRepository_GetProfileById_Negative(t *testing.T) {
 func TestUserRepository_GetProfileIdByLogin_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		name    string
 		login   string
 		wantID  int64
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name:   "returns_id",
@@ -419,9 +420,9 @@ func TestUserRepository_GetProfileIdByLogin_Positive(t *testing.T) {
 func TestUserRepository_GetProfileIdByLogin_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		name    string
 		login   string
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name:  "not_found",
@@ -449,10 +450,10 @@ func TestUserRepository_GetProfileIdByLogin_Negative(t *testing.T) {
 func TestUserRepository_UploadBio_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name    string
-		userID  int64
-		bio     string
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		bio     string
+		userID  int64
 	}{
 		{
 			name:   "updates_bio",
@@ -481,10 +482,10 @@ func TestUserRepository_UploadBio_Positive(t *testing.T) {
 func TestUserRepository_UploadBio_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name    string
-		userID  int64
-		bio     string
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		bio     string
+		userID  int64
 	}{
 		{
 			name:   "not_found",
@@ -513,9 +514,9 @@ func TestUserRepository_UploadBirthDate_Positive(t *testing.T) {
 	ctx := context.Background()
 	bd := time.Date(1991, 2, 2, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		name    string
 		userID  int64
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name:   "updates_birth_date",
@@ -544,9 +545,9 @@ func TestUserRepository_UploadBirthDate_Negative(t *testing.T) {
 	ctx := context.Background()
 	bd := time.Date(1991, 2, 2, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		name    string
 		userID  int64
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name:   "not_found",
@@ -573,10 +574,10 @@ func TestUserRepository_UploadBirthDate_Negative(t *testing.T) {
 func TestUserRepository_UploadAvatarUrl_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name    string
-		userID  int64
-		url     string
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		url     string
+		userID  int64
 	}{
 		{
 			name:   "updates_avatar",
@@ -605,10 +606,10 @@ func TestUserRepository_UploadAvatarUrl_Positive(t *testing.T) {
 func TestUserRepository_UploadAvatarUrl_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name    string
-		userID  int64
-		url     string
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		url     string
+		userID  int64
 	}{
 		{
 			name:   "not_found",
@@ -636,10 +637,10 @@ func TestUserRepository_UploadAvatarUrl_Negative(t *testing.T) {
 func TestUserRepository_UploadName_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name     string
 		lastName *string
 		wantLast *string
 		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
+		name     string
 	}{
 		{
 			name:     "first_name_only",
@@ -676,10 +677,10 @@ func TestUserRepository_UploadName_Positive(t *testing.T) {
 func TestUserRepository_UploadName_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name     string
-		userID   int64
 		lastName *string
 		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
+		name     string
+		userID   int64
 	}{
 		{
 			name:     "first_only_not_found",
@@ -715,9 +716,9 @@ func TestUserRepository_UploadName_Negative(t *testing.T) {
 func TestUserRepository_DeleteUserAvatar_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		name    string
 		userID  int64
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name:   "clears_avatar",
@@ -745,9 +746,9 @@ func TestUserRepository_DeleteUserAvatar_Positive(t *testing.T) {
 func TestUserRepository_DeleteUserAvatar_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 		name    string
 		userID  int64
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
 	}{
 		{
 			name:   "not_found",
@@ -777,10 +778,10 @@ func TestUserRepository_Create_Positive(t *testing.T) {
 	updated := time.Date(2024, 6, 2, 12, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name    string
 		user    func() *userdomain.User
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface, u *userdomain.User)
 		assert  func(t *testing.T, got *userdomain.User)
+		name    string
 	}{
 		{
 			name: "success",
@@ -830,10 +831,10 @@ func TestUserRepository_Create_Positive(t *testing.T) {
 func TestUserRepository_Create_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name    string
 		user    func() *userdomain.User
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface, u *userdomain.User)
 		assert  func(t *testing.T, got *userdomain.User, err error)
+		name    string
 	}{
 		{
 			name: "login_already_exists_exists_query",

@@ -941,7 +941,7 @@ func (h *ChatsHandler) AddMembersToChat(w http.ResponseWriter, r *http.Request) 
 
 	resp := dtoApi.ApiSuccessResponse[any]{
 		Status: dtoApi.Success,
-		Body:   "Members added to chat successfuly",
+		Body:   "Members added to chat successfully",
 	}
 	response.Send(w, http.StatusOK, resp)
 }
@@ -1132,7 +1132,7 @@ func (h *ChatsHandler) DeleteMemberFromChat(w http.ResponseWriter, r *http.Reque
 
 	resp := dtoApi.ApiSuccessResponse[any]{
 		Status: dtoApi.Success,
-		Body:   "Members deleted from chat successfuly",
+		Body:   "Members deleted from chat successfully",
 	}
 	response.Send(w, http.StatusOK, resp)
 
@@ -1356,7 +1356,7 @@ func (h *ChatsHandler) QuitChat(w http.ResponseWriter, r *http.Request) {
 
 	resp := dtoApi.ApiSuccessResponse[any]{
 		Status: dtoApi.Success,
-		Body:   "You are leave chat successfuly",
+		Body:   "You are leave chat successfully",
 	}
 	response.Send(w, http.StatusOK, resp)
 

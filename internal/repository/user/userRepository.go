@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
-	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user/sql"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
+	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user/sql"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
@@ -80,12 +81,12 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) (_ *doma
 	userModel := toModel(user)
 
 	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{
-        IsoLevel: pgx.Serializable,
-    })
-    if err != nil {
-        return nil, fmt.Errorf("begin tx: %w", err)
-    }
-    defer func() { _ = tx.Rollback(ctx) }()
+		IsoLevel: pgx.Serializable,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	var exists bool
 	err = tx.QueryRow(ctx, usersql.ExistsLogin, userModel.Login).Scan(&exists)
@@ -217,7 +218,6 @@ func (r *UserRepository) UploadBio(ctx context.Context, userId int64, bio string
 	q := usersql.UploadBio
 	start := time.Now()
 	row := r.db.QueryRow(ctx, q, userId, bio)
-
 	p := &ProfileModel{}
 	err := row.Scan(
 		&p.UserId, &p.Login, &p.FirstName, &p.LastName, &p.Avatar, &p.Bio, &p.BirthDate, &p.LastSeen,

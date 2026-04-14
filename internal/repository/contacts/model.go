@@ -6,20 +6,20 @@ import (
 )
 
 type ContactModel struct {
-	UserID int64 
-	FirstName string  
-	LastName  sql.NullString
-	ContactUserID int64 
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	FirstName        string
+	LastName         sql.NullString
 	ContactAvatarUrl sql.NullString
-	CreatedAt time.Time
-	UpdatedAt time.Time 
+	UserID           int64
+	ContactUserID    int64
 }
 
 type ContactUserInfoModel struct {
-	ContactModel 
-	Username string `json:"username"`
-	Email string `json:"email"`
+	LastSeen  sql.NullTime   `json:"last_seen"`
+	Username  string         `json:"username"`
+	Email     string         `json:"email"`
 	AvatarUrl sql.NullString `json:"avatar_url"`
-	Bio sql.NullString `json:"bio"`
-	LastSeen sql.NullTime `json:"last_seen"`
+	Bio       sql.NullString `json:"bio"`
+	ContactModel
 }

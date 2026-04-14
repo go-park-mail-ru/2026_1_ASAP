@@ -10,12 +10,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	chatssql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type dbPool interface {
@@ -55,7 +56,7 @@ func (r *ChatRepository) GetAllChatsByUserID(ctx context.Context, id int64) ([]*
 	var chats []*domain.Chat
 	for rows.Next() {
 		chatModel := &ChatModel{}
-		err := rows.Scan(
+		scanErr := rows.Scan(
 			&chatModel.Id,
 			&chatModel.Type,
 			&chatModel.Title,
@@ -65,8 +66,8 @@ func (r *ChatRepository) GetAllChatsByUserID(ctx context.Context, id int64) ([]*
 			&chatModel.CreatedAt,
 			&chatModel.UpdatedAt,
 		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan rows: %w", err)
+		if scanErr != nil {
+			return nil, fmt.Errorf("failed to scan rows: %w", scanErr)
 		}
 
 		chat := toDomainChat(chatModel)
@@ -165,7 +166,7 @@ func (r *ChatRepository) GetLastMessagesOfChats(ctx context.Context, id int64) (
 	var lastMessages []*domain.Message
 	for rows.Next() {
 		lastMessageModel := &MessageModel{}
-		err := rows.Scan(
+		scanErr := rows.Scan(
 			&lastMessageModel.Id,
 			&lastMessageModel.ChatId,
 			&lastMessageModel.SenderId,
@@ -176,8 +177,8 @@ func (r *ChatRepository) GetLastMessagesOfChats(ctx context.Context, id int64) (
 			&lastMessageModel.UpdatedAt,
 			&lastMessageModel.DeletedAt,
 		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan rows: %w", err)
+		if scanErr != nil {
+			return nil, fmt.Errorf("failed to scan rows: %w", scanErr)
 		}
 
 		lastMessage := toDomainMessage(lastMessageModel)
@@ -268,12 +269,14 @@ func (r *ChatRepository) GetDialogBetweenUsers(ctx context.Context, user1ID, use
 
 func (r *ChatRepository) DeleteChat(ctx context.Context, chatID int64) error {
 	trx, err := r.db.BeginTx(ctx, pgx.TxOptions{
-        IsoLevel: pgx.RepeatableRead,
-    })
-    if err != nil {
-        return fmt.Errorf("failed to create transaction: %w", err)
-    }
-    defer trx.Rollback(ctx)
+		IsoLevel: pgx.RepeatableRead,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create transaction: %w", err)
+	}
+	defer func() {
+		_ = trx.Rollback(ctx)
+	}()
 
 	q := chatssql.DeleteMessagesByChatID
 	start := time.Now()

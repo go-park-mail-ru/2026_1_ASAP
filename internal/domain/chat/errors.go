@@ -29,4 +29,3 @@ var (
 	ErrCantQuitDialog               = errors.New("You cant quit dialog")
 	ErrOwnerCantQuitGroup           = errors.New("As owner you cant quit group")
 )
-

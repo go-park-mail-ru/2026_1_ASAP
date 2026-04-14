@@ -3,8 +3,9 @@ package loggerctx
 import (
 	"context"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	"go.uber.org/zap"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 )
 
 type loggerKey struct{}

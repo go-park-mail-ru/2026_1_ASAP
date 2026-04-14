@@ -12,6 +12,6 @@ const (
 )
 
 type WsResponse[T any] struct {
-	Status  WsResponseStatus `json:"type"`
 	Payload T                `json:"payload"`
+	Status  WsResponseStatus `json:"type"`
 }

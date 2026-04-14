@@ -3,9 +3,9 @@ package contacts
 import "time"
 
 type AddContactRequest struct {
-	ContactUserID int64 `json:"contact_user_id"`
-	FirstName string     `json:"first_name"`
-	LastName  *string    `json:"last_name,omitempty"`
+	LastName      *string `json:"last_name,omitempty"`
+	FirstName     string  `json:"first_name"`
+	ContactUserID int64   `json:"contact_user_id"`
 }
 
 type DeleteContactRequest struct {
@@ -13,12 +13,12 @@ type DeleteContactRequest struct {
 }
 
 type ContactResponse struct {
-	UserID int64 `json:"user_id"` 
-	ContactUserID int64 `json:"contact_user_id"`
-	FirstName string     `json:"first_name"`
-	LastName  *string    `json:"last_name,omitempty"`
-	ContactAvatarUrl  *string `json:"contact_avatar_url"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt        time.Time `json:"created_at"`
+	LastName         *string   `json:"last_name,omitempty"`
+	ContactAvatarUrl *string   `json:"contact_avatar_url"`
+	FirstName        string    `json:"first_name"`
+	UserID           int64     `json:"user_id"`
+	ContactUserID    int64     `json:"contact_user_id"`
 }
 
 type ResponseDeleteSuccess struct {

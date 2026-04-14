@@ -5,21 +5,22 @@ import (
 	"fmt"
 	"time"
 
+	minio "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	"go.uber.org/zap"
+
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/s3log"
-	minio "github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	"go.uber.org/zap"
 )
 
 type MediaRepository struct {
 	client    *minio.Client
+	logger    *zap.Logger
 	bucket    string
 	publicURL string
-	logger    *zap.Logger
 }
 
 func NewMediaRepository(ctx context.Context, cfg config.S3Config, logger *zap.Logger) (*MediaRepository, error) {

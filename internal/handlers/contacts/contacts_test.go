@@ -11,15 +11,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/contacts"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/contacts/mock"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
-	"github.com/go-chi/chi"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 func strPtrContact(s string) *string {
@@ -43,10 +44,10 @@ func TestPositiveContactHandler_GetContacts(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
+		name    string
 		want    []*dto.ContactResponse
+		args    args
 	}{
 		{
 			name: "success get contacts",
@@ -152,11 +153,11 @@ func TestNegativeContactHandler_GetContacts(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
 		args       args
-		wantCode   int
+		prepare    func(*fields)
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -225,17 +226,17 @@ func TestPositiveContactHandler_CreateContact(t *testing.T) {
 	}
 
 	type args struct {
+		lastName      *string
+		firstName     string
 		userID        int64
 		contactUserID int64
-		firstName     string
-		lastName      *string
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
-		args    args
 		want    *dto.ContactResponse
+		name    string
+		args    args
 	}{
 		{
 			name: "success create contact with last name",
@@ -346,19 +347,16 @@ func TestNegativeContactHandler_CreateContact(t *testing.T) {
 	}
 
 	type args struct {
-		userID        interface{}
-		body          string
-		contactUserID int64
-		firstName     string
-		lastName      *string
+		userID interface{}
+		body   string
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
+		name       string
+		wantErr    dtoApi.ErrorCode
 		args       args
 		wantCode   int
-		wantErr    dtoApi.ErrorCode
 		skipErrCmp bool
 	}{
 		{
@@ -494,8 +492,8 @@ func TestPositiveContactHandler_DeleteContact(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		prepare func(*fields)
+		name    string
 		args    args
 	}{
 		{
@@ -558,11 +556,11 @@ func TestNegativeContactHandler_DeleteContact(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
 		args       args
-		wantCode   int
+		name       string
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{

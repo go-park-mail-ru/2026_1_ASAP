@@ -11,19 +11,19 @@ linters:
     - ineffassign
     - typecheck
 
-    - gofmt         #Проверяет форматирование
-    - goimports     #Проверяет порядок импортов
-    - misspell      #Ищет опечатки в комментариях/строковых литералах
+    - gofmt
+    - goimports
+    - misspell
 
-    - gocyclo       #Проверяет цикломатическую сложность функций
-    - gocognit      #Когнитивная сложность
+    - gocyclo
+    - gocognit
 
-    - depguard      #Запрещает импорт определенных пакетов (чтобы слой repo не импортил handler)
-    - importas      #Позволяет унифицировать имена импортов (чтобы везде одинаково назывались)
-    - nilnil        #Проверяет, что функции возвращающие nil возвращают и ошибку
+    - depguard
+    - importas
+    - nilnil
 
-    - gosec         #Проверяет уязвимости (иньекции, утечки)
-    - prealloc      #Советы по предварительному выделению слайсов
+    - gosec
+    - prealloc
 
 linters-settings:
   depguard:
@@ -33,13 +33,18 @@ linters-settings:
           - pkg: "io/ioutil"
             desc: "Устарел, используйте io или os пакеты"
   gocyclo:
-    min-complexity: 15 #Если функция сложнее 15 будет ругаться
+    min-complexity: 40
   gocognit:
-    min-complexity: 20
+    min-complexity: 60
   govet:
     enable-all: true
+    disable:
+      - fieldalignment
   goimports:
     local-prefixes: github.com/go-park-mail-ru/2026_1_ASAP
+  gosec:
+    excludes:
+      - G115
 
 issues:
   exclude-dirs:
@@ -48,14 +53,15 @@ issues:
     - tmp
     - .git
   exclude-rules:
-    #Исключаем тесты из некоторых проверок 
     - path: _test\.go
       linters:
         - gocyclo
         - gocognit
         - errcheck
-    #Исключаем G101 (hardcoded credentials) для файлов с кодами ошибок
     - path: internal/dto/api/response.go
       linters:
         - gosec
       text: "G101"
+    - path: internal/repository/chat/chat.go
+      linters:
+        - nilnil

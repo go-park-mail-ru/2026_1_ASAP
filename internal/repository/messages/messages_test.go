@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
-	messagessql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/messages/sql"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
+	messagessql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/messages/sql"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
 )
 
 func ptr[T any](v T) *T {
@@ -51,10 +52,10 @@ func TestMessageRepository_CreateMessage_Positive(t *testing.T) {
 	updated := time.Date(2024, 7, 1, 11, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name    string
 		message func() *domain.Message
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message)
 		assert  func(t *testing.T, got *domain.Message)
+		name    string
 	}{
 		{
 			name: "without_sticker",
@@ -154,10 +155,10 @@ func TestMessageRepository_CreateMessage_Negative(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		message func() *domain.Message
 		prepare func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message)
 		assert  func(t *testing.T, got *domain.Message, err error)
+		name    string
 	}{
 		{
 			name:    "begin_tx_error",
@@ -256,12 +257,12 @@ func TestMessageRepository_CreateMessage_Negative(t *testing.T) {
 func TestMessageRepository_GetMessagesByChatId_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name     string
-		chatID   int64
 		beforeID *int64
-		limit    int
 		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
 		assert   func(t *testing.T, got []*domain.Message)
+		name     string
+		chatID   int64
+		limit    int
 	}{
 		{
 			name:     "without_before_id_returns_rows",
@@ -335,12 +336,12 @@ func TestMessageRepository_GetMessagesByChatId_Positive(t *testing.T) {
 func TestMessageRepository_GetMessagesByChatId_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name     string
-		chatID   int64
 		beforeID *int64
-		limit    int
 		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
 		assert   func(t *testing.T, err error)
+		name     string
+		chatID   int64
+		limit    int
 	}{
 		{
 			name:     "query_error_without_before",

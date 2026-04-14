@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
@@ -17,8 +20,6 @@ import (
 	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth/mock"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -112,11 +113,11 @@ func TestNegativeAuthHandler_Login(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
+		name       string
 		args       args
-		wantCode   int
 		wantCodeIn dtoApi.ErrorCode
+		wantCode   int
 	}{
 		{
 			name:       "invalid JSON",
@@ -262,11 +263,11 @@ func TestNegativeAuthHandler_Register(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		prepare    func(*fields)
+		name       string
 		args       args
-		wantCode   int
 		wantErr    dtoApi.ErrorCode
+		wantCode   int
 		skipErrCmp bool
 	}{
 		{
@@ -404,11 +405,11 @@ func TestNegativeAuthHandler_Logout(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		prepare  func(*fields)
 		args     args
-		wantCode int
+		prepare  func(*fields)
+		name     string
 		wantErr  dtoApi.ErrorCode
+		wantCode int
 	}{
 		{
 			name:     "missing session in context",

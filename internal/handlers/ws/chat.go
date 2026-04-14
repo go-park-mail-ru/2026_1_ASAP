@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+
 	domainChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/message"
@@ -16,8 +19,6 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
-	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 const wsWriteTimeout = 3 * time.Second
@@ -33,24 +34,22 @@ type ChatServiceInterface interface {
 }
 
 type subscriber struct {
-	userID    int64
 	conn      *websocket.Conn
 	msgs      chan []byte
 	cancel    context.CancelFunc
 	closeSlow func()
+	userID    int64
 }
 
 type ChatServer struct {
+	messageService          MessagesServiceInterface
+	chatService             ChatServiceInterface
+	subscribers             map[*subscriber]struct{}
+	subscribersByUserID     map[int64]map[*subscriber]struct{}
+	logger                  *zap.Logger
+	wg                      sync.WaitGroup
 	subscriberMessageBuffer int
-
-	subscribers         map[*subscriber]struct{}
-	subscribersByUserID map[int64]map[*subscriber]struct{}
-	mu                  sync.RWMutex
-	wg                  sync.WaitGroup
-
-	logger         *zap.Logger
-	messageService MessagesServiceInterface
-	chatService    ChatServiceInterface
+	mu                      sync.RWMutex
 }
 
 func NewChatServer(logger *zap.Logger, messageService MessagesServiceInterface, chatService ChatServiceInterface) *ChatServer {
@@ -212,7 +211,9 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	s.addSubscriber(sub)
 	defer s.removeSubscriber(sub)
 
-	defer wsConn.CloseNow()
+	defer func() {
+		_ = wsConn.CloseNow()
+	}()
 
 	ctx, cancel := context.WithCancel(reqCtx)
 	defer cancel()
