@@ -150,6 +150,6 @@ func (m *MessageRepository) log(ctx context.Context) *zap.Logger {
 	return loggerctx.EnrichLoggerFromContext(ctx, base)
 }
 
-func (m *MessageRepository) Close(ctx context.Context) error {
-	return m.db.Close()
+func (m *MessageRepository) Close() {
+	m.db.Close()
 }

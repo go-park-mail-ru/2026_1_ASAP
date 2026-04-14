@@ -18,6 +18,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 )
 
+//go:generate mockgen -source=auth.go -destination=mock/auth_mock.go -package=mock
 type AuthService interface {
 	Register(ctx context.Context, request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, error)
 	Login(ctx context.Context, request *dtoAuth.RequestLogin) (*dtoSession.SessionDTO, error)

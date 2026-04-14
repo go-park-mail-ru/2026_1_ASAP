@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockgen -source=session.go -destination=mock/session_mock.go -package=mock
 type SessionRepository interface {
 	CreateSession(ctx context.Context, session *domain.Session) (string, error)
 	GetSession(ctx context.Context, sessionID string) (*domain.Session, error)
