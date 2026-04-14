@@ -19,6 +19,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 )
 
+//go:generate mockgen -source=contacts.go -destination=mock/contacts_mock.go -package=mock
 type ContactService interface {
 	GetContacts(ctx context.Context, userID int64) ([]*dto.ContactResponse, error)
 	AddContact(ctx context.Context, contactRequest dto.AddContactRequest, userID int64) (*dto.ContactResponse, error)

@@ -248,13 +248,25 @@ func ValidationContactCreate(req *dtoContact.AddContactRequest) []ValidationErro
 		})
 	}
 
-	
-
-	if len(*req.LastName) > 100{
+	if req.LastName != nil && len(*req.LastName) > 100{
 		errs = append(errs, ValidationError{
 			Field: "last_name",
 			Message: "contact lastname must be less than 100 caracters",
 			Code: "CONTACT_LAST_NAME_MUST_LESS_100_CHARACTERS",
+		})
+	}
+
+	if req.ContactUserID == 0 {
+		errs = append(errs, ValidationError{
+			Field:   "contact_user_id",
+			Message: "contact_user_id is required",
+			Code:    "CONTACT_USER_ID_REQUIRED",
+		})
+	} else if req.ContactUserID < 0 {
+		errs = append(errs, ValidationError{
+			Field:   "contact_user_id",
+			Message: "contact_user_id must be positive",
+			Code:    "CONTACT_USER_ID_INVALID",
 		})
 	}
 
