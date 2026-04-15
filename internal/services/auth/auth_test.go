@@ -1,149 +1,532 @@
 package auth
 
 import (
+	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
+	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
-	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
+	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth/mock"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
 )
 
-func newTestAuthService(t *testing.T) *AuthService {
-	t.Helper()
+func TestPositiveAuthService_Register(t *testing.T) {
+	type fields struct {
+		userRepository *mock.MockUserRepository
+		sessionService *mock.MockSessionService
+	}
 
-	userRepo := userRepository.NewMockUserRepository()
-	sessionRepo := sessions.NewSessionRepository()
-	sessionService := session.NewSessionService(sessionRepo, time.Hour)
+	type args struct {
+		ctx     context.Context
+		request *dtoAuth.RequestRegistrate
+	}
 
-	return NewAuthService(userRepo, sessionService)
+	sessionExpire := time.Date(2030, 6, 1, 12, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		args    args
+		prepare func(*fields)
+		want    *dtoSession.SessionDTO
+		name    string
+	}{
+		{
+			name: "Registers user and returns session",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					Create(context.Background(), gomock.AssignableToTypeOf(&domain.User{})).
+					DoAndReturn(func(_ context.Context, u *domain.User) (*domain.User, error) {
+						require.Equal(t, "newuser", u.Login)
+						require.Equal(t, "newuser@mail.test", u.Email)
+						require.Equal(t, "newuser", u.FirstName)
+						require.NotEmpty(t, u.PasswordHash)
+						return &domain.User{
+							Id:    55,
+							Login: u.Login,
+							Email: u.Email,
+						}, nil
+					})
+				f.sessionService.EXPECT().
+					CreateSession(context.Background(), int64(55)).
+					Return(&dtoSession.SessionDTO{
+						SessionID: "sid-55",
+						CSRFToken: "csrf-55",
+						Expire:    sessionExpire,
+					}, nil)
+			},
+			args: args{
+				ctx: context.Background(),
+				request: &dtoAuth.RequestRegistrate{
+					Login:    "newuser",
+					Email:    "newuser@mail.test",
+					Password: "SecurePassw0rd!",
+				},
+			},
+			want: &dtoSession.SessionDTO{
+				SessionID: "sid-55",
+				CSRFToken: "csrf-55",
+				Expire:    sessionExpire,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			f := fields{
+				userRepository: mock.NewMockUserRepository(ctrl),
+				sessionService: mock.NewMockSessionService(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &AuthService{
+				userRepository: f.userRepository,
+				SessionService: f.sessionService,
+			}
+			result, err := s.Register(tt.args.ctx, tt.args.request)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, result)
+		})
+	}
 }
 
-func TestAuthServiceRegister_Success(t *testing.T) {
-	authService := newTestAuthService(t)
+func TestNegativeAuthService_Register(t *testing.T) {
+	type fields struct {
+		userRepository *mock.MockUserRepository
+		sessionService *mock.MockSessionService
+	}
+
+	type args struct {
+		ctx     context.Context
+		request *dtoAuth.RequestRegistrate
+	}
 
 	req := &dtoAuth.RequestRegistrate{
-		Login:    "newuser",
-		Email:    "newuser@example.com",
-		Password: "Passw0rd&",
+		Login:    "user1",
+		Email:    "user1@mail.test",
+		Password: "SecurePassw0rd!",
 	}
 
-	sessionData, errs := authService.Register(req)
-
-	if len(errs) != 0 {
-		t.Fatalf("expected no validation errors, got %v", errs)
+	tests := []struct {
+		args       args
+		wantErr    error
+		prepare    func(*fields)
+		name       string
+		wantSubstr string
+		wantAnyErr bool
+	}{
+		{
+			name: "Login already exists",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					Create(context.Background(), gomock.AssignableToTypeOf(&domain.User{})).
+					Return(nil, domain.ErrLoginAlreadyExists)
+			},
+			args:    args{ctx: context.Background(), request: req},
+			wantErr: domain.ErrLoginAlreadyExists,
+		},
+		{
+			name: "Email already exists",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					Create(context.Background(), gomock.AssignableToTypeOf(&domain.User{})).
+					Return(nil, domain.ErrEmailAlreadyExists)
+			},
+			args:    args{ctx: context.Background(), request: req},
+			wantErr: domain.ErrEmailAlreadyExists,
+		},
+		{
+			name: "Repository error",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					Create(context.Background(), gomock.AssignableToTypeOf(&domain.User{})).
+					Return(nil, errors.New("db down"))
+			},
+			args:       args{ctx: context.Background(), request: req},
+			wantAnyErr: true,
+			wantSubstr: "failed to create user",
+		},
+		{
+			name: "CreateSession fails after user created",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					Create(context.Background(), gomock.AssignableToTypeOf(&domain.User{})).
+					Return(&domain.User{Id: 10, Login: req.Login, Email: req.Email}, nil)
+				f.sessionService.EXPECT().
+					CreateSession(context.Background(), int64(10)).
+					Return(nil, errors.New("redis down"))
+			},
+			args:       args{ctx: context.Background(), request: req},
+			wantAnyErr: true,
+			wantSubstr: "failed to create session",
+		},
 	}
 
-	if sessionData == nil || sessionData.SessionID == "" {
-		t.Fatalf("expected non nil session data with id, got %#v", sessionData)
-	}
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			f := fields{
+				userRepository: mock.NewMockUserRepository(ctrl),
+				sessionService: mock.NewMockSessionService(ctrl),
+			}
 
-func TestAuthServiceRegister_EmailAlreadyRegistered(t *testing.T) {
-	authService := newTestAuthService(t)
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
 
-	// email already exists in mock repository
-	req := &dtoAuth.RequestRegistrate{
-		Login:    "newlogin",
-		Email:    "alice@example.com",
-		Password: "Passw0rd&",
-	}
-
-	sessionData, errs := authService.Register(req)
-
-	if sessionData != nil {
-		t.Fatalf("expected nil session data, got %#v", sessionData)
-	}
-
-	if len(errs) != 1 || errs[0].Code != "EMAIL_ALREADY_REGISTERED" {
-		t.Fatalf("expected EMAIL_ALREADY_REGISTERED error, got %#v", errs)
-	}
-}
-
-func TestAuthServiceRegister_LoginAlreadyRegistered(t *testing.T) {
-	authService := newTestAuthService(t)
-
-	// login already exists in mock repository
-	req := &dtoAuth.RequestRegistrate{
-		Login:    "alice",
-		Email:    "newalice@example.com",
-		Password: "Passw0rd&",
-	}
-
-	sessionData, errs := authService.Register(req)
-
-	if sessionData != nil {
-		t.Fatalf("expected nil session data, got %#v", sessionData)
-	}
-
-	if len(errs) != 1 || errs[0].Code != "LOGIN_ALREADY_REGISTERED" {
-		t.Fatalf("expected LOGIN_ALREADY_REGISTERED error, got %#v", errs)
-	}
-}
-
-func TestAuthServiceLogin_Success(t *testing.T) {
-	authService := newTestAuthService(t)
-
-	req := &dtoAuth.RequestLogin{
-		Login:    "alice",
-		Password: "passWo1r&",
-	}
-
-	sessionData, err := authService.Login(req)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if sessionData == nil || sessionData.SessionID == "" {
-		t.Fatalf("expected non nil session data with id, got %#v", sessionData)
-	}
-}
-
-func TestAuthServiceLogin_InvalidLogin(t *testing.T) {
-	authService := newTestAuthService(t)
-
-	req := &dtoAuth.RequestLogin{
-		Login:    "unknown",
-		Password: "passWo1r&",
-	}
-
-	sessionData, err := authService.Login(req)
-	if err == nil {
-		t.Fatalf("expected error, got nil")
-	}
-
-	if sessionData != nil {
-		t.Fatalf("expected nil session data, got %#v", sessionData)
+			s := &AuthService{
+				userRepository: f.userRepository,
+				SessionService: f.sessionService,
+			}
+			result, err := s.Register(tt.args.ctx, tt.args.request)
+			require.Nil(t, result)
+			if tt.wantAnyErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.wantSubstr)
+			} else {
+				require.EqualError(t, err, tt.wantErr.Error())
+			}
+		})
 	}
 }
 
-func TestAuthServiceLogin_InvalidPassword(t *testing.T) {
-	authService := newTestAuthService(t)
-
-	req := &dtoAuth.RequestLogin{
-		Login:    "alice",
-		Password: "wrongPassword1!",
+func TestPositiveAuthService_Login(t *testing.T) {
+	type fields struct {
+		userRepository *mock.MockUserRepository
+		sessionService *mock.MockSessionService
 	}
 
-	sessionData, err := authService.Login(req)
-	if err == nil {
-		t.Fatalf("expected error, got nil")
+	type args struct {
+		ctx     context.Context
+		request *dtoAuth.RequestLogin
 	}
 
-	if sessionData != nil {
-		t.Fatalf("expected nil session data, got %#v", sessionData)
+	pass := "CorrectHorseBattery99!"
+	hashStr, err := hash.HashPassword(pass)
+	require.NoError(t, err)
+
+	sessionExpire := time.Date(2030, 7, 1, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		args    args
+		prepare func(*fields)
+		want    *dtoSession.SessionDTO
+		name    string
+	}{
+		{
+			name: "Valid credentials",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					GetUserByLogin(context.Background(), "alice").
+					Return(&domain.User{
+						Id:           3,
+						Login:        "alice",
+						PasswordHash: hashStr,
+					}, nil)
+				f.sessionService.EXPECT().
+					CreateSession(context.Background(), int64(3)).
+					Return(&dtoSession.SessionDTO{
+						SessionID: "sid-alice",
+						CSRFToken: "csrf",
+						Expire:    sessionExpire,
+					}, nil)
+			},
+			args: args{
+				ctx: context.Background(),
+				request: &dtoAuth.RequestLogin{
+					Login:    "alice",
+					Password: pass,
+				},
+			},
+			want: &dtoSession.SessionDTO{
+				SessionID: "sid-alice",
+				CSRFToken: "csrf",
+				Expire:    sessionExpire,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			f := fields{
+				userRepository: mock.NewMockUserRepository(ctrl),
+				sessionService: mock.NewMockSessionService(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &AuthService{
+				userRepository: f.userRepository,
+				SessionService: f.sessionService,
+			}
+			result, err := s.Login(tt.args.ctx, tt.args.request)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, result)
+		})
 	}
 }
 
-func TestAuthServiceLogout_Success(t *testing.T) {
-	authService := newTestAuthService(t)
-
-	req := &dtoAuth.RequestLogout{
-		SessionID: "some-session-id",
+func TestNegativeAuthService_Login(t *testing.T) {
+	type fields struct {
+		userRepository *mock.MockUserRepository
+		sessionService *mock.MockSessionService
 	}
 
-	if err := authService.Logout(req); err != nil {
-		t.Fatalf("expected no error on logout, got %v", err)
+	type args struct {
+		ctx     context.Context
+		request *dtoAuth.RequestLogin
+	}
+
+	pass := "SamePassword123!"
+	hashStr, err := hash.HashPassword(pass)
+	require.NoError(t, err)
+
+	tests := []struct {
+		args       args
+		wantErr    error
+		prepare    func(*fields)
+		name       string
+		wantSubstr string
+		wantAnyErr bool
+	}{
+		{
+			name: "User not found",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					GetUserByLogin(context.Background(), "nobody").
+					Return(nil, domain.ErrNotFound)
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dtoAuth.RequestLogin{Login: "nobody", Password: pass},
+			},
+			wantErr: domain.ErrNotFound,
+		},
+		{
+			name: "Invalid password",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					GetUserByLogin(context.Background(), "bob").
+					Return(&domain.User{
+						Id:           4,
+						Login:        "bob",
+						PasswordHash: hashStr,
+					}, nil)
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dtoAuth.RequestLogin{Login: "bob", Password: "wrong-password"},
+			},
+			wantErr: domain.ErrInvalidCredentials,
+		},
+		{
+			name: "GetUserByLogin error",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					GetUserByLogin(context.Background(), "bob").
+					Return(nil, errors.New("timeout"))
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dtoAuth.RequestLogin{Login: "bob", Password: pass},
+			},
+			wantAnyErr: true,
+			wantSubstr: "failed login",
+		},
+		{
+			name: "CreateSession error",
+			prepare: func(f *fields) {
+				f.userRepository.EXPECT().
+					GetUserByLogin(context.Background(), "bob").
+					Return(&domain.User{
+						Id:           4,
+						Login:        "bob",
+						PasswordHash: hashStr,
+					}, nil)
+				f.sessionService.EXPECT().
+					CreateSession(context.Background(), int64(4)).
+					Return(nil, errors.New("session failed"))
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dtoAuth.RequestLogin{Login: "bob", Password: pass},
+			},
+			wantAnyErr: true,
+			wantSubstr: "failed to create session",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			f := fields{
+				userRepository: mock.NewMockUserRepository(ctrl),
+				sessionService: mock.NewMockSessionService(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &AuthService{
+				userRepository: f.userRepository,
+				SessionService: f.sessionService,
+			}
+			result, err := s.Login(tt.args.ctx, tt.args.request)
+			require.Nil(t, result)
+			if tt.wantAnyErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.wantSubstr)
+			} else {
+				require.EqualError(t, err, tt.wantErr.Error())
+			}
+		})
+	}
+}
+
+func TestPositiveAuthService_Logout(t *testing.T) {
+	type fields struct {
+		userRepository *mock.MockUserRepository
+		sessionService *mock.MockSessionService
+	}
+
+	type args struct {
+		ctx     context.Context
+		request *dtoAuth.RequestLogout
+	}
+
+	tests := []struct {
+		args    args
+		prepare func(*fields)
+		name    string
+	}{
+		{
+			name: "Deletes session",
+			prepare: func(f *fields) {
+				f.sessionService.EXPECT().
+					DeleteSession(context.Background(), "sess-to-clear").
+					Return(nil)
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dtoAuth.RequestLogout{SessionID: "sess-to-clear"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			f := fields{
+				userRepository: mock.NewMockUserRepository(ctrl),
+				sessionService: mock.NewMockSessionService(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &AuthService{
+				userRepository: f.userRepository,
+				SessionService: f.sessionService,
+			}
+			err := s.Logout(tt.args.ctx, tt.args.request)
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestNegativeAuthService_Logout(t *testing.T) {
+	type fields struct {
+		userRepository *mock.MockUserRepository
+		sessionService *mock.MockSessionService
+	}
+
+	type args struct {
+		ctx     context.Context
+		request *dtoAuth.RequestLogout
+	}
+
+	sid := "missing-sid"
+
+	tests := []struct {
+		args       args
+		wantErr    error
+		prepare    func(*fields)
+		name       string
+		wantSubstr string
+		wantAnyErr bool
+	}{
+		{
+			name: "Session not found",
+			prepare: func(f *fields) {
+				f.sessionService.EXPECT().
+					DeleteSession(context.Background(), sid).
+					Return(domainSession.ErrNotFound)
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dtoAuth.RequestLogout{SessionID: sid},
+			},
+			wantErr: domainSession.ErrNotFound,
+		},
+		{
+			name: "DeleteSession error",
+			prepare: func(f *fields) {
+				f.sessionService.EXPECT().
+					DeleteSession(context.Background(), sid).
+					Return(errors.New("redis err"))
+			},
+			args: args{
+				ctx:     context.Background(),
+				request: &dtoAuth.RequestLogout{SessionID: sid},
+			},
+			wantAnyErr: true,
+			wantSubstr: "failed to logout",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			f := fields{
+				userRepository: mock.NewMockUserRepository(ctrl),
+				sessionService: mock.NewMockSessionService(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &AuthService{
+				userRepository: f.userRepository,
+				SessionService: f.sessionService,
+			}
+			err := s.Logout(tt.args.ctx, tt.args.request)
+			if tt.wantAnyErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.wantSubstr)
+			} else {
+				require.EqualError(t, err, tt.wantErr.Error())
+			}
+		})
 	}
 }

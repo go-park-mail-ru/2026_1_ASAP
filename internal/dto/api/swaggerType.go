@@ -3,12 +3,19 @@ package api
 import (
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
+	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"
+	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/profile"
 )
 
 // типы ответов для swagger
-type ResponseLoginSuccessForSwagger = ApiSucessResponse[dtoAuth.ResponseLoginSuccess]
-type ResponseRegisterSuccessForSwagger = ApiSucessResponse[dtoAuth.ResponseRegisterSuccess]
-type ResponseLogoutSuccessForSwagger = ApiSucessResponse[dtoAuth.ResponseLogoutSuccess]
-type ResponseGetChatsSuccessForSwagger = ApiSucessResponse[[]dtoChat.ChatInformationDTO]
-type ResponseCreateChatSuccessForSwagger = ApiSucessResponse[*dtoChat.ChatInformationDTO]
-type ResponseGetChatByIDSuccessForSwagger = ApiSucessResponse[*dtoChat.ChatInformationDTO]
+type ResponseLoginSuccessForSwagger = ApiSuccessResponse[dtoAuth.ResponseLoginSuccess]
+type ResponseRegisterSuccessForSwagger = ApiSuccessResponse[dtoAuth.ResponseRegisterSuccess]
+type ResponseLogoutSuccessForSwagger = ApiSuccessResponse[dtoAuth.ResponseLogoutSuccess]
+type ResponseGetChatsSuccessForSwagger = ApiSuccessResponse[[]dtoChat.ChatInformationDTO]
+type ResponseCreateChatSuccessForSwagger = ApiSuccessResponse[*dtoChat.ChatInformationDTO]
+type ResponseGetChatByIDSuccessForSwagger = ApiSuccessResponse[*dtoChat.ChatInformationDTO]
+type ResponseGetContactsSuccessForSwagger = ApiSuccessResponse[[]dtoContact.ContactResponse]
+type ResponseCreateContactSuccessForSwagger = ApiSuccessResponse[*dtoContact.ContactResponse]
+type ResponseDeleteContactSuccessForSwagger = ApiSuccessResponse[string]
+type ResponseGetProfileSuccessForSwagger = ApiSuccessResponse[*dto.ResponseGetProfile]
+type ResponseUpdateProfileForSwagger = ApiSuccessResponse[*dto.ResponseUpdateProfile]

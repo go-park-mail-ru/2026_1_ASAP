@@ -1,0 +1,4 @@
+.env
+.idea/
+coverage.out
+internal/**/mock/

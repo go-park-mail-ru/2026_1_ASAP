@@ -1,0 +1,67 @@
+run:
+  timeout: 5m
+
+#Список включаемых линтеров
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - unused
+    - ineffassign
+    - typecheck
+
+    - gofmt
+    - goimports
+    - misspell
+
+    - gocyclo
+    - gocognit
+
+    - depguard
+    - importas
+    - nilnil
+
+    - gosec
+    - prealloc
+
+linters-settings:
+  depguard:
+    rules:
+      main:
+        deny:
+          - pkg: "io/ioutil"
+            desc: "Устарел, используйте io или os пакеты"
+  gocyclo:
+    min-complexity: 40
+  gocognit:
+    min-complexity: 60
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+  goimports:
+    local-prefixes: github.com/go-park-mail-ru/2026_1_ASAP
+  gosec:
+    excludes:
+      - G115
+
+issues:
+  exclude-dirs:
+    - bin
+    - vendor
+    - tmp
+    - .git
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - gocognit
+        - errcheck
+    - path: internal/dto/api/response.go
+      linters:
+        - gosec
+      text: "G101"
+    - path: internal/repository/chat/chat.go
+      linters:
+        - nilnil

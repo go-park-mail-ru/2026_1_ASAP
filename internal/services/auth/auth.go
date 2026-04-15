@@ -1,109 +1,105 @@
 package auth
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"log"
 
+	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
-	modelsSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/session"
-	modelsUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/models/user"
-	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/session"
+	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 )
 
-type AuthServiceInterface interface {
-	Register(request *dtoAuth.RequestRegistrate) (*modelsSession.SessionData, []validation.ValidationError)
-	Login(request *dtoAuth.RequestLogin) (*modelsSession.SessionData, error)
-	Logout(request *dtoAuth.RequestLogout) error
+//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/auth_mock.go -package=mock
+type UserRepository interface {
+	Create(ctx context.Context, u *domain.User) (*domain.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
+	GetUserByLogin(ctx context.Context, login string) (*domain.User, error)
+	GetUserByID(ctx context.Context, id int64) (*domain.User, error)
+}
+
+type SessionService interface {
+	CreateSession(ctx context.Context, userID int64) (*dtoSession.SessionDTO, error)
+	GetUserID(ctx context.Context, sessionID string) (int64, error)
+	DeleteSession(ctx context.Context, sessionID string) error
 }
 
 type AuthService struct {
-	userRepository userRepository.UserRepositoryInterface
-	SessionService *session.SessionService
+	userRepository UserRepository
+	SessionService SessionService
 }
 
-func NewAuthService(userRepository userRepository.UserRepositoryInterface, sessionService *session.SessionService) *AuthService {
+func NewAuthService(userRepository UserRepository, sessionService SessionService) *AuthService {
 	return &AuthService{
 		userRepository: userRepository,
 		SessionService: sessionService,
 	}
 }
 
-func (authService *AuthService) Register(request *dtoAuth.RequestRegistrate) (*modelsSession.SessionData, []validation.ValidationError) {
-	user := &modelsUser.User{
-		Login: request.Login,
-		Email: request.Email,
+func (authService *AuthService) Register(ctx context.Context, request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, error) {
+	user := &domain.User{
+		Login:     request.Login,
+		Email:     request.Email,
+		FirstName: request.Login,
 	}
 
 	passwordHash, err := hash.HashPassword(request.Password)
 	if err != nil {
-		return nil, []validation.ValidationError{
-			{
-				Code:    "HASH_ERROR",
-				Message: "Failed to hash password",
-				Field:   "password",
-			},
-		}
+		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 	user.PasswordHash = passwordHash
 
-	err = authService.userRepository.Create(user)
+	createdUser, err := authService.userRepository.Create(ctx, user)
 	if err != nil {
-		if errors.Is(err, userRepository.ErrEmailAlreadyRegister) {
-			return nil, []validation.ValidationError{
-				{
-					Code:    "EMAIL_ALREADY_REGISTERED",
-					Message: err.Error(),
-					Field:   "email",
-				},
-			}
-		} else if errors.Is(err, userRepository.ErrLoginAlreadyRegister) {
-			return nil, []validation.ValidationError{
-				{
-					Code:    "LOGIN_ALREADY_REGISTERED",
-					Message: err.Error(),
-					Field:   "login",
-				},
-			}
+		if errors.Is(err, domain.ErrLoginAlreadyExists) {
+			return nil, domain.ErrLoginAlreadyExists
+		} else if errors.Is(err, domain.ErrEmailAlreadyExists) {
+			return nil, domain.ErrEmailAlreadyExists
 		}
+
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	sessionData, err := authService.SessionService.CreateSession(user.Id)
+	sessionData, err := authService.SessionService.CreateSession(ctx, createdUser.Id)
 	if err != nil {
-		return nil, []validation.ValidationError{
-			{
-				Code:    "SESSION_ERROR",
-				Message: err.Error(),
-			},
-		}
+		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
 	return sessionData, nil
 }
 
-func (authService *AuthService) Login(request *dtoAuth.RequestLogin) (*modelsSession.SessionData, error) {
-	user, err := authService.userRepository.GetUserByLogin(request.Login)
+func (authService *AuthService) Login(ctx context.Context, request *dtoAuth.RequestLogin) (*dtoSession.SessionDTO, error) {
+	user, err := authService.userRepository.GetUserByLogin(ctx, request.Login)
 	if err != nil {
-		return nil, errors.New("Invalid credentials")
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed login: %w", err)
 	}
-
 	if !hash.CheckPassword(user.PasswordHash, request.Password) {
-		return nil, errors.New("Invalid credentials")
+		log.Println(err)
+		return nil, domain.ErrInvalidCredentials
 	}
 
-	sessionData, err := authService.SessionService.CreateSession(user.Id)
+	sessionData, err := authService.SessionService.CreateSession(ctx, user.Id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
 	return sessionData, nil
 }
 
-func (authService *AuthService) Logout(request *dtoAuth.RequestLogout) error {
-	err := authService.SessionService.DeleteSession(request.SessionID)
+func (authService *AuthService) Logout(ctx context.Context, request *dtoAuth.RequestLogout) error {
+	err := authService.SessionService.DeleteSession(ctx, request.SessionID)
 	if err != nil {
-		return errors.New("Failed to logout")
+		if errors.Is(err, domainSession.ErrNotFound) {
+			return domainSession.ErrNotFound
+		}
+
+		return fmt.Errorf("failed to logout: %w", err)
 	}
 
 	return nil
