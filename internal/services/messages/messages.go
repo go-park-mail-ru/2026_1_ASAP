@@ -13,7 +13,7 @@ import (
 
 const maxMessageRunes = 2000
 
-//go:generate mockgen -source=messages.go -destination=mock/messages_mock.go -package=mock
+//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=messages.go -destination=mock/messages_mock.go -package=mock
 type MessageRepositoryInterface interface {
 	CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
 	GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error)

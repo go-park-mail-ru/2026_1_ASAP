@@ -11,7 +11,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
 
-//go:generate mockgen -source=csrf.go -destination=mock/csrf_token_service_mock.go -package=mock
+//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=csrf.go -destination=mock/csrf_token_service_mock.go -package=mock
 type CSRFTokenService interface {
 	GetCSRFToken(ctx context.Context, sessionID string) (string, error)
 	SetCSRFToken(ctx context.Context, sessionID string, token string) error

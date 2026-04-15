@@ -15,7 +15,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sanitize"
 )
 
-//go:generate mockgen -source=chat.go -destination=mock/chat_mock.go -package=mock
+//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=chat.go -destination=mock/chat_mock.go -package=mock
 type ChatRepositoryInterface interface {
 	GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error)
 	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)

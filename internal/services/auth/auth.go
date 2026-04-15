@@ -13,7 +13,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
 )
 
-//go:generate mockgen -source=auth.go -destination=mock/auth_mock.go -package=mock
+//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/auth_mock.go -package=mock
 type UserRepository interface {
 	Create(ctx context.Context, u *domain.User) (*domain.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)

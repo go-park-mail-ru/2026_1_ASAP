@@ -37,7 +37,7 @@ type ChatService interface {
 	GetChatMemberIDs(ctx context.Context, chatID int64) ([]int64, error)
 }
 
-//go:generate mockgen -source=chat.go -destination=mock/chat_mock.go -package=mock
+//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=chat.go -destination=mock/chat_mock.go -package=mock
 type WsUserPublisher interface {
 	PublishToUser(ctx context.Context, userID int64, message []byte)
 }

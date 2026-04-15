@@ -18,7 +18,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
 
-//go:generate mockgen -source=profile.go -destination=mock/profile_mock.go -package=mock
+//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=profile.go -destination=mock/profile_mock.go -package=mock
 type ProfileServiceInterface interface {
 	GetUserProfile(ctx context.Context, userID int64) (response *dto.ResponseGetProfile, err error)
 	UpdateProfileBio(ctx context.Context, userID int64, request *dto.RequestUpdateBio) (response *dto.ResponseUpdateProfile, err error)

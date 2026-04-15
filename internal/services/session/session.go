@@ -13,7 +13,7 @@ import (
 	utils "github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/csrf"
 )
 
-//go:generate mockgen -source=session.go -destination=mock/session_mock.go -package=mock
+//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=session.go -destination=mock/session_mock.go -package=mock
 type SessionRepository interface {
 	CreateSession(ctx context.Context, session *domain.Session) (string, error)
 	GetSession(ctx context.Context, sessionID string) (*domain.Session, error)

@@ -11,7 +11,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
 
-//go:generate mockgen -source=auth.go -destination=mock/session_service_mock.go -package=mock
+//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/session_service_mock.go -package=mock
 type ctxKey string
 
 const UserID ctxKey = "userID"

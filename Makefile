@@ -8,7 +8,6 @@ test: generate mocks
 
 generate: $(MOCKGEN)
 	PATH="$(shell go env GOPATH)/bin:$${PATH}" go generate ./...
-	@$(MAKE) mocks-contacts
 
 coverage: generate
 	go test $(COVER_PKGS) -coverprofile=coverage.out
