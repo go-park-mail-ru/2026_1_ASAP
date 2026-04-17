@@ -519,9 +519,9 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 	}
 	log.Debug("vkid: public_info raw", zap.ByteString("body", publicInfoRaw))
 
-	var authRequest dtoVK.RequestAuth
-	if err := json.Unmarshal(publicInfoRaw, &authRequest); err != nil {
-		log.Error("vkid: decode public_info json", zap.Error(err))
+	authRequest, err := dtoVK.RequestAuthFromPublicInfoJSON(publicInfoRaw)
+	if err != nil {
+		log.Error("vkid: parse public_info user payload", zap.Error(err))
 		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -534,7 +534,7 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	session, err := authHandler.AuthService.AuthWithVKID(ctx, &authRequest)
+	session, err := authHandler.AuthService.AuthWithVKID(ctx, authRequest)
 	if err != nil {
 		log.Error("vkid: AuthWithVKID", zap.Error(err))
 		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
