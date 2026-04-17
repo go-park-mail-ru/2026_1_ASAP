@@ -4,7 +4,7 @@ CREATE TABLE users (
     first_name TEXT NOT NULL,
     last_name TEXT,
     email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT,
     avatar_url TEXT,
     bio TEXT,
     birth_date DATE,

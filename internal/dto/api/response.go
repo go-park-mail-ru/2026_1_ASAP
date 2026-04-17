@@ -46,6 +46,7 @@ const (
 	CSRFTokenNotInSession    = "CSRF_TOKEN_NOT_IN_SESSION"
 	EmptyFirstName           = "EMPTY_FIRST_NAME"
 	UserNotFound             = "USER_NOT_FOUND"
+	VKIDFailed               = "VKID_FAILED"
 )
 
 const (
@@ -91,6 +92,7 @@ const (
 	CSRFTokenNotInSessionMsg    = "CSRF token not in session"
 	EmptyFirstNameMsg           = "Empty first name"
 	UserNotFoundMsg             = "Cant find user you try to add"
+	VKIDFailedMsg               = "VKID failed to login"
 )
 
 type ApiError struct {

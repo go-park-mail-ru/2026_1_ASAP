@@ -19,6 +19,7 @@ type Config struct {
 	RedisConfig    RedisConfig
 	AppConfig      AppConfig
 	SessionConfig  SessionConfig
+	VKIDConfig     VKIDConfig
 }
 
 type ServerConfig struct {
@@ -59,6 +60,13 @@ type S3Config struct {
 type AppConfig struct {
 	ShutdownTime time.Duration
 	LogLevel     zapcore.Level
+}
+
+type VKIDConfig struct {
+	ClientID      string
+	RedirectURI   string
+	AuthURL       string
+	PublicInfoURL string
 }
 
 func parseZapLevel(s string) (zapcore.Level, error) {
@@ -124,6 +132,7 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 	var postgresConfig PostgresConfig
 	var s3Config S3Config
 	var appConfig AppConfig
+	var vkidConfig VKIDConfig
 
 	host, err := getEnvVariable(logger, "HOST", "localhost")
 	if err != nil {
@@ -282,6 +291,30 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 	}
 	appConfig.LogLevel = logLevel
 
+	vkClientID, err := getEnvVariable(logger, "VKID_CLIENT_ID", "test-client-id")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	vkidConfig.ClientID = vkClientID
+
+	vkRedirectURI, err := getEnvVariable(logger, "VKID_REDIRECT_URI", "http://localhost:8080/api/v1/auth/vk")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	vkidConfig.RedirectURI = vkRedirectURI
+
+	vkAuthURL, err := getEnvVariable(logger, "VKID_AUTH_URL", "https://id.vk.ru/oauth2/auth")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	vkidConfig.AuthURL = vkAuthURL
+
+	vkPublicInfoURL, err := getEnvVariable(logger, "VKID_PUBLIC_INFO_URL", "https://id.vk.ru/oauth2/public_info")
+	if err != nil {
+		return nil, fmt.Errorf("Load Config error: %w", err)
+	}
+	vkidConfig.PublicInfoURL = vkPublicInfoURL
+
 	config := &Config{
 		ServerConfig:   serverConfig,
 		SessionConfig:  sessionConfig,
@@ -289,6 +322,7 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 		PostgresConfig: postgresConfig,
 		S3Config:       s3Config,
 		AppConfig:      appConfig,
+		VKIDConfig:     vkidConfig,
 	}
 
 	logger.Info("config loaded",
@@ -302,6 +336,10 @@ func LoadConfigFromEnv(logger *zap.Logger) (*Config, error) {
 		zap.String("s3_public_url", s3Config.PublicURL()),
 		zap.Duration("shutdown_timeout", appConfig.ShutdownTime),
 		zap.String("log_level", appConfig.LogLevel.String()),
+		zap.Bool("vkid_client_id_set", vkidConfig.ClientID != ""),
+		zap.String("vkid_redirect_uri", vkidConfig.RedirectURI),
+		zap.String("vkid_auth_url", vkidConfig.AuthURL),
+		zap.String("vkid_public_info_url", vkidConfig.PublicInfoURL),
 	)
 
 	return config, nil

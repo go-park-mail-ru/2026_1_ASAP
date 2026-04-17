@@ -280,6 +280,10 @@ func TestPositiveConfig_LoadConfigFromEnv(t *testing.T) {
 				require.Equal(t, 10*time.Second, cfg.AppConfig.ShutdownTime)
 				require.Equal(t, "minio", cfg.S3Config.Host)
 				require.False(t, cfg.S3Config.UseSSL)
+				require.Equal(t, "test-client-id", cfg.VKIDConfig.ClientID)
+				require.Equal(t, "http://localhost:8080/api/v1/auth/vk", cfg.VKIDConfig.RedirectURI)
+				require.Equal(t, "https://id.vk.ru/oauth2/auth", cfg.VKIDConfig.AuthURL)
+				require.Equal(t, "https://id.vk.ru/oauth2/public_info", cfg.VKIDConfig.PublicInfoURL)
 			},
 		},
 		{
@@ -292,6 +296,10 @@ func TestPositiveConfig_LoadConfigFromEnv(t *testing.T) {
 				t.Setenv("TTL", "120")
 				t.Setenv("LOG_LEVEL", "warn")
 				t.Setenv("S3_USE_SSL", "true")
+				t.Setenv("VKID_CLIENT_ID", "7915193")
+				t.Setenv("VKID_REDIRECT_URI", "https://frontend.example.com/callback")
+				t.Setenv("VKID_AUTH_URL", "https://id.vk.ru/oauth2/auth")
+				t.Setenv("VKID_PUBLIC_INFO_URL", "https://id.vk.ru/oauth2/public_info")
 			},
 			args: args{},
 			assert: func(t *testing.T, cfg *Config) {
@@ -300,6 +308,8 @@ func TestPositiveConfig_LoadConfigFromEnv(t *testing.T) {
 				require.Equal(t, 120*time.Second, cfg.SessionConfig.SessionTTL)
 				require.Equal(t, zapcore.WarnLevel, cfg.AppConfig.LogLevel)
 				require.True(t, cfg.S3Config.UseSSL)
+				require.Equal(t, "7915193", cfg.VKIDConfig.ClientID)
+				require.Equal(t, "https://frontend.example.com/callback", cfg.VKIDConfig.RedirectURI)
 			},
 		},
 	}

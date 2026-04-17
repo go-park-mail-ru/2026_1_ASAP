@@ -143,6 +143,7 @@ func main() {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
 		mux.With(authMiddleware, csrfMiddleware).Post("/logout", auth.Logout)
+		mux.Post("/vk", auth.VkIDLogin)
 	})
 
 	mux.Route("/api/v1/chats", func(mux chi.Router) {

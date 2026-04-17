@@ -6,12 +6,17 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
+	"time"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
 	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
+	dtoVK "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/vkid"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
@@ -24,14 +29,16 @@ type AuthService interface {
 	Register(ctx context.Context, request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, error)
 	Login(ctx context.Context, request *dtoAuth.RequestLogin) (*dtoSession.SessionDTO, error)
 	Logout(ctx context.Context, request *dtoAuth.RequestLogout) error
+	AuthWithVKID(ctx context.Context, request *dtoVK.RequestAuth) (*dtoSession.SessionDTO, error)
 }
 
 type AuthHandler struct {
 	AuthService AuthService
+	VKIDConfig  config.VKIDConfig
 }
 
-func NewAuthHandler(authService AuthService) *AuthHandler {
-	return &AuthHandler{AuthService: authService}
+func NewAuthHandler(authService AuthService, config config.VKIDConfig) *AuthHandler {
+	return &AuthHandler{AuthService: authService, VKIDConfig: config}
 }
 
 // Login godoc
@@ -313,4 +320,201 @@ func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Send(w, http.StatusOK, resp)
+}
+
+func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	decoder := json.NewDecoder(r.Body)
+
+	var request dtoVK.RequestVKID
+	err := decoder.Decode(&request)
+	if err != nil {
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InvalidJson,
+					Message: dtoApi.InvalidJsonMsg,
+				},
+			},
+		})
+		return
+	}
+	queryParams := url.Values{
+		"grant_type":    []string{"authorization_code"},
+		"code_verifier": []string{request.CodeVerifier},
+		"redirect_uri":  []string{authHandler.VKIDConfig.RedirectURI}, // TODO
+		"code":          []string{request.Code},
+		"client_id":     []string{authHandler.VKIDConfig.ClientID}, //TODO
+		"device_id":     []string{request.DeviceID},
+		"state":         []string{request.State},
+	}
+
+	ctxTimeout, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(
+		ctxTimeout,
+		http.MethodPost,
+		"https://id.vk.ru/oauth2/auth",
+		strings.NewReader(queryParams.Encode()),
+	)
+	if err != nil {
+		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
+		})
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.VKIDFailed,
+					Message: dtoApi.VKIDFailedMsg,
+				},
+			},
+		})
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.VKIDFailed,
+					Message: dtoApi.VKIDFailedMsg,
+				},
+			},
+		})
+		return
+	}
+	var vkIDCallback dtoVK.CallbackResponseFromVKID
+	decoder = json.NewDecoder(resp.Body)
+	err = json.NewDecoder(resp.Body).Decode(&vkIDCallback)
+	if err != nil {
+		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.VKIDFailed,
+					Message: dtoApi.VKIDFailedMsg,
+				},
+			},
+		})
+		return
+	}
+	queryParams = url.Values{
+		"client_id": []string{string(vkIDCallback.UserID)},
+		"id_token":  []string{vkIDCallback.IDToken},
+	}
+
+	ctxTimeout, cancel = context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+	req, err = http.NewRequestWithContext(
+		ctxTimeout,
+		http.MethodPost,
+		"https://id.vk.ru/oauth2/public_info",
+		strings.NewReader(queryParams.Encode()),
+	)
+	if err != nil {
+		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
+		})
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.VKIDFailed,
+					Message: dtoApi.VKIDFailedMsg,
+				},
+			},
+		})
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.VKIDFailed,
+					Message: dtoApi.VKIDFailedMsg,
+				},
+			},
+		})
+		return
+	}
+
+	var authRequest dtoVK.RequestAuth
+	decoder = json.NewDecoder(resp.Body)
+	err = decoder.Decode(&authRequest)
+	if err != nil {
+		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.VKIDFailed,
+					Message: dtoApi.VKIDFailedMsg,
+				},
+			},
+		})
+		return
+	}
+
+	session, err := authHandler.AuthService.AuthWithVKID(ctx, &authRequest)
+	if err != nil {
+		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
+		})
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    session.SessionID,
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  session.Expire,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   true,
+	})
+
+	res := dtoApi.ApiSuccessResponse[dtoAuth.ResponseLoginSuccess]{
+		Status: dtoApi.Success,
+		Body: dtoAuth.ResponseLoginSuccess{
+			Login: session.UserID,
+		},
+	}
+
+	w.Header().Set("X-NEW-CSRF-TOKEN", session.CSRFToken)
+	response.Send(w, http.StatusOK, res)
 }

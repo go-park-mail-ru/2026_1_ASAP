@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -30,6 +31,92 @@ type dbPool interface {
 type UserRepository struct {
 	db     dbPool
 	logger *zap.Logger
+}
+
+func (r *UserRepository) CreateUserByVKID(ctx context.Context, vkID int64, user *domain.User) (*domain.User, error) {
+	start := time.Now()
+	userModel := toModel(user)
+	vkUserID := strconv.FormatInt(vkID, 10)
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.Serializable,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var exists bool
+	err = tx.QueryRow(ctx, usersql.ExistsLogin, userModel.Login).Scan(&exists)
+	if err != nil {
+		return nil, fmt.Errorf("check login: %w", err)
+	}
+	if exists {
+		return nil, domain.ErrLoginAlreadyExists
+	}
+
+	err = tx.QueryRow(ctx, usersql.ExistsEmail, userModel.Email).Scan(&exists)
+	if err != nil {
+		return nil, fmt.Errorf("check email: %w", err)
+	}
+	if exists {
+		userModel.Email = ""
+	}
+
+	err = tx.QueryRow(ctx, usersql.InsertUser,
+		userModel.Login, userModel.FirstName, userModel.LastName, userModel.Email, userModel.PasswordHash,
+		userModel.AvatarUrl, userModel.Bio, userModel.BirthDate, userModel.LastSeenAt,
+	).Scan(&userModel.Id, &userModel.CreatedAt, &userModel.UpdatedAt)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.ConstraintName {
+			case "users_login_key":
+				return nil, domain.ErrLoginAlreadyExists
+			case "users_email_key":
+				return nil, domain.ErrEmailAlreadyExists
+			}
+		}
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, usersql.InsertVKAccount, userModel.Id, vkUserID, userModel.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to link vk account: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit: %w", err)
+	}
+
+	sqllog.LogQuery(ctx, r.log(ctx), "CreateUserByVKID", usersql.CreateUserByVKIDTxDescription, start, nil, []any{
+		userModel.Login, userModel.FirstName, userModel.LastName, userModel.Email, vkUserID,
+		userModel.AvatarUrl, userModel.Bio, userModel.BirthDate, userModel.LastSeenAt,
+	})
+
+	return toDomain(userModel), nil
+}
+
+func (r *UserRepository) GetUserByVKID(ctx context.Context, vkid int64) (*domain.User, error) {
+	q := usersql.GetUserByVKID
+	start := time.Now()
+	vkUserID := strconv.FormatInt(vkid, 10)
+	row := r.db.QueryRow(ctx, q, vkUserID)
+
+	u := &UserModel{}
+	err := row.Scan(
+		&u.Id, &u.Login, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash,
+		&u.AvatarUrl, &u.Bio, &u.BirthDate, &u.LastSeenAt,
+		&u.CreatedAt, &u.UpdatedAt,
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetUserByVKID", q, start, err, []any{vkUserID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrNotFound
+		}
+		return nil, fmt.Errorf("userRepository failed get user by vk id: %w", err)
+	}
+	return toDomain(u), nil
 }
 
 func (r *UserRepository) GetProfileIdByLogin(ctx context.Context, login string) (int64, error) {
