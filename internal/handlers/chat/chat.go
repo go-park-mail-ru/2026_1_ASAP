@@ -88,6 +88,47 @@ func (h *ChatsHandler) wsPublishChatDeleted(ctx context.Context, memberIDs []int
 	}
 }
 
+func (h *ChatsHandler) wsPublishMembersAdded(ctx context.Context, chatID int64, addedUserIDs []int64) {
+	if h.wsPublisher == nil || len(addedUserIDs) == 0 {
+		return
+	}
+	addedSet := make(map[int64]struct{}, len(addedUserIDs))
+	for _, id := range addedUserIDs {
+		addedSet[id] = struct{}{}
+	}
+
+	for _, uid := range addedUserIDs {
+		info, err := h.chatService.GetChatByID(ctx, chatID, uid)
+		if err != nil {
+			continue
+		}
+		frame, err := dtoWs.EncodeChatNew(info)
+		if err != nil {
+			continue
+		}
+		h.wsPublisher.PublishToUser(ctx, uid, frame)
+	}
+
+	allMemberIDs, err := h.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		return
+	}
+	for _, uid := range allMemberIDs {
+		if _, isNew := addedSet[uid]; isNew {
+			continue
+		}
+		info, err := h.chatService.GetChatByID(ctx, chatID, uid)
+		if err != nil {
+			continue
+		}
+		frame, err := dtoWs.EncodeChatUpdated(info)
+		if err != nil {
+			continue
+		}
+		h.wsPublisher.PublishToUser(ctx, uid, frame)
+	}
+}
+
 // GetChats godoc
 // @Summary Получить список чатов
 // @Description Возвращает все чаты пользователя
@@ -944,6 +985,8 @@ func (h *ChatsHandler) AddMembersToChat(w http.ResponseWriter, r *http.Request) 
 		Body:   "Members added to chat successfully",
 	}
 	response.Send(w, http.StatusOK, resp)
+
+	h.wsPublishMembersAdded(ctx, chatID, request.MembersId)
 }
 
 // DeleteMemberFromChat удаляет участника из чата

@@ -343,9 +343,9 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 	queryParams := url.Values{
 		"grant_type":    []string{"authorization_code"},
 		"code_verifier": []string{request.CodeVerifier},
-		"redirect_uri":  []string{authHandler.VKIDConfig.RedirectURI}, // TODO
+		"redirect_uri":  []string{authHandler.VKIDConfig.RedirectURI},
 		"code":          []string{request.Code},
-		"client_id":     []string{authHandler.VKIDConfig.ClientID}, //TODO
+		"client_id":     []string{authHandler.VKIDConfig.ClientID},
 		"device_id":     []string{request.DeviceID},
 		"state":         []string{request.State},
 	}
@@ -401,7 +401,7 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 	}
 	var vkIDCallback dtoVK.CallbackResponseFromVKID
 	decoder = json.NewDecoder(resp.Body)
-	err = json.NewDecoder(resp.Body).Decode(&vkIDCallback)
+	err = decoder.Decode(&vkIDCallback)
 	if err != nil {
 		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
