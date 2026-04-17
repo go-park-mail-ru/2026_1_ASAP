@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -441,7 +440,7 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 	}
 
 	queryParams = url.Values{
-		"client_id": []string{strconv.FormatInt(vkIDCallback.UserID, 10)},
+		"client_id": []string{authHandler.VKIDConfig.ClientID},
 		"id_token":  []string{vkIDCallback.IDToken},
 	}
 
