@@ -102,7 +102,7 @@ func main() {
 	chatsHandler := chatHandlers.NewChatHandler(chatServ, ws)
 	contactsHandler := contactHandlers.NewContactHandler(contactServ)
 	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
-	auth := authHandlers.NewAuthHandler(authServ, cfg.VKIDConfig)
+	auth := authHandlers.NewAuthHandler(authServ, cfg.VKIDConfig, handlerLogger.Named("auth"))
 
 	//Middleware
 	requestIDMiddleware := middleware.RequestIDMiddleware()
