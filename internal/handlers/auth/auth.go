@@ -467,6 +467,12 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		})
 		return
 	}
+	// Чтобы вывести тело ответа VK в формате JSON для отладки:
+	var vkRawBody map[string]interface{}
+	_ = json.NewDecoder(resp.Body).Decode(&vkRawBody)
+	vkJson, _ := json.MarshalIndent(vkRawBody, "", "  ")
+	log.Println("VK public_info RAW JSON:", string(vkJson))
+	resp.Body.Close() // Закрываем тело, так как дальше оно читается в основной логике
 
 	var authRequest dtoVK.RequestAuth
 	decoder = json.NewDecoder(resp.Body)
