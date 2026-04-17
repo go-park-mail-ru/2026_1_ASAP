@@ -12,7 +12,6 @@ import (
 	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	dtoVK "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/vkid"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/hash"
-	"github.com/google/uuid"
 )
 
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/auth_mock.go -package=mock
@@ -44,7 +43,7 @@ func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			user := &domain.User{
-				Login:     uuid.NewString(),
+				Login:     "vk_" + string(request.VKUserID),
 				Email:     request.Email,
 				FirstName: request.FirstName,
 				LastName:  &request.LastName,
