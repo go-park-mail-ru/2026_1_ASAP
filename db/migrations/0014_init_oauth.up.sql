@@ -3,6 +3,6 @@ CREATE TABLE vk_accounts (
     user_id BIGINT,
     vk_user_id TEXT NOT NULL,
     vk_email TEXT,
-    created_at TIMESTAMPZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
