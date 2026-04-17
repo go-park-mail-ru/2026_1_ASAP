@@ -43,7 +43,7 @@ func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			user := &domain.User{
-				Login:     "vk_" + string(request.VKUserID),
+				Login:     fmt.Sprintf("vk_%d", request.VKUserID),
 				Email:     request.Email,
 				FirstName: request.FirstName,
 				LastName:  &request.LastName,
