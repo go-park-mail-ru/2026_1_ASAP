@@ -33,6 +33,11 @@ services:
       S3_PUBLIC_HOST: ${S3_PUBLIC_HOST:-localhost}
       S3_PUBLIC_PORT: ${S3_PUBLIC_PORT:-443}
 
+      VKID_CLIENT_ID: ${VKID_CLIENT_ID}
+      VKID_REDIRECT_URI: ${VKID_REDIRECT_URI}
+      VKID_AUTH_URL: ${VKID_AUTH_URL:-https://id.vk.ru/oauth2/auth}
+      VKID_PUBLIC_INFO_URL: ${VKID_PUBLIC_INFO_URL:-https://id.vk.ru/oauth2/public_info}
+
     depends_on:
       - redis
       - db

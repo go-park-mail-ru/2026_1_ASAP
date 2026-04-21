@@ -12,7 +12,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
@@ -74,7 +76,7 @@ func TestPositiveAuthHandler_Login(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			h := &AuthHandler{AuthService: f.authService}
+			h := &AuthHandler{AuthService: f.authService, logger: zap.NewNop()}
 			rr := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(tt.args.body))
 			req.Header.Set("Content-Type", "application/json")
@@ -177,7 +179,7 @@ func TestNegativeAuthHandler_Login(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			h := &AuthHandler{AuthService: f.authService}
+			h := &AuthHandler{AuthService: f.authService, logger: zap.NewNop()}
 			rr := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(tt.args.body))
 			req.Header.Set("Content-Type", "application/json")
@@ -234,7 +236,7 @@ func TestPositiveAuthHandler_Register(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			h := &AuthHandler{AuthService: f.authService}
+			h := &AuthHandler{AuthService: f.authService, logger: zap.NewNop()}
 			rr := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", strings.NewReader(tt.args.body))
 			req.Header.Set("Content-Type", "application/json")
@@ -328,7 +330,7 @@ func TestNegativeAuthHandler_Register(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			h := &AuthHandler{AuthService: f.authService}
+			h := &AuthHandler{AuthService: f.authService, logger: zap.NewNop()}
 			rr := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", strings.NewReader(tt.args.body))
 			req.Header.Set("Content-Type", "application/json")
@@ -379,7 +381,7 @@ func TestPositiveAuthHandler_Logout(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			h := &AuthHandler{AuthService: f.authService}
+			h := &AuthHandler{AuthService: f.authService, logger: zap.NewNop()}
 			rr := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
 			ctx := context.WithValue(req.Context(), middleware.SessionID, tt.args.sessionID)
@@ -464,7 +466,7 @@ func TestNegativeAuthHandler_Logout(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			h := &AuthHandler{AuthService: f.authService}
+			h := &AuthHandler{AuthService: f.authService, logger: zap.NewNop()}
 			rr := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
 			req = req.WithContext(tt.args.ctx)
@@ -483,7 +485,7 @@ func TestNewAuthHandler(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	svc := mock.NewMockAuthService(ctrl)
-	h := NewAuthHandler(svc)
+	h := NewAuthHandler(svc, config.VKIDConfig{}, zap.NewNop())
 	require.NotNil(t, h)
 	require.Equal(t, svc, h.AuthService)
 }

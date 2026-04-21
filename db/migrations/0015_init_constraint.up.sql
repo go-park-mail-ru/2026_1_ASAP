@@ -1,6 +1,5 @@
-ALTER TABLE oauth_users
-ADD CONSTRAINT fk_oauth_users_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE vk_accounts
+ADD CONSTRAINT fk_vk_accounts_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
-ALTER TABLE oauth_users
-ADD CONSTRAINT uq_oauth_users_provider_id UNIQUE (provider, provider_user_id);
-
+ALTER TABLE vk_accounts
+ADD CONSTRAINT uq_vk_accounts_vk_user_id UNIQUE (vk_user_id);

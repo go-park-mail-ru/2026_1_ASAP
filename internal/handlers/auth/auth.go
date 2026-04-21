@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
@@ -18,6 +20,7 @@ import (
 	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/session"
 	dtoVK "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/vkid"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sanitize"
@@ -35,10 +38,22 @@ type AuthService interface {
 type AuthHandler struct {
 	AuthService AuthService
 	VKIDConfig  config.VKIDConfig
+	logger      *zap.Logger
 }
 
-func NewAuthHandler(authService AuthService, config config.VKIDConfig) *AuthHandler {
-	return &AuthHandler{AuthService: authService, VKIDConfig: config}
+func NewAuthHandler(authService AuthService, vkCfg config.VKIDConfig, logger *zap.Logger) *AuthHandler {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
+	return &AuthHandler{AuthService: authService, VKIDConfig: vkCfg, logger: logger.Named("vkid")}
+}
+
+func (authHandler *AuthHandler) Log(ctx context.Context) *zap.Logger {
+	base := authHandler.logger
+	if base == nil {
+		return zap.NewNop()
+	}
+	return loggerctx.EnrichLoggerFromContext(ctx, base)
 }
 
 // Login godoc
@@ -128,7 +143,7 @@ func (authHandler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		}
-		log.Println(err.Error())
+		authHandler.Log(ctx).Error("login: internal error", zap.Error(err))
 		response.Send(w, http.StatusInternalServerError, resp)
 		return
 	}
@@ -234,7 +249,7 @@ func (authHandler *AuthHandler) Register(w http.ResponseWriter, r *http.Request)
 				},
 			},
 		}
-		log.Println(err.Error())
+		authHandler.Log(ctx).Error("register: internal error", zap.Error(err))
 		response.Send(w, http.StatusInternalServerError, resp)
 		return
 	}
@@ -324,11 +339,11 @@ func (authHandler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	decoder := json.NewDecoder(r.Body)
+	log := authHandler.Log(ctx)
 
 	var request dtoVK.RequestVKID
-	err := decoder.Decode(&request)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		log.Warn("vkid: invalid request json", zap.Error(err))
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -340,26 +355,28 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		})
 		return
 	}
+
 	queryParams := url.Values{
 		"grant_type":    []string{"authorization_code"},
 		"code_verifier": []string{request.CodeVerifier},
-		"redirect_uri":  []string{authHandler.VKIDConfig.RedirectURI}, // TODO
+		"redirect_uri":  []string{authHandler.VKIDConfig.RedirectURI},
 		"code":          []string{request.Code},
-		"client_id":     []string{authHandler.VKIDConfig.ClientID}, //TODO
+		"client_id":     []string{authHandler.VKIDConfig.ClientID},
 		"device_id":     []string{request.DeviceID},
 		"state":         []string{request.State},
 	}
 
-	ctxTimeout, cancel := context.WithTimeout(r.Context(), time.Second*5)
-	defer cancel()
+	tokenCtx, cancelToken := context.WithTimeout(ctx, 5*time.Second)
+	defer cancelToken()
 
 	req, err := http.NewRequestWithContext(
-		ctxTimeout,
+		tokenCtx,
 		http.MethodPost,
-		"https://id.vk.ru/oauth2/auth",
+		authHandler.VKIDConfig.AuthURL,
 		strings.NewReader(queryParams.Encode()),
 	)
 	if err != nil {
+		log.Error("vkid: build token request", zap.Error(err))
 		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -373,8 +390,9 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	tokenResp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		log.Error("vkid: token exchange request", zap.Error(err))
 		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -386,8 +404,14 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		})
 		return
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	defer tokenResp.Body.Close()
+
+	if tokenResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(tokenResp.Body)
+		log.Warn("vkid: token exchange failed",
+			zap.Int("status", tokenResp.StatusCode),
+			zap.String("body", truncateForLog(body, 512)),
+		)
 		response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -399,10 +423,10 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		})
 		return
 	}
+
 	var vkIDCallback dtoVK.CallbackResponseFromVKID
-	decoder = json.NewDecoder(resp.Body)
-	err = json.NewDecoder(resp.Body).Decode(&vkIDCallback)
-	if err != nil {
+	if err := json.NewDecoder(tokenResp.Body).Decode(&vkIDCallback); err != nil {
+		log.Error("vkid: decode token response", zap.Error(err))
 		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -414,20 +438,23 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		})
 		return
 	}
+
 	queryParams = url.Values{
-		"client_id": []string{string(vkIDCallback.UserID)},
+		"client_id": []string{authHandler.VKIDConfig.ClientID},
 		"id_token":  []string{vkIDCallback.IDToken},
 	}
 
-	ctxTimeout, cancel = context.WithTimeout(r.Context(), time.Second*5)
-	defer cancel()
+	infoCtx, cancelInfo := context.WithTimeout(ctx, 5*time.Second)
+	defer cancelInfo()
+
 	req, err = http.NewRequestWithContext(
-		ctxTimeout,
+		infoCtx,
 		http.MethodPost,
-		"https://id.vk.ru/oauth2/public_info",
+		authHandler.VKIDConfig.PublicInfoURL,
 		strings.NewReader(queryParams.Encode()),
 	)
 	if err != nil {
+		log.Error("vkid: build public_info request", zap.Error(err))
 		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -441,8 +468,9 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err = http.DefaultClient.Do(req)
+	infoResp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		log.Error("vkid: public_info request", zap.Error(err))
 		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -454,8 +482,14 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		})
 		return
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	defer infoResp.Body.Close()
+
+	if infoResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(infoResp.Body)
+		log.Warn("vkid: public_info non-200",
+			zap.Int("status", infoResp.StatusCode),
+			zap.String("body", truncateForLog(body, 512)),
+		)
 		response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -468,10 +502,25 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var authRequest dtoVK.RequestAuth
-	decoder = json.NewDecoder(resp.Body)
-	err = decoder.Decode(&authRequest)
+	publicInfoRaw, err := io.ReadAll(infoResp.Body)
 	if err != nil {
+		log.Error("vkid: read public_info body", zap.Error(err))
+		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.VKIDFailed,
+					Message: dtoApi.VKIDFailedMsg,
+				},
+			},
+		})
+		return
+	}
+	log.Debug("vkid: public_info raw", zap.ByteString("body", publicInfoRaw))
+
+	authRequest, err := dtoVK.RequestAuthFromPublicInfoJSON(publicInfoRaw, vkIDCallback.UserID)
+	if err != nil {
+		log.Error("vkid: parse public_info user payload", zap.Error(err))
 		response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -484,8 +533,9 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	session, err := authHandler.AuthService.AuthWithVKID(ctx, &authRequest)
+	session, err := authHandler.AuthService.AuthWithVKID(ctx, authRequest)
 	if err != nil {
+		log.Error("vkid: AuthWithVKID", zap.Error(err))
 		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -497,6 +547,8 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 		})
 		return
 	}
+
+	log.Info("vkid: login ok", zap.String("user_id", session.UserID))
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
@@ -517,4 +569,11 @@ func (authHandler *AuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.CSRFToken)
 	response.Send(w, http.StatusOK, res)
+}
+
+func truncateForLog(b []byte, max int) string {
+	if len(b) <= max {
+		return string(b)
+	}
+	return string(b[:max]) + "…"
 }
