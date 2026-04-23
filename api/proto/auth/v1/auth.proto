@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1;authv1";
+
+service Auth {
+  rpc Login(RequestLogin) returns (ResponseLogin);
+  rpc Register(RequestRegister) returns (ResponseRegister);
+  rpc Logout(RequestLogout) returns (ResponseLogout);
+  rpc AuthVKID(RequestVKID) returns (ResponseLogin);
+
+  rpc ValidateSession(RequestValidateSession) returns (ResponseValidateSession);
+  rpc GetUserPublic(RequestGetUserPublic) returns (ResponseGetUserPublic);
+
+  rpc GetCSRFToken(RequestGetCSRFToken) returns (ResponseGetCSRFToken);
+  rpc SetCSRFToken(RequestSetCSRFToken) returns (google.protobuf.Empty);
+}
+
+message RequestSetCSRFToken {
+  string session_id = 1;
+  string csrf_token = 2;
+}
+
+message RequestGetCSRFToken {
+  string session_id = 1;
+}
+
+message ResponseGetCSRFToken {
+  string csrf_token = 1;
+}
+
+message RequestValidateSession {
+  string session_id = 1;
+}
+
+message ResponseValidateSession {
+  int64 user_id = 1;
+}
+
+message RequestGetUserPublic {
+  int64 user_id = 1;
+}
+
+message ResponseGetUserPublic {
+  string login = 1;
+  string email = 2;
+}
+
+message RequestVKID {
+  string code = 1;
+  string state = 2;
+  string code_verifier = 3;
+  string device_id = 4;
+}
+
+message RequestLogout {
+  string session_id = 1;
+}
+
+message ResponseLogout {
+
+}
+
+message RequestLogin {
+  string login = 1;
+  string password = 2;
+}
+
+message ResponseLogin {
+  SessionMeta session = 1;
+  string login = 2;
+}
+
+message RequestRegister {
+  string login = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message ResponseRegister {
+  string login = 1;
+  string email = 2;
+}
+
+message SessionMeta {
+  string session_id = 1;
+  string csrf_token = 2;
+  int64 user_id = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}

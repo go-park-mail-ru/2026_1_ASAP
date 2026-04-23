@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/middleware"
 )
 
 type loggerKey struct{}
@@ -25,9 +23,11 @@ func From(ctx context.Context) *zap.Logger {
 }
 
 func EnrichLoggerFromContext(ctx context.Context, logger *zap.Logger) *zap.Logger {
-	reqID, ok := middleware.RequestIDFromContext(ctx)
-	if !ok {
-		reqID = "unknown_request_id"
+	if logger == nil {
+		return zap.NewNop()
 	}
-	return logger.With(zap.String("request_id", reqID))
+	if ctx == nil {
+		return logger
+	}
+	return logger
 }

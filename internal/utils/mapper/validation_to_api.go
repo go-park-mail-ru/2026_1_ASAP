@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
+	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 )
 

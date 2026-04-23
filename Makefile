@@ -1,7 +1,12 @@
-.PHONY: test generate coverage install-linter lint lint-fix install-mockgen mocks mocks-contacts mocks-profile
+.PHONY: test generate coverage install-linter lint lint-fix install-mockgen mocks mocks-contacts mocks-profile proto install-proto-tools
 
 MOCKGEN := $(shell go env GOPATH)/bin/mockgen
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
+PROTOC_GEN_GO := $(shell go env GOPATH)/bin/protoc-gen-go
+PROTOC_GEN_GO_GRPC := $(shell go env GOPATH)/bin/protoc-gen-go-grpc
+PROTO_DIR := api/proto
+GEN_DIR := gen/go
+PROTO_FILES := $(shell rg --files $(PROTO_DIR) -g '*.proto')
 
 test: generate mocks
 	go test ./...
@@ -34,3 +39,16 @@ $(MOCKGEN):
 
 $(GOLANGCI_LINT):
 	@$(MAKE) install-linter
+
+install-proto-tools:
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC):
+	@$(MAKE) install-proto-tools
+
+proto: $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC)
+	PATH="$(shell go env GOPATH)/bin:$${PATH}" protoc -I $(PROTO_DIR) \
+		--go_out=. --go_opt=module=github.com/go-park-mail-ru/2026_1_ASAP --go_opt=paths=import \
+		--go-grpc_out=. --go-grpc_opt=module=github.com/go-park-mail-ru/2026_1_ASAP --go-grpc_opt=paths=import \
+		$(PROTO_FILES)

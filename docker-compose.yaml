@@ -1,43 +1,47 @@
 services:
-  backend:
-    build: .
+  gateway:
+    build:
+      context: .
+      dockerfile: ./docker/gateway.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      CONFIG_PATH: configs/gateway/local.yml
     ports:
       - "8080:8080"
+    depends_on:
+      - auth
+      - profile
+    restart: always
+
+  profile:
+    build:
+      context: .
+      dockerfile: ./docker/profile.Dockerfile
+    env_file:
+      - ./.env
     environment:
-      PORT: "8080"
-      HOST: ${BACKEND_HOST:-0.0.0.0}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CONFIG_PATH: configs/profile/local.yml
+    ports:
+      - "8002:8002"
+    depends_on:
+      - db
+      - migrate
+      - minio
+    restart: always
 
-      # Redis
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      REDIS_DATABASE: ${REDIS_DATABASE:-0}   # дефолтная база 0, если не указана
-
-      # Postgres / Database
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
-
-      # MinIO / S3-compatible storage
-      S3_HOST: ${S3_HOST:-minio}
-      S3_PORT: ${S3_PORT:-9000}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
-      S3_BUCKET: ${S3_BUCKET:-media}
-      S3_USE_SSL: ${S3_USE_SSL:-false}
-      S3_PUBLIC_USE_SSL: ${S3_PUBLIC_USE_SSL:-true}
-      S3_PUBLIC_HOST: ${S3_PUBLIC_HOST:-localhost}
-      S3_PUBLIC_PORT: ${S3_PUBLIC_PORT:-443}
-
-      VKID_CLIENT_ID: ${VKID_CLIENT_ID}
-      VKID_REDIRECT_URI: ${VKID_REDIRECT_URI}
-      VKID_AUTH_URL: ${VKID_AUTH_URL:-https://id.vk.ru/oauth2/auth}
-      VKID_PUBLIC_INFO_URL: ${VKID_PUBLIC_INFO_URL:-https://id.vk.ru/oauth2/public_info}
-
+  auth:
+    build:
+      context: .
+      dockerfile: ./docker/auth.Dockerfile
+      args:
+        SERVICE_NAME: auth
+    env_file:
+      - ./.env
+    environment:
+      CONFIG_PATH: configs/auth/local.yml
+    ports:
+      - "8001:8001"
     depends_on:
       - redis
       - db
@@ -47,23 +51,36 @@ services:
 
   redis:
     image: redis:latest
+    env_file:
+      - ./.env
+    environment:
+      REDIS_PORT: "6379"
     ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+      - "6379:6379"
+    command:
+      - /bin/sh
+      - -c
+      - redis-server --requirepass "$$REDIS_PASSWORD"
     restart: always
 
   db:
     image: postgres:15
+    env_file:
+      - ./.env
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB: asap
     ports:
       - "5432:5432"
     restart: always
 
   migrate:
     image: migrate/migrate
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: asap
     volumes:
       - ./db/migrations:/migrations
     entrypoint:
@@ -72,7 +89,7 @@ services:
       - |
         set -e
         RETRIES=10
-        until migrate -path=/migrations -database="postgres://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable" up || [ $$RETRIES -eq 0 ]; do
+        until migrate -path=/migrations -database="postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@db:5432/$$POSTGRES_DB?sslmode=disable" up || [ $$RETRIES -eq 0 ]; do
           echo "Migration failed, retrying in 3s..."
           RETRIES=$$((RETRIES-1))
           sleep 3
@@ -83,12 +100,14 @@ services:
 
   minio:
     image: minio/minio:latest
+    env_file:
+      - ./.env
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data

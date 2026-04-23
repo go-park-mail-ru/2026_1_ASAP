@@ -5,7 +5,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"

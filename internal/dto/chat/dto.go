@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 )
 
 type ChatType string

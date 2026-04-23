@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package profile.v1;
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1;profilev1";
+
+import "google/protobuf/timestamp.proto";
+
+service Profile {
+    rpc GetProfile(RequestGetProfile) returns (ResponseGetProfile);
+    rpc UpdateProfileAvatar(RequestUpdateAvatar) returns (ResponseGetProfile);
+    rpc UpdateProfileBio(RequestUpdateBio) returns (ResponseGetProfile);
+    rpc UpdateProfileBirthDate(RequestUpdateBirthDate) returns (ResponseGetProfile);
+    rpc UpdateProfileName(RequestUpdateName) returns (ResponseGetProfile);
+}
+
+message RequestUpdateName {
+    int64 user_id = 1;
+    string first_name = 2;
+    optional string second_name = 3;
+}
+
+message RequestUpdateBirthDate {
+    int64 user_id = 1;
+    optional string birth_date = 2;
+}
+
+message RequestUpdateBio {
+    int64 user_id = 1;
+    optional string bio = 2;
+}
+
+message RequestUpdateAvatar {
+    int64 user_id = 1;
+    bytes content = 2;
+    string type = 3;
+}
+
+message RequestGetProfile {
+    int64 user_id = 1;
+}
+
+message ResponseGetProfile {
+    int64 user_id = 1;
+    string first_name = 2;
+    optional string second_name = 3;
+    optional google.protobuf.Timestamp last_seen = 4;
+    string bio = 5;
+    string birth_date = 6;
+    string avatar = 7;
+}

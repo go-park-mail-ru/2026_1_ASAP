@@ -6,9 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
 	"github.com/stretchr/testify/require"
-
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 )
 
 func TestPositiveResponse_Send(t *testing.T) {

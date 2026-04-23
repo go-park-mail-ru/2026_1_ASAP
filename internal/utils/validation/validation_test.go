@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
 	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 )
 
@@ -16,7 +16,7 @@ func TestValidateEmail(t *testing.T) {
 	}{
 		{"empty", "", false},
 		{"invalid", "invalid-email", false},
-		{"valid", "user@example.com", true},
+		{"valid", "profile@example.com", true},
 	}
 
 	for _, tt := range tests {
@@ -90,8 +90,8 @@ func TestValidationRequestRegistrate(t *testing.T) {
 		{
 			name: "valid",
 			req: &dtoAuth.RequestRegistrate{
-				Login:    "user",
-				Email:    "user@example.com",
+				Login:    "profile",
+				Email:    "profile@example.com",
 				Password: "Passw0rd&",
 			},
 		},
@@ -114,7 +114,7 @@ func TestValidationRequestLogin(t *testing.T) {
 		{
 			name: "valid",
 			req: &dtoAuth.RequestLogin{
-				Login:    "user",
+				Login:    "profile",
 				Password: "Passw0rd&",
 			},
 		},

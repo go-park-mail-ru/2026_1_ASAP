@@ -1,0 +1,9 @@
+server:
+  host: 0.0.0.0
+  port: "8080"
+
+auth:
+  grpc_addr: auth:8001
+
+profile:
+  grpc_addr: profile:8002
