@@ -15,8 +15,10 @@ import (
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	gwauth "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/auth"
+	gwcontacts "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/contacts"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	gwprofile "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/profile"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -44,25 +46,37 @@ func main() {
 
 	authHandler := gwauth.NewGatewayAuthHandler(authClient)
 	profileHandler := gwprofile.NewGatewayProfileHandler(authClient, profileClient)
+	contactsHandler := gwcontacts.NewGatewayContactsHandler(profileClient)
+	accessLogger, _ := zap.NewProduction()
+
+	authMiddleware := middleware.AuthMiddleware(authClient)
+	csrfMiddleware := middleware.CSRFMiddleware(authClient)
 
 	router := chi.NewRouter()
-	router.Route("/api/v1/auth", func(r chi.Router) {
-		r.Post("/login", authHandler.Login)
-		r.Post("/register", authHandler.Register)
-		r.With(middleware.AuthMiddleware(authClient), middleware.CSRFMiddleware(authClient)).Post("/logout", authHandler.Logout)
+	router.Use(middleware.RequestIDMiddleware())
+	router.Use(middleware.AccessMiddleware(accessLogger))
+
+	router.Route("/api/v1/auth", func(mux chi.Router) {
+		mux.Post("/login", authHandler.Login)
+		mux.Post("/register", authHandler.Register)
+		mux.With(authMiddleware, csrfMiddleware).Post("/logout", authHandler.Logout)
 	})
 
-	router.Get("/api/v1/profiles/search", profileHandler.SearchIdByLogin)
+	router.Route("/api/v1/contacts", func(mux chi.Router) {
+		mux.With(authMiddleware, csrfMiddleware).Get("/", contactsHandler.GetContacts)
+		mux.With(authMiddleware, csrfMiddleware).Post("/", contactsHandler.CreateContact)
+		mux.With(authMiddleware, csrfMiddleware).Delete("/{contact_user_id}", contactsHandler.DeleteContact)
+	})
 
-	router.Route("/api/v1", func(r chi.Router) {
-		r.Use(middleware.AuthMiddleware(authClient))
-		r.Get("/profile/me", profileHandler.GetMyProfile)
-		r.Get("/profile/{id}", profileHandler.GetUserProfile)
-		r.With(middleware.CSRFMiddleware(authClient)).Post("/profiles/me/avatar", profileHandler.UpdateUserAvatar)
-		r.With(middleware.CSRFMiddleware(authClient)).Post("/profiles/me/bio", profileHandler.UpdateUserBio)
-		r.With(middleware.CSRFMiddleware(authClient)).Post("/profiles/me/birth", profileHandler.UpdateUserBirthDate)
-		r.With(middleware.CSRFMiddleware(authClient)).Post("/profiles/me/name", profileHandler.UpdateProfileName)
-		r.With(middleware.CSRFMiddleware(authClient)).Delete("/profiles/me/avatar", profileHandler.DeleteUserAvatar)
+	router.Route("/api/v1/profiles", func(mux chi.Router) {
+		mux.With(authMiddleware, csrfMiddleware).Get("/me", profileHandler.GetMyProfile)
+		mux.With(authMiddleware, csrfMiddleware).Post("/me/bio", profileHandler.UpdateUserBio)
+		mux.With(authMiddleware, csrfMiddleware).Post("/me/avatar", profileHandler.UpdateUserAvatar)
+		mux.With(authMiddleware, csrfMiddleware).Delete("/me/avatar", profileHandler.DeleteUserAvatar)
+		mux.With(authMiddleware, csrfMiddleware).Get("/search", profileHandler.SearchIdByLogin)
+		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", profileHandler.GetUserProfile)
+		mux.With(authMiddleware, csrfMiddleware).Post("/me/birth", profileHandler.UpdateUserBirthDate)
+		mux.With(authMiddleware, csrfMiddleware).Post("/me/name", profileHandler.UpdateProfileName)
 	})
 
 	server := &http.Server{

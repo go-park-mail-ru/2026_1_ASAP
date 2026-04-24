@@ -81,3 +81,13 @@ func ptrStringOrEmpty(v *string) string {
 	}
 	return *v
 }
+
+func mapSearchIdByLoginToProto(d *dto.ResponseSearchIdByLogin) *profilev1.ResponseSearchIdByLogin {
+	if d == nil {
+		return nil
+	}
+	return &profilev1.ResponseSearchIdByLogin{
+		UserId: d.UserId,
+		Login:  d.Login,
+	}
+}

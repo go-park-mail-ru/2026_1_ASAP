@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"strings"
 
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"
+	contactuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/contact"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -26,11 +28,13 @@ type ProfileServiceInterface interface {
 type ProfileServer struct {
 	profilev1.UnimplementedProfileServer
 	profileUseCase ProfileServiceInterface
+	contactService *contactuc.ContactService
 }
 
-func NewProfileServer(profileUseCase ProfileServiceInterface) *ProfileServer {
+func NewProfileServer(profileUseCase ProfileServiceInterface, contactService *contactuc.ContactService) *ProfileServer {
 	return &ProfileServer{
 		profileUseCase: profileUseCase,
+		contactService: contactService,
 	}
 }
 
@@ -40,7 +44,7 @@ func (p ProfileServer) GetProfile(ctx context.Context, request *profilev1.Reques
 	}
 	profileDTO, err := p.profileUseCase.GetUserProfile(ctx, request.GetUserId())
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
+		if errors.Is(err, pdomain.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, "profile not found")
 		}
 		return nil, status.Error(codes.Internal, "profile internal error")
@@ -65,11 +69,11 @@ func (p ProfileServer) UpdateProfileAvatar(ctx context.Context, avatar *profilev
 	})
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrAvatarTooLarge),
-			errors.Is(err, domain.ErrInvalidAvatarType),
-			errors.Is(err, domain.ErrEmptyAvatar):
+		case errors.Is(err, pdomain.ErrAvatarTooLarge),
+			errors.Is(err, pdomain.ErrInvalidAvatarType),
+			errors.Is(err, pdomain.ErrEmptyAvatar):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
-		case errors.Is(err, domain.ErrNotFound):
+		case errors.Is(err, pdomain.ErrNotFound):
 			return nil, status.Error(codes.NotFound, "profile not found")
 		default:
 			return nil, status.Error(codes.Internal, "profile internal error")
@@ -93,7 +97,7 @@ func (p ProfileServer) UpdateProfileBio(ctx context.Context, req *profilev1.Requ
 	})
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrNotFound):
+		case errors.Is(err, pdomain.ErrNotFound):
 			return nil, status.Error(codes.NotFound, "profile not found")
 		default:
 			return nil, status.Error(codes.Internal, "profile internal error")
@@ -118,9 +122,9 @@ func (p ProfileServer) UpdateProfileBirthDate(ctx context.Context, date *profile
 	})
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrInvalidBirthDate), errors.Is(err, domain.ErrInvalidBirthDateFormat):
+		case errors.Is(err, pdomain.ErrInvalidBirthDate), errors.Is(err, pdomain.ErrInvalidBirthDateFormat):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
-		case errors.Is(err, domain.ErrNotFound):
+		case errors.Is(err, pdomain.ErrNotFound):
 			return nil, status.Error(codes.NotFound, "profile not found")
 		default:
 			return nil, status.Error(codes.Internal, "profile internal error")
@@ -147,9 +151,9 @@ func (p ProfileServer) UpdateProfileName(ctx context.Context, name *profilev1.Re
 	})
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrEmptyFirstName):
+		case errors.Is(err, pdomain.ErrEmptyFirstName):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
-		case errors.Is(err, domain.ErrNotFound):
+		case errors.Is(err, pdomain.ErrNotFound):
 			return nil, status.Error(codes.NotFound, "profile not found")
 		default:
 			return nil, status.Error(codes.Internal, "profile internal error")
@@ -157,4 +161,22 @@ func (p ProfileServer) UpdateProfileName(ctx context.Context, name *profilev1.Re
 	}
 
 	return mapUpdateProfileToProto(profileDTO), nil
+}
+
+func (p ProfileServer) SearchIdByLogin(ctx context.Context, request *profilev1.RequestSearchIdByLogin) (*profilev1.ResponseSearchIdByLogin, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	login := strings.TrimSpace(request.GetLogin())
+	if login == "" {
+		return nil, status.Error(codes.InvalidArgument, "login is required")
+	}
+	out, err := p.profileUseCase.SearchIdByLogin(ctx, &profile.RequestSearchIdByLogin{Login: login})
+	if err != nil {
+		if errors.Is(err, pdomain.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "profile not found")
+		}
+		return nil, status.Error(codes.Internal, "profile internal error")
+	}
+	return mapSearchIdByLoginToProto(out), nil
 }

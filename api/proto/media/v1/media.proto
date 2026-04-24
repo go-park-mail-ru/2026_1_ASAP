@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package media.v1;
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1;mediav1";
+
+
+service Media {
+  rpc UpdateUserAvatar(RequestUpdateUserAvatar) returns (ResponseUpdateUserAvatar);
+  rpc UploadChatAvatar(RequestUpdateChatAvatar) returns (ResponseUpdateChatAvatar);
+  rpc DeleteUserAvatar(RequestDeleteUserAvatar) returns (ResponseDeleteUserAvatar);
+}
+
+message File {
+  bytes content = 1;
+  string type = 2;
+  int64 size = 3;
+}
+
+message RequestUpdateUserAvatar {
+  int64 user_id = 1;
+  File avatar = 2;
+}
+
+message ResponseUpdateUserAvatar {
+  string avatar_url = 1;
+}
+
+message RequestUpdateChatAvatar {
+  int64 chat_id = 1;
+  File avatar = 2;
+}
+
+message ResponseUpdateChatAvatar {
+  string avatar_url = 1;
+}
+
+message RequestDeleteUserAvatar {
+  int64 user_id = 1;
+}
+
+message ResponseDeleteUserAvatar {}

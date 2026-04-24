@@ -7,40 +7,43 @@ import (
 	"log"
 	"time"
 
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
 	media2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	profile2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sanitize"
 )
 
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=profile.go -destination=mock/profile_mock.go -package=mock
-type MediaRepositoryInterface interface {
+type MediaService interface {
 	UploadAvatar(ctx context.Context, userId int64, input *media2.FileInput) (string, error)
 	DeleteAvatar(ctx context.Context, userID int64) error
 }
 
 type ProfileRepositoryInterface interface {
-	GetProfileById(ctx context.Context, profileId int64) (*domain.Profile, error)
-	UploadBio(ctx context.Context, userId int64, bio string) (*domain.Profile, error)
-	UploadAvatarUrl(ctx context.Context, userId int64, avatarUrl string) (*domain.Profile, error)
-	UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*domain.Profile, error)
+	GetProfileById(ctx context.Context, profileId int64) (*pdomain.Profile, error)
+	UploadBio(ctx context.Context, userId int64, bio string) (*pdomain.Profile, error)
+	UploadAvatarUrl(ctx context.Context, userId int64, avatarUrl string) (*pdomain.Profile, error)
+	UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*pdomain.Profile, error)
 	GetProfileIdByLogin(ctx context.Context, login string) (int64, error)
-	UploadName(ctx context.Context, userID int64, firstName string, lastName *string) (*domain.Profile, error)
-	DeleteUserAvatar(ctx context.Context, userId int64) (*domain.Profile, error)
+	UploadName(ctx context.Context, userID int64, firstName string, lastName *string) (*pdomain.Profile, error)
+	DeleteUserAvatar(ctx context.Context, userId int64) (*pdomain.Profile, error)
 }
 
 type ProfileService struct {
 	profileRepository ProfileRepositoryInterface
-	mediaRepository   MediaRepositoryInterface
+	mediaRepository   MediaService
 }
 
 func (p ProfileService) SearchIdByLogin(ctx context.Context, login *profile2.RequestSearchIdByLogin) (response *profile2.ResponseSearchIdByLogin, err error) {
 	if login == nil {
-		return nil, errors.New("update profile bio nil request")
+		return nil, errors.New("search id by login: nil request")
 	}
 
 	userID, err := p.profileRepository.GetProfileIdByLogin(ctx, login.Login)
 	if err != nil {
+		if errors.Is(err, pdomain.ErrNotFound) {
+			return nil, pdomain.ErrNotFound
+		}
 		return nil, fmt.Errorf("failed to search profile by id: %w", err)
 	}
 
@@ -55,24 +58,24 @@ func (p ProfileService) UpdateProfileBirthDate(ctx context.Context, userID int64
 		return nil, errors.New("update profile bio nil request")
 	}
 	if request.BirthDate == nil {
-		return nil, domain.ErrInvalidBirthDate
+		return nil, pdomain.ErrInvalidBirthDate
 	}
 
 	date, err := time.Parse(time.DateOnly, *request.BirthDate)
 	if err != nil {
-		return nil, domain.ErrInvalidBirthDateFormat
+		return nil, pdomain.ErrInvalidBirthDateFormat
 	}
 	if date.After(time.Now()) {
-		return nil, domain.ErrInvalidBirthDate
+		return nil, pdomain.ErrInvalidBirthDate
 	}
 	if date.Before(time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)) {
-		return nil, domain.ErrInvalidBirthDate
+		return nil, pdomain.ErrInvalidBirthDate
 	}
 
 	profile, err := p.profileRepository.UploadBirthDate(ctx, userID, &date)
 	if err != nil {
-		if errors.Is(err, domain.ErrInvalidBirthDate) {
-			return nil, domain.ErrInvalidBirthDate
+		if errors.Is(err, pdomain.ErrInvalidBirthDate) {
+			return nil, pdomain.ErrInvalidBirthDate
 		}
 		return nil, fmt.Errorf("upload birth date: %w", err)
 	}
@@ -98,7 +101,7 @@ func (p ProfileService) UpdateProfileBio(ctx context.Context, userID int64, requ
 		return nil, errors.New("update profile bio nil request")
 	}
 	if request.Bio == nil {
-		return nil, domain.ErrEmptyBio
+		return nil, pdomain.ErrEmptyBio
 	}
 
 	profile, err := p.profileRepository.UploadBio(ctx, userID, *request.Bio)
@@ -130,11 +133,11 @@ func (p ProfileService) UpdateProfileAvatar(ctx context.Context, userID int64, r
 	if err != nil {
 		switch {
 		case errors.Is(err, media2.ErrFileTooLarge):
-			return nil, domain.ErrAvatarTooLarge
+			return nil, pdomain.ErrAvatarTooLarge
 		case errors.Is(err, media2.ErrInvalidFileType):
-			return nil, domain.ErrInvalidAvatarType
+			return nil, pdomain.ErrInvalidAvatarType
 		case errors.Is(err, media2.ErrEmptyFile):
-			return nil, domain.ErrEmptyAvatar
+			return nil, pdomain.ErrEmptyAvatar
 		}
 
 		return nil, fmt.Errorf("invalid avatar: %w", err)
@@ -167,7 +170,7 @@ func (p ProfileService) UpdateProfileAvatar(ctx context.Context, userID int64, r
 	}, nil
 }
 
-func NewProfileService(profileRepository ProfileRepositoryInterface, mediaRepositoryInterface MediaRepositoryInterface) *ProfileService {
+func NewProfileService(profileRepository ProfileRepositoryInterface, mediaRepositoryInterface MediaService) *ProfileService {
 	return &ProfileService{profileRepository: profileRepository,
 		mediaRepository: mediaRepositoryInterface}
 }
@@ -175,8 +178,8 @@ func NewProfileService(profileRepository ProfileRepositoryInterface, mediaReposi
 func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (response *profile2.ResponseGetProfile, err error) {
 	profile, err := p.profileRepository.GetProfileById(ctx, userID)
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
-			return nil, domain.ErrNotFound
+		if errors.Is(err, pdomain.ErrNotFound) {
+			return nil, pdomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get profile: %w", err)
 	}
@@ -203,7 +206,7 @@ func (p ProfileService) UpdateProfileName(ctx context.Context, userID int64, req
 		return nil, errors.New("update profile bio nil request")
 	}
 	if request.FirstName == "" {
-		return nil, domain.ErrEmptyFirstName
+		return nil, pdomain.ErrEmptyFirstName
 	}
 
 	profile, err := p.profileRepository.UploadName(ctx, userID, request.FirstName, request.LastName)

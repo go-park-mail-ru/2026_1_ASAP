@@ -10,10 +10,12 @@ import (
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
+	contactrepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/contacts"
 	mediarepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/media"
 	profilerepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/profile"
 	grpcTransport "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/transport/grpc"
-	profileuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase"
+	contactuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/contact"
+	profileuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/profile"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -42,8 +44,15 @@ func main() {
 		logger.Fatal("init media repository", zap.Error(err))
 	}
 
+	cRepo, err := contactrepo.NewContactsRepository(ctx, cfg.PostgresConfig, logger.Named("contact_repo"))
+	if err != nil {
+		logger.Fatal("init contact repository", zap.Error(err))
+	}
+	defer cRepo.Close()
+
+	contactService := contactuc.NewContactService(cRepo, pRepo)
 	svc := profileuc.NewProfileService(pRepo, mRepo)
-	srv := grpcTransport.NewProfileServer(svc)
+	srv := grpcTransport.NewProfileServer(svc, contactService)
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())
 	if err != nil {

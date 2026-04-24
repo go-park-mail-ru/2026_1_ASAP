@@ -48,6 +48,7 @@ const (
 	UserNotFound             = "USER_NOT_FOUND"
 	VKIDFailed               = "VKID_FAILED"
 	NotImplemented           = "NOT_IMPLEMENTED"
+	EmptyLogin               = "EMPTY_LOGIN"
 )
 
 const (
@@ -95,6 +96,7 @@ const (
 	UserNotFoundMsg             = "Cant find profile you try to add"
 	VKIDFailedMsg               = "VKID failed to login"
 	NotImplementedMsg           = "This endpoint is not available yet"
+	EmptyLoginMsg               = "Login query parameter is required"
 )
 
 type ApiError struct {

@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
 	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/profile/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
@@ -38,14 +38,14 @@ func (r *UserRepository) GetProfileIdByLogin(ctx context.Context, login string) 
 	sqllog.LogQuery(ctx, r.log(ctx), "GetProfileIdByLogin", q, start, err, []any{login})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, profile.ErrNotFound
+			return 0, pdomain.ErrNotFound
 		}
 		return 0, fmt.Errorf("userRepository failed get profile id by login: %w", err)
 	}
 	return userID, nil
 }
 
-func (r *UserRepository) UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*profile.Profile, error) {
+func (r *UserRepository) UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*pdomain.Profile, error) {
 	q := usersql.UploadBirthDate
 	start := time.Now()
 	row := r.db.QueryRow(ctx, q, userId, birthDate)
@@ -57,7 +57,7 @@ func (r *UserRepository) UploadBirthDate(ctx context.Context, userId int64, birt
 	sqllog.LogQuery(ctx, r.log(ctx), "UploadBirthDate", q, start, err, []any{userId, birthDate})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, profile.ErrNotFound
+			return nil, pdomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("userRepository failed upload bio: %w", err)
 	}
@@ -75,7 +75,7 @@ func NewUserRepository(ctx context.Context, cfg config.PostgresConfig, logger *z
 	return &UserRepository{db: pool, logger: logger}, nil
 }
 
-func (r *UserRepository) GetProfileById(ctx context.Context, profileId int64) (*profile.Profile, error) {
+func (r *UserRepository) GetProfileById(ctx context.Context, profileId int64) (*pdomain.Profile, error) {
 	q := usersql.GetProfileByID
 	start := time.Now()
 	row := r.db.QueryRow(ctx, q, profileId)
@@ -87,14 +87,14 @@ func (r *UserRepository) GetProfileById(ctx context.Context, profileId int64) (*
 	sqllog.LogQuery(ctx, r.log(ctx), "GetProfileById", q, start, err, []any{profileId})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, profile.ErrNotFound
+			return nil, pdomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("userRepository failed get profile by id: %w", err)
 	}
 	return toDomainProfile(p), nil
 }
 
-func (r *UserRepository) UploadBio(ctx context.Context, userId int64, bio string) (*profile.Profile, error) {
+func (r *UserRepository) UploadBio(ctx context.Context, userId int64, bio string) (*pdomain.Profile, error) {
 	q := usersql.UploadBio
 	start := time.Now()
 	row := r.db.QueryRow(ctx, q, userId, bio)
@@ -105,14 +105,14 @@ func (r *UserRepository) UploadBio(ctx context.Context, userId int64, bio string
 	sqllog.LogQuery(ctx, r.log(ctx), "UploadBio", q, start, err, []any{userId, bio})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, profile.ErrNotFound
+			return nil, pdomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("userRepository failed upload bio: %w", err)
 	}
 	return toDomainProfile(p), nil
 }
 
-func (r *UserRepository) UploadAvatarUrl(ctx context.Context, userId int64, avatarURL string) (*profile.Profile, error) {
+func (r *UserRepository) UploadAvatarUrl(ctx context.Context, userId int64, avatarURL string) (*pdomain.Profile, error) {
 	q := usersql.UploadAvatarURL
 	start := time.Now()
 	row := r.db.QueryRow(ctx, q, userId, avatarURL)
@@ -124,14 +124,14 @@ func (r *UserRepository) UploadAvatarUrl(ctx context.Context, userId int64, avat
 	sqllog.LogQuery(ctx, r.log(ctx), "UploadAvatarUrl", q, start, err, []any{userId, avatarURL})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, profile.ErrNotFound
+			return nil, pdomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("userRepository failed upload avatar url: %w", err)
 	}
 	return toDomainProfile(p), nil
 }
 
-func (r *UserRepository) UploadName(ctx context.Context, userId int64, firstName string, lastName *string) (*profile.Profile, error) {
+func (r *UserRepository) UploadName(ctx context.Context, userId int64, firstName string, lastName *string) (*pdomain.Profile, error) {
 	start := time.Now()
 	var row pgx.Row
 	var q string
@@ -155,14 +155,14 @@ func (r *UserRepository) UploadName(ctx context.Context, userId int64, firstName
 	}
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, profile.ErrNotFound
+			return nil, pdomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("userRepository failed upload avatar url: %w", err)
 	}
 	return toDomainProfile(p), nil
 }
 
-func (r *UserRepository) DeleteUserAvatar(ctx context.Context, userId int64) (*profile.Profile, error) {
+func (r *UserRepository) DeleteUserAvatar(ctx context.Context, userId int64) (*pdomain.Profile, error) {
 	q := usersql.DeleteUserAvatar
 	start := time.Now()
 	row := r.db.QueryRow(ctx, q, userId)
@@ -174,7 +174,7 @@ func (r *UserRepository) DeleteUserAvatar(ctx context.Context, userId int64) (*p
 	sqllog.LogQuery(ctx, r.log(ctx), "DeleteUserAvatar", q, start, err, []any{userId})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, profile.ErrNotFound
+			return nil, pdomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("userRepository failed upload avatar url: %w", err)
 	}

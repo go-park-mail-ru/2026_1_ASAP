@@ -1003,19 +1003,73 @@ func (h *GatewayProfileHandler) UpdateProfileName(w http.ResponseWriter, r *http
 	})
 }
 
-// SearchIdByLogin — в proto нет RPC; оставлено под будущую реализацию.
 func (h *GatewayProfileHandler) SearchIdByLogin(w http.ResponseWriter, r *http.Request) {
-	_ = r.URL.Query().Get("login")
-	response.Send(w, http.StatusNotImplemented, dtoApi.ApiErrorResponse{
-		Status: dtoApi.Error,
-		Errors: []dtoApi.ApiError{{
-			Code:    dtoApi.NotImplemented,
-			Message: dtoApi.NotImplementedMsg,
-		}},
+	ctx := r.Context()
+	login := strings.TrimSpace(r.URL.Query().Get("login"))
+	if login == "" {
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{
+				Code:    dtoApi.EmptyLogin,
+				Message: dtoApi.EmptyLoginMsg,
+			}},
+		})
+		return
+	}
+	resp, err := h.ProfileService.SearchIdByLogin(ctx, &profilev1.RequestSearchIdByLogin{Login: login})
+	if err != nil {
+		st, stOK := status.FromError(err)
+		if !stOK {
+			response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				}},
+			})
+			return
+		}
+		switch st.Code() {
+		case codes.NotFound:
+			response.Send(w, http.StatusNotFound, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{
+					Code:    dtoApi.NotFound,
+					Message: dtoApi.NotFoundMsg,
+				}},
+			})
+		case codes.InvalidArgument:
+			response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{
+					Code:    dtoApi.EmptyLogin,
+					Message: dtoApi.EmptyLoginMsg,
+				}},
+			})
+		default:
+			response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				}},
+			})
+		}
+		return
+	}
+	var body *dto.ResponseSearchIdByLogin
+	if resp != nil {
+		body = &dto.ResponseSearchIdByLogin{
+			UserId: resp.GetUserId(),
+			Login:  resp.GetLogin(),
+		}
+	}
+	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[*dto.ResponseSearchIdByLogin]{
+		Status: dtoApi.Success,
+		Body:   body,
 	})
 }
 
-// DeleteUserAvatar — в proto нет RPC; оставлено под будущую реализацию.
 func (h *GatewayProfileHandler) DeleteUserAvatar(w http.ResponseWriter, r *http.Request) {
 	if _, ok := r.Context().Value(middleware.UserID).(int64); !ok {
 		response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{

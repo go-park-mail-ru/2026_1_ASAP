@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"go.uber.org/zap"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/s3log"
 )
@@ -69,7 +69,7 @@ func NewMediaRepository(ctx context.Context, cfg config.S3Config, logger *zap.Lo
 
 func (m *MediaRepository) UploadAvatar(ctx context.Context, userId int64, input *media.FileInput) (string, error) {
 	if input == nil || input.Body == nil {
-		return "", profile.ErrEmptyAvatar
+		return "", pdomain.ErrEmptyAvatar
 	}
 
 	extension := getExtensionFromContentType(input.ContentType)
@@ -90,7 +90,7 @@ func (m *MediaRepository) UploadAvatar(ctx context.Context, userId int64, input 
 
 func (m *MediaRepository) UploadChatAvatar(ctx context.Context, chatID int64, input *media.FileInput) (string, error) {
 	if input == nil || input.Body == nil {
-		return "", profile.ErrEmptyAvatar
+		return "", pdomain.ErrEmptyAvatar
 	}
 
 	extension := getExtensionFromContentType(input.ContentType)

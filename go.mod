@@ -3,6 +3,7 @@ module github.com/go-park-mail-ru/2026_1_ASAP
 go 1.25.7
 
 require (
+	github.com/coder/websocket v1.8.14
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/golang/mock v1.6.0
 	github.com/gomodule/redigo v1.9.3
@@ -10,6 +11,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/minio/minio-go/v7 v7.0.99
+	github.com/pashagolub/pgxmock/v4 v4.9.0
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/swag v1.16.6
 	go.uber.org/zap v1.27.1

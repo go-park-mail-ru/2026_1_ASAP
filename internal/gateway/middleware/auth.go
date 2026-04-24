@@ -12,10 +12,11 @@ import (
 )
 
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/session_service_mock.go -package=mock
-type ctxKey string
 
-const UserID ctxKey = "userID"
-const SessionID ctxKey = "sessionID"
+const (
+	UserID    ctxKey = "userID"
+	SessionID ctxKey = "sessionID"
+)
 
 func AuthMiddleware(sessionService authv1.AuthClient) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

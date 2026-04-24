@@ -12,6 +12,10 @@ service Profile {
     rpc UpdateProfileBio(RequestUpdateBio) returns (ResponseGetProfile);
     rpc UpdateProfileBirthDate(RequestUpdateBirthDate) returns (ResponseGetProfile);
     rpc UpdateProfileName(RequestUpdateName) returns (ResponseGetProfile);
+    rpc SearchIdByLogin(RequestSearchIdByLogin) returns (ResponseSearchIdByLogin);
+    rpc ListContacts(RequestListContacts) returns (ResponseListContacts);
+    rpc AddContact(RequestAddContact) returns (ResponseAddContact);
+    rpc DeleteContact(RequestDeleteContact) returns (ResponseDeleteContact);
 }
 
 message RequestUpdateName {
@@ -39,6 +43,50 @@ message RequestUpdateAvatar {
 message RequestGetProfile {
     int64 user_id = 1;
 }
+
+message RequestSearchIdByLogin {
+    string login = 1;
+}
+
+message ResponseSearchIdByLogin {
+    int64 user_id = 1;
+    string login = 2;
+}
+
+message RequestListContacts {
+    int64 user_id = 1;
+}
+
+message ContactItem {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+    string first_name = 3;
+    optional string last_name = 4;
+    optional string contact_avatar_url = 5;
+    google.protobuf.Timestamp created_at = 6;
+}
+
+message ResponseListContacts {
+    repeated ContactItem contacts = 1;
+}
+
+message RequestAddContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+    string first_name = 3;
+    optional string last_name = 4;
+}
+
+message ResponseAddContact {
+    ContactItem contact = 1;
+}
+
+message RequestDeleteContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+}
+
+message ResponseDeleteContact {}
 
 message ResponseGetProfile {
     int64 user_id = 1;

@@ -7,8 +7,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// --- Shared blocks used by several services and repositories.
-
 type ServerConfig struct {
 	Host string
 	Port string

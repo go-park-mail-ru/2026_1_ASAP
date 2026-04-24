@@ -1,12 +1,12 @@
 package profile
 
 import (
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
 )
 
-func toDomainProfile(profileModel *ProfileModel) *domain.Profile {
-	return &domain.Profile{
+func toDomainProfile(profileModel *ProfileModel) *pdomain.Profile {
+	return &pdomain.Profile{
 		UserId:    profileModel.UserId,
 		FirstName: profileModel.FirstName,
 		LastName:  null.NullStringToPtrString(profileModel.LastName),

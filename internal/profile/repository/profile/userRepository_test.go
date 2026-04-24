@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	profiledomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
 	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/profile/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
 )
@@ -322,7 +322,7 @@ func TestUserRepository_GetProfileById_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
 		prepare    func(t *testing.T, m pgxmock.PgxPoolIface)
-		assertProf func(t *testing.T, p *profiledomain.Profile)
+		assertProf func(t *testing.T, p *pdomain.Profile)
 		name       string
 		profileID  int64
 	}{
@@ -332,7 +332,7 @@ func TestUserRepository_GetProfileById_Positive(t *testing.T) {
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface) {
 				m.ExpectQuery(usersql.GetProfileByID).WithArgs(int64(10)).WillReturnRows(newProfileRowWithEmail(t))
 			},
-			assertProf: func(t *testing.T, p *profiledomain.Profile) {
+			assertProf: func(t *testing.T, p *pdomain.Profile) {
 				t.Helper()
 				require.Equal(t, int64(10), p.UserId)
 				require.Equal(t, "alice@example.com", p.Email)
@@ -377,7 +377,7 @@ func TestUserRepository_GetProfileById_Negative(t *testing.T) {
 			repo := newTestUserRepository(mock)
 
 			_, err := repo.GetProfileById(ctx, tt.profileID)
-			require.ErrorIs(t, err, profiledomain.ErrNotFound)
+			require.ErrorIs(t, err, pdomain.ErrNotFound)
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
@@ -438,7 +438,7 @@ func TestUserRepository_GetProfileIdByLogin_Negative(t *testing.T) {
 			repo := newTestUserRepository(mock)
 
 			id, err := repo.GetProfileIdByLogin(ctx, tt.login)
-			require.ErrorIs(t, err, profiledomain.ErrNotFound)
+			require.ErrorIs(t, err, pdomain.ErrNotFound)
 			require.Zero(t, id)
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
@@ -502,7 +502,7 @@ func TestUserRepository_UploadBio_Negative(t *testing.T) {
 			repo := newTestUserRepository(mock)
 
 			_, err := repo.UploadBio(ctx, tt.userID, tt.bio)
-			require.ErrorIs(t, err, profiledomain.ErrNotFound)
+			require.ErrorIs(t, err, pdomain.ErrNotFound)
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
@@ -563,7 +563,7 @@ func TestUserRepository_UploadBirthDate_Negative(t *testing.T) {
 			repo := newTestUserRepository(mock)
 
 			_, err := repo.UploadBirthDate(ctx, tt.userID, &bd)
-			require.ErrorIs(t, err, profiledomain.ErrNotFound)
+			require.ErrorIs(t, err, pdomain.ErrNotFound)
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
@@ -626,7 +626,7 @@ func TestUserRepository_UploadAvatarUrl_Negative(t *testing.T) {
 			repo := newTestUserRepository(mock)
 
 			_, err := repo.UploadAvatarUrl(ctx, tt.userID, tt.url)
-			require.ErrorIs(t, err, profiledomain.ErrNotFound)
+			require.ErrorIs(t, err, pdomain.ErrNotFound)
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
@@ -705,7 +705,7 @@ func TestUserRepository_UploadName_Negative(t *testing.T) {
 			repo := newTestUserRepository(mock)
 
 			_, err := repo.UploadName(ctx, tt.userID, "Bob", tt.lastName)
-			require.ErrorIs(t, err, profiledomain.ErrNotFound)
+			require.ErrorIs(t, err, pdomain.ErrNotFound)
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
@@ -764,7 +764,7 @@ func TestUserRepository_DeleteUserAvatar_Negative(t *testing.T) {
 			repo := newTestUserRepository(mock)
 
 			_, err := repo.DeleteUserAvatar(ctx, tt.userID)
-			require.ErrorIs(t, err, profiledomain.ErrNotFound)
+			require.ErrorIs(t, err, pdomain.ErrNotFound)
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
 	}

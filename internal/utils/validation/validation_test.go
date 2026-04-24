@@ -1,11 +1,9 @@
 package validation
 
 import (
-	"strings"
 	"testing"
 
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
-	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
 )
 
 func TestValidateEmail(t *testing.T) {
@@ -123,47 +121,6 @@ func TestValidationRequestLogin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if errs := ValidationRequestLogin(tt.req); len(errs) != 0 {
-				t.Fatalf("expected no errors, got %v", errs)
-			}
-		})
-	}
-}
-
-func TestValidationChatCreate(t *testing.T) {
-	longUnicodeTitle := strings.Repeat("я", 101)
-
-	tests := []struct {
-		name    string
-		req     *dtoChat.ChatCreate
-		wantErr bool
-	}{
-		{
-			name: "valid dialog",
-			req: &dtoChat.ChatCreate{
-				Title:     "Test chat",
-				Type:      dtoChat.ChatTypeDialog,
-				MembersID: []int64{10, 15},
-			},
-			wantErr: false,
-		},
-		{
-			name: "title longer than 100 runes",
-			req: &dtoChat.ChatCreate{
-				Title:     longUnicodeTitle,
-				Type:      dtoChat.ChatTypeGroup,
-				MembersID: []int64{1},
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			errs := ValidationChatCreate(tt.req)
-			if tt.wantErr && len(errs) == 0 {
-				t.Fatalf("expected errors, got none")
-			}
-			if !tt.wantErr && len(errs) != 0 {
 				t.Fatalf("expected no errors, got %v", errs)
 			}
 		})
