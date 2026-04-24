@@ -2,3 +2,5 @@
 .idea/
 coverage.out
 internal/**/mock/
+.gitignore
+.DS_Store
