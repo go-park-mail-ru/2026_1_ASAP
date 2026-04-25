@@ -2,6 +2,7 @@ package complaint
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/complaint"
@@ -135,6 +136,9 @@ func (c ComplaintService) GetComplaintsByUser(ctx context.Context, userID int64)
 func (c ComplaintService) UpdateComplaintStatus(ctx context.Context, request dtoComplaint.RequestUpdateComplaintStatus) (dtoComplaint.ResponseGetComplaint, error) {
 	complaint, err := c.repo.UpdateComplaint(ctx, request.ComplaintId, domain.ComplaintStatus(request.Status))
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return dtoComplaint.ResponseGetComplaint{}, domain.ErrNotFound
+		}
 		return dtoComplaint.ResponseGetComplaint{}, fmt.Errorf("update complaint status: %w", err)
 	}
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi"
 
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/complaint"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
 	dtoComplaint "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/complaint"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
@@ -492,6 +493,18 @@ func (h *ComplaintHandler) UpdateComplaintStatus(w http.ResponseWriter, r *http.
 
 	complaint, err := h.ComplaintService.UpdateComplaintStatus(ctx, req)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.InvalidID,
+						Message: dtoApi.InvalidIDMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusBadRequest, resp)
+		}
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{
@@ -527,7 +540,6 @@ func (h *ComplaintHandler) GetAllComplaints(w http.ResponseWriter, r *http.Reque
 				},
 			},
 		}
-		log.Println(err.Error())
 		response.Send(w, http.StatusInternalServerError, resp)
 		return
 	}

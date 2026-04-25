@@ -246,7 +246,7 @@ func (r *ComplaintRepository) UpdateComplaint(ctx context.Context, complaintID i
 	sqllog.LogQuery(ctx, r.log(ctx), "UpdateComplaintStatus", q, start, err, []any{complaintID, status})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.Complaint{}, fmt.Errorf("complaint not found")
+			return domain.Complaint{}, domain.ErrNotFound
 		}
 		return domain.Complaint{}, fmt.Errorf("update complaint status: %w", err)
 	}
