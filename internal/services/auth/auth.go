@@ -85,10 +85,13 @@ func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK
 }
 
 func NewAuthService(userRepository UserRepository, sessionService SessionService) *AuthService {
-	return &AuthService{
+
+	service := &AuthService{
 		userRepository: userRepository,
 		SessionService: sessionService,
 	}
+
+	return service
 }
 
 func (authService *AuthService) Register(ctx context.Context, request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, error) {

@@ -202,6 +202,7 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/my", complaintHandler.GetMyComplaints)
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", complaintHandler.GetComplaint)
 		mux.With(authMiddleware, csrfMiddleware, adminMiddleware).Post("/update", complaintHandler.UpdateComplaintStatus)
+		mux.With(authMiddleware, csrfMiddleware, adminMiddleware).Get("/all", complaintHandler.GetAllComplaints)
 	})
 
 	mux.Route("/api/v1/analytics", func(mux chi.Router) {
