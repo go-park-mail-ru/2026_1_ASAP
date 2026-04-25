@@ -13,3 +13,6 @@ var GetComplaintsByUserID string
 
 //go:embed upload_attachment_url.sql
 var UploadAttachmentURL string
+
+//go:embed update_complaint_status.sql
+var UpdateComplaintStatus string

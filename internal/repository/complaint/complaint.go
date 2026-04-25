@@ -190,6 +190,35 @@ func (r *ComplaintRepository) UploadAttachmentURL(ctx context.Context, complaint
 	return toDomain(model), nil
 }
 
+func (r *ComplaintRepository) UpdateComplaint(ctx context.Context, complaintID int64, status domain.ComplaintType) (domain.Complaint, error) {
+	q := complaintsql.UpdateComplaintStatus
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, complaintID, string(status))
+
+	model := ComplaintModel{}
+	err := row.Scan(
+		&model.ID,
+		&model.Status,
+		&model.Type,
+		&model.FeedBackName,
+		&model.FeedBackEmail,
+		&model.Body,
+		&model.UserID,
+		&model.AttachmentURL,
+		&model.CreatedAt,
+		&model.UpdatedAt,
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "UpdateComplaintStatus", q, start, err, []any{complaintID, status})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Complaint{}, fmt.Errorf("complaint not found")
+		}
+		return domain.Complaint{}, fmt.Errorf("update complaint status: %w", err)
+	}
+
+	return toDomain(model), nil
+}
+
 func (r *ComplaintRepository) Close() {
 	r.db.Close()
 }

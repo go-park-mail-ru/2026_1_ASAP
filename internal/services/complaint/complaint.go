@@ -18,11 +18,42 @@ type ComplaintRepositoryInterface interface {
 	UploadAttachmentURL(ctx context.Context, complaintID int64, attachmentURL string) (domain.Complaint, error)
 	GetComplaintsByUserID(ctx context.Context, userID int64) ([]domain.Complaint, error)
 	GetComplaintByID(ctx context.Context, id int64) (domain.Complaint, error)
+	UpdateComplaint(ctx context.Context, complaintID int64, status domain.ComplaintType) (domain.Complaint, error)
 }
 
 type ComplaintService struct {
 	repo      ComplaintRepositoryInterface
 	mediaRepo MediaRepositoryInterface
+}
+
+func (c ComplaintService) CreateUnAuthrozied(ctx context.Context, request dtoComplaint.RequestCreateComplaint) (*dtoComplaint.ResponseCreateComplaint, error) {
+	complaint, err := c.repo.Create(ctx, domain.Complaint{
+		Type:          domain.ComplaintType(request.Type),
+		FeedBackName:  request.FeedBackInfo.FeedBackName,
+		FeedBackEmail: request.FeedBackInfo.FeedBackEmail,
+		Body:          request.Body,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create complaint: %w", err)
+	}
+
+	if request.File != nil {
+		if c.mediaRepo == nil {
+			return nil, fmt.Errorf("upload complaint attachment: media repository is nil")
+		}
+		attachmentURL, err := c.mediaRepo.UploadComplaint(ctx, complaint.ID, request.File)
+		if err != nil {
+			return nil, fmt.Errorf("upload complaint attachment: %w", err)
+		}
+		complaint, err = c.repo.UploadAttachmentURL(ctx, complaint.ID, attachmentURL)
+		if err != nil {
+			return nil, fmt.Errorf("save complaint attachment url: %w", err)
+		}
+	}
+
+	return &dtoComplaint.ResponseCreateComplaint{
+		ComplaintDTO: complaintToDTO(complaint),
+	}, nil
 }
 
 func (c ComplaintService) CreateAuthrozied(ctx context.Context, userID int64, request dtoComplaint.RequestCreateComplaint) (*dtoComplaint.ResponseCreateComplaint, error) {
@@ -83,6 +114,17 @@ func (c ComplaintService) GetComplaintsByUser(ctx context.Context, userID int64)
 	return response, nil
 }
 
+func (c ComplaintService) UpdateComplaintStatus(ctx context.Context, request dtoComplaint.RequestUpdateComplaintStatus) (dtoComplaint.ResponseGetComplaint, error) {
+	complaint, err := c.repo.UpdateComplaint(ctx, request.ComplaintId, domain.ComplaintType(request.Status))
+	if err != nil {
+		return dtoComplaint.ResponseGetComplaint{}, fmt.Errorf("update complaint status: %w", err)
+	}
+
+	return dtoComplaint.ResponseGetComplaint{
+		ComplaintDTO: complaintToDTO(complaint),
+	}, nil
+}
+
 func NewComplaintService(repo ComplaintRepositoryInterface, mediaRepo MediaRepositoryInterface) *ComplaintService {
 	return &ComplaintService{
 		repo:      repo,
@@ -97,6 +139,7 @@ func complaintToDTO(complaint domain.Complaint) dtoComplaint.ComplaintDTO {
 	}
 
 	return dtoComplaint.ComplaintDTO{
+		ID:     complaint.ID,
 		Type:   string(complaint.Type),
 		Status: complaint.Status,
 		FeedbackDTO: dtoComplaint.FeedbackDTO{

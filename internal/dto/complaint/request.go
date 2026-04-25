@@ -29,3 +29,8 @@ type FeedbackDTO struct {
 	FeedBackName  string `json:"feedback_name"`
 	FeedBackEmail string `json:"feedback_email"`
 }
+
+type RequestUpdateComplaintStatus struct {
+	ComplaintId int64         `json:"complaint_id"`
+	Status      ComplaintType `json:"status"`
+}

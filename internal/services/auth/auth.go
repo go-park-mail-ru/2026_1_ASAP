@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/session"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
@@ -36,6 +37,18 @@ type SessionService interface {
 type AuthService struct {
 	userRepository UserRepository
 	SessionService SessionService
+}
+
+func (authService *AuthService) IsAdmin(ctx context.Context, userID int64) (bool, error) {
+	user, err := authService.userRepository.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get user by id: %w", err)
+	}
+
+	return strings.EqualFold(user.Login, "admin"), nil
 }
 
 func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK.RequestAuth) (*dtoSession.SessionDTO, error) {
