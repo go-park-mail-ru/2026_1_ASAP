@@ -21,7 +21,6 @@ func (a AnalyticService) GetUserComplaintAnalytic(ctx context.Context, request d
 	if err != nil {
 		return dtoAnalytic.ResponseComplaintAnalytic{}, fmt.Errorf("get user complaint analytic: %w", err)
 	}
-
 	return dtoAnalytic.ResponseComplaintAnalytic{
 		CountStatus: dtoAnalytic.CountStatus{
 			CountStatusClosed: res.CountStatus.CountStatusClosed,
