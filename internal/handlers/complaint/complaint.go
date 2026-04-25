@@ -504,6 +504,7 @@ func (h *ComplaintHandler) UpdateComplaintStatus(w http.ResponseWriter, r *http.
 				},
 			}
 			response.Send(w, http.StatusBadRequest, resp)
+			return
 		}
 		resp := dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
