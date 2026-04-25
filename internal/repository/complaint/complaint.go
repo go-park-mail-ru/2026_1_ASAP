@@ -225,7 +225,7 @@ func (r *ComplaintRepository) UploadAttachmentURL(ctx context.Context, complaint
 	return toDomain(model), nil
 }
 
-func (r *ComplaintRepository) UpdateComplaint(ctx context.Context, complaintID int64, status domain.ComplaintType) (domain.Complaint, error) {
+func (r *ComplaintRepository) UpdateComplaint(ctx context.Context, complaintID int64, status domain.ComplaintStatus) (domain.Complaint, error) {
 	q := complaintsql.UpdateComplaintStatus
 	start := time.Now()
 	row := r.db.QueryRow(ctx, q, complaintID, string(status))

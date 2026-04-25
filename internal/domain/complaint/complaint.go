@@ -10,6 +10,14 @@ const (
 	ComplaintTypeUpgrade ComplaintType = "upgrade"
 )
 
+type ComplaintStatus string
+
+const (
+	ComplaintStatusNew        ComplaintStatus = "new"
+	ComplaintStatusInProgress ComplaintStatus = "in_progress"
+	ComplaintStatusClosed     ComplaintStatus = "closed"
+)
+
 type Complaint struct {
 	ID            int64
 	Status        string

@@ -3,11 +3,18 @@ package complaint
 import "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
 
 type ComplaintType string
+type ComplaintStatus string
 
 const (
 	ComplaintTypeBug     ComplaintType = "bug"
 	ComplaintTypeProduct ComplaintType = "product"
 	ComplaintTypeUpgrade ComplaintType = "upgrade"
+)
+
+const (
+	ComplaintStatusNew        ComplaintStatus = "new"
+	ComplaintStatusInProgress ComplaintStatus = "in_progress"
+	ComplaintStatusClosed     ComplaintStatus = "closed"
 )
 
 type RequestCreateComplaint struct {
@@ -31,6 +38,6 @@ type FeedbackDTO struct {
 }
 
 type RequestUpdateComplaintStatus struct {
-	ComplaintId int64         `json:"complaint_id"`
-	Status      ComplaintType `json:"status"`
+	ComplaintId int64           `json:"complaint_id"`
+	Status      ComplaintStatus `json:"status"`
 }

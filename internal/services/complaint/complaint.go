@@ -19,7 +19,7 @@ type ComplaintRepositoryInterface interface {
 	UploadAttachmentURL(ctx context.Context, complaintID int64, attachmentURL string) (domain.Complaint, error)
 	GetComplaintsByUserID(ctx context.Context, userID int64) ([]domain.Complaint, error)
 	GetComplaintByID(ctx context.Context, id int64) (domain.Complaint, error)
-	UpdateComplaint(ctx context.Context, complaintID int64, status domain.ComplaintType) (domain.Complaint, error)
+	UpdateComplaint(ctx context.Context, complaintID int64, status domain.ComplaintStatus) (domain.Complaint, error)
 	GetAllComplaints(ctx context.Context) ([]domain.Complaint, error)
 }
 
@@ -133,7 +133,7 @@ func (c ComplaintService) GetComplaintsByUser(ctx context.Context, userID int64)
 }
 
 func (c ComplaintService) UpdateComplaintStatus(ctx context.Context, request dtoComplaint.RequestUpdateComplaintStatus) (dtoComplaint.ResponseGetComplaint, error) {
-	complaint, err := c.repo.UpdateComplaint(ctx, request.ComplaintId, domain.ComplaintType(request.Status))
+	complaint, err := c.repo.UpdateComplaint(ctx, request.ComplaintId, domain.ComplaintStatus(request.Status))
 	if err != nil {
 		return dtoComplaint.ResponseGetComplaint{}, fmt.Errorf("update complaint status: %w", err)
 	}
