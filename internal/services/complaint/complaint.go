@@ -19,11 +19,28 @@ type ComplaintRepositoryInterface interface {
 	GetComplaintsByUserID(ctx context.Context, userID int64) ([]domain.Complaint, error)
 	GetComplaintByID(ctx context.Context, id int64) (domain.Complaint, error)
 	UpdateComplaint(ctx context.Context, complaintID int64, status domain.ComplaintType) (domain.Complaint, error)
+	GetAllComplaints(ctx context.Context) ([]domain.Complaint, error)
 }
 
 type ComplaintService struct {
 	repo      ComplaintRepositoryInterface
 	mediaRepo MediaRepositoryInterface
+}
+
+func (c ComplaintService) GetAllComplaints(ctx context.Context) (dtoComplaint.ResponseGetComplaints, error) {
+	complaints, err := c.repo.GetAllComplaints(ctx)
+	if err != nil {
+		return dtoComplaint.ResponseGetComplaints{}, fmt.Errorf("get complaints by user id: %w", err)
+	}
+
+	response := dtoComplaint.ResponseGetComplaints{
+		Complaints: make([]dtoComplaint.ComplaintDTO, 0, len(complaints)),
+	}
+	for _, complaint := range complaints {
+		response.Complaints = append(response.Complaints, complaintToDTO(complaint))
+	}
+
+	return response, nil
 }
 
 func (c ComplaintService) CreateUnAuthrozied(ctx context.Context, request dtoComplaint.RequestCreateComplaint) (*dtoComplaint.ResponseCreateComplaint, error) {

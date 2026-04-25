@@ -32,6 +32,41 @@ type ComplaintRepository struct {
 	logger *zap.Logger
 }
 
+func (r *ComplaintRepository) GetAllComplaints(ctx context.Context) ([]domain.Complaint, error) {
+	q := complaintsql.GetAll
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("get complaints by user id: %w", err)
+	}
+	defer rows.Close()
+
+	complaints := make([]domain.Complaint, 0)
+	for rows.Next() {
+		model := ComplaintModel{}
+		if err := rows.Scan(
+			&model.ID,
+			&model.Status,
+			&model.Type,
+			&model.FeedBackName,
+			&model.FeedBackEmail,
+			&model.Body,
+			&model.UserID,
+			&model.AttachmentURL,
+			&model.CreatedAt,
+			&model.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan complaint row: %w", err)
+		}
+
+		complaints = append(complaints, toDomain(model))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate complaint rows: %w", err)
+	}
+
+	return complaints, nil
+}
+
 type ComplaintModel struct {
 	ID            int64
 	Status        string

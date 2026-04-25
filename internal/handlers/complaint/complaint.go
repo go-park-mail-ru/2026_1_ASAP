@@ -24,6 +24,7 @@ type ComplaintServiceInterface interface {
 	GetComplaintsByUser(ctx context.Context, userID int64) (dtoComplaint.ResponseGetComplaints, error)
 	CreateUnAuthrozied(ctx context.Context, request dtoComplaint.RequestCreateComplaint) (*dtoComplaint.ResponseCreateComplaint, error)
 	UpdateComplaintStatus(ctx context.Context, request dtoComplaint.RequestUpdateComplaintStatus) (dtoComplaint.ResponseGetComplaint, error)
+	GetAllComplaints(ctx context.Context) (dtoComplaint.ResponseGetComplaints, error)
 }
 
 type ComplaintHandler struct {
@@ -508,6 +509,32 @@ func (h *ComplaintHandler) UpdateComplaintStatus(w http.ResponseWriter, r *http.
 	resp := dtoApi.ApiSuccessResponse[dtoComplaint.ResponseGetComplaint]{
 		Status: dtoApi.Success,
 		Body:   complaint,
+	}
+	response.Send(w, http.StatusOK, resp)
+}
+
+func (h *ComplaintHandler) GetAllComplaints(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	complaints, err := h.ComplaintService.GetAllComplaints(ctx)
+	if err != nil {
+		resp := dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{
+				{
+					Code:    dtoApi.InternalError,
+					Message: dtoApi.InternalErrorMsg,
+				},
+			},
+		}
+		log.Println(err.Error())
+		response.Send(w, http.StatusInternalServerError, resp)
+		return
+	}
+
+	resp := dtoApi.ApiSuccessResponse[dtoComplaint.ResponseGetComplaints]{
+		Status: dtoApi.Success,
+		Body:   complaints,
 	}
 	response.Send(w, http.StatusOK, resp)
 }

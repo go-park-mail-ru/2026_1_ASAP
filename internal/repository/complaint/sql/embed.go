@@ -16,3 +16,6 @@ var UploadAttachmentURL string
 
 //go:embed update_complaint_status.sql
 var UpdateComplaintStatus string
+
+//go:embed get_all.sql
+var GetAll string
