@@ -23,6 +23,26 @@ type MediaRepository struct {
 	publicURL string
 }
 
+func (m *MediaRepository) UploadComplaint(ctx context.Context, complaintID int64, input *media.FileInput) (string, error) {
+	if input == nil || input.Body == nil {
+		return "", media.ErrEmptyFile
+	}
+
+	extension := getExtensionFromContentType(input.ContentType)
+	objectName := fmt.Sprintf("complaint/%d_%d%s", complaintID, time.Now().UnixNano(), extension)
+
+	start := time.Now()
+	_, err := m.client.PutObject(ctx, m.bucket, objectName, input.Body, input.Size, minio.PutObjectOptions{
+		ContentType: input.ContentType,
+	})
+	s3log.LogOp(ctx, m.log(ctx), "UploadComplaint", objectName, start, err, []any{complaintID, input.ContentType, input.Size})
+	if err != nil {
+		return "", fmt.Errorf("upload complaint attachment: %w", err)
+	}
+
+	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucket, objectName), nil
+}
+
 func NewMediaRepository(ctx context.Context, cfg config.S3Config, logger *zap.Logger) (*MediaRepository, error) {
 	minioClient, err := minio.New(cfg.Endpoint(), &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
