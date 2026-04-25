@@ -17,19 +17,27 @@ import (
 
 	config "github.com/go-park-mail-ru/2026_1_ASAP/config"
 	_ "github.com/go-park-mail-ru/2026_1_ASAP/docs"
+	analyticHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/analytic"
 	authHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/auth"
 	chatHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/chat"
+	complaintHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/complaint"
 	contactHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/contacts"
 	profileHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/profile"
 	wsHandlers "github.com/go-park-mail-ru/2026_1_ASAP/internal/handlers/ws"
+	analyticRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/analytic"
 	chatRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat"
+	complaintRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/complaint"
 	contactRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/contacts"
 	mediaRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/media"
 	messageRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/messages"
 	sessionRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/sessions"
 	userRepository "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/user"
+
+	analyticService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/analytic"
+
 	authService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/auth"
 	chatService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat"
+	complaintService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/complaint"
 	contactService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/contacts"
 	messageService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/messages"
 	profileService "github.com/go-park-mail-ru/2026_1_ASAP/internal/services/profile"
@@ -89,6 +97,15 @@ func main() {
 		appLogger.Fatal(err.Error())
 
 	}
+
+	complaintRepo, err := complaintRepository.NewComplaintRepository(context.Background(), cfg.PostgresConfig, repositoryLogger.Named("complaint_repo"))
+	if err != nil {
+		appLogger.Fatal(err.Error())
+	}
+	analyticRepo, err := analyticRepository.NewAnalyticRepository(context.Background(), cfg.PostgresConfig, repositoryLogger.Named("analytic_repo"))
+	if err != nil {
+		appLogger.Fatal(err.Error())
+	}
 	// Services
 	sessionServ := session.NewSessionService(sessRepo, cfg.SessionConfig.SessionTTL)
 	authServ := authService.NewAuthService(userRepo, sessionServ)
@@ -96,19 +113,22 @@ func main() {
 	contactServ := contactService.NewContactService(contactRepo, userRepo)
 	profileServ := profileService.NewProfileService(userRepo, mediaRepo)
 	messageServ := messageService.NewMessageService(messageRepo, chatRepo)
-
+	complaintServ := complaintService.NewComplaintService(complaintRepo, mediaRepo)
+	analyticServ := analyticService.NewAnalyticService(analyticRepo)
 	// Handlers
 	ws := wsHandlers.NewChatServer(handlerLogger.Named("ws"), messageServ, chatServ)
 	chatsHandler := chatHandlers.NewChatHandler(chatServ, ws)
 	contactsHandler := contactHandlers.NewContactHandler(contactServ)
 	profileHandlers := profileHandlers.NewProfileHandler(profileServ)
-	auth := authHandlers.NewAuthHandler(authServ)
-
+	auth := authHandlers.NewAuthHandler(authServ, cfg.VKIDConfig, handlerLogger.Named("auth"))
+	complaintHandler := complaintHandlers.NewComplaintHandler(complaintServ)
+	analyticHandler := analyticHandlers.NewAnalyticHandler(analyticServ)
 	//Middleware
 	requestIDMiddleware := middleware.RequestIDMiddleware()
 	accessMiddleware := middleware.AccessMiddleware(logger.Named("access"))
 	authMiddleware := middleware.AuthMiddleware(sessionServ)
 	csrfMiddleware := middleware.CSRFMiddleware(sessionServ)
+	adminMiddleware := middleware.AdminMiddleware(authServ)
 
 	mux := chi.NewRouter()
 
@@ -143,6 +163,7 @@ func main() {
 		mux.Post("/login", auth.Login)
 		mux.Post("/register", auth.Register)
 		mux.With(authMiddleware, csrfMiddleware).Post("/logout", auth.Logout)
+		mux.Post("/vk", auth.VkIDLogin)
 	})
 
 	mux.Route("/api/v1/chats", func(mux chi.Router) {
@@ -175,6 +196,18 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/name", profileHandlers.UpdateProfileName)
 	})
 
+	mux.Route("/api/v1/complaints", func(mux chi.Router) {
+		mux.Post("/createUnauthorized", complaintHandler.CreateComplaintUnAuthorized)
+		mux.With(authMiddleware, csrfMiddleware).Post("/create", complaintHandler.CreateComplaintAuthorized)
+		mux.With(authMiddleware, csrfMiddleware).Get("/my", complaintHandler.GetMyComplaints)
+		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", complaintHandler.GetComplaint)
+		mux.With(authMiddleware, csrfMiddleware, adminMiddleware).Post("/update", complaintHandler.UpdateComplaintStatus)
+		mux.With(authMiddleware, csrfMiddleware, adminMiddleware).Get("/all", complaintHandler.GetAllComplaints)
+	})
+
+	mux.Route("/api/v1/analytics", func(mux chi.Router) {
+		mux.With(authMiddleware, csrfMiddleware).Get("/complaint", analyticHandler.GetUserComplaintAnalytic)
+	})
 	mux.With(authMiddleware).Get("/api/v1/ws", ws.SubscribeHandler)
 
 	mux.Get("/swagger/*", httpSwagger.Handler())
@@ -212,5 +245,6 @@ func main() {
 	contactRepo.Close()
 	mediaRepo.Close()
 	messageRepo.Close()
+	analyticRepo.Close()
 	appLogger.Info("Graceful shutdown complete")
 }

@@ -2,8 +2,8 @@ package usersql
 
 import _ "embed"
 
-// CreateUserTxDescription — подпись для лога многошаговой транзакции Create (не SQL).
 const CreateUserTxDescription = "tx: EXISTS login; EXISTS email; INSERT users; COMMIT"
+const CreateUserByVKIDTxDescription = "tx: EXISTS login; EXISTS email; INSERT users; INSERT vk_accounts; COMMIT"
 
 //go:embed upload_birth_date.sql
 var UploadBirthDate string
@@ -43,3 +43,9 @@ var UploadNameFull string
 
 //go:embed delete_user_avatar.sql
 var DeleteUserAvatar string
+
+//go:embed insert_vk_account.sql
+var InsertVKAccount string
+
+//go:embed get_user_by_vk_id.sql
+var GetUserByVKID string

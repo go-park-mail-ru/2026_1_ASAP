@@ -1647,6 +1647,29 @@ func TestPositiveChatHandler_AddMembersToChat(t *testing.T) {
 				f.chatService.EXPECT().
 					AddMembersToChat(gomock.Any(), int64(100), int64(1), gomock.Any()).
 					Return(nil)
+
+				chatInfo := &dto.ChatInformationDTO{
+					ID:       1,
+					ChatType: dto.ChatTypeGroup,
+					Title:    "Group Chat",
+				}
+				f.chatService.EXPECT().
+					GetChatByID(gomock.Any(), int64(1), int64(101)).
+					Return(chatInfo, nil)
+				f.chatService.EXPECT().
+					GetChatByID(gomock.Any(), int64(1), int64(102)).
+					Return(chatInfo, nil)
+				f.chatService.EXPECT().
+					GetChatMemberIDs(gomock.Any(), int64(1)).
+					Return([]int64{100, 101, 102}, nil)
+				f.chatService.EXPECT().
+					GetChatByID(gomock.Any(), int64(1), int64(100)).
+					Return(chatInfo, nil)
+
+				f.wsPublisher.EXPECT().
+					PublishToUser(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return().
+					Times(3)
 			},
 			args: args{
 				userID:    100,
