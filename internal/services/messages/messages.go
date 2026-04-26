@@ -21,6 +21,7 @@ type MessageRepositoryInterface interface {
 
 type ChatRepositoryInterface interface {
 	IsMember(ctx context.Context, chatId int64, userId int64) (bool, error)
+	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
 }
 
 type MessageService struct {
@@ -104,6 +105,17 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 
 	if !isUserMember {
 		return nil, domain.ErrMessageNotMember
+	}
+
+	chat, err := m.chatRepo.GetChatByID(ctx, chatId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chat by id: %w", err)
+	}
+
+	if chat.Type == domain.ChatTypeChannel {
+		if userID != chat.OwnerId {
+			return nil, domain.ErrOnlyOwnerCanSendMessaage
+		}
 	}
 
 	message := &domain.Message{
