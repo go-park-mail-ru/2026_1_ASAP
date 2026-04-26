@@ -654,6 +654,18 @@ func (h *ChatsHandler) UpdateChatAvatar(w http.ResponseWriter, r *http.Request) 
 			}
 			response.Send(w, http.StatusBadRequest, resp)
 			return
+		case errors.Is(err, domain.ErrOnlyOwnerCanChangeAvatar):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.OnlyOwnerCanChangeAvatar,
+						Message: dtoApi.OnlyOwnerCanChangeAvatarMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusForbidden, resp)
+			return
 		default:
 			resp := dtoApi.ApiErrorResponse{
 				Status: dtoApi.Error,
@@ -796,6 +808,18 @@ func (h *ChatsHandler) UpdateChatTitle(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 			response.Send(w, http.StatusBadRequest, resp)
+			return
+		case errors.Is(err, domain.ErrOnlyOwnerCanChangeTitle):
+			resp := dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{
+					{
+						Code:    dtoApi.OnlyOwnerCanChangeTitle,
+						Message: dtoApi.OnlyOwnerCanChangeTitleMsg,
+					},
+				},
+			}
+			response.Send(w, http.StatusForbidden, resp)
 			return
 		default:
 			resp := dtoApi.ApiErrorResponse{

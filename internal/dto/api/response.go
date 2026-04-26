@@ -47,6 +47,8 @@ const (
 	EmptyFirstName           = "EMPTY_FIRST_NAME"
 	UserNotFound             = "USER_NOT_FOUND"
 	VKIDFailed               = "VKID_FAILED"
+	OnlyOwnerCanChangeAvatar = "YOU_CANT_CHANGE_AVATAR"
+	OnlyOwnerCanChangeTitle  = "YOU_CANT_CHANGE_TITLE"
 )
 
 const (
@@ -93,6 +95,8 @@ const (
 	EmptyFirstNameMsg           = "Empty first name"
 	UserNotFoundMsg             = "Cant find user you try to add"
 	VKIDFailedMsg               = "VKID failed to login"
+	OnlyOwnerCanChangeAvatarMsg = "only owner can change avatar"
+	OnlyOwnerCanChangeTitleMsg  = "only owner can change title"
 )
 
 type ApiError struct {

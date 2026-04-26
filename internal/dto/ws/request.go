@@ -12,27 +12,29 @@ const (
 )
 
 const (
-	ErrCodeInvalidEnvelope WsErrorCode = "INVALID_ENVELOPE"
-	ErrCodeInvalidPayload  WsErrorCode = "INVALID_PAYLOAD"
-	ErrCodeUnknownType     WsErrorCode = "UNKNOWN_TYPE"
-	ErrCodeEmptyText       WsErrorCode = "EMPTY_TEXT"
-	ErrCodeMessageTooLong  WsErrorCode = "MESSAGE_TOO_LONG"
-	ErrCodeNotMemberOfChat WsErrorCode = "NOT_MEMBER_OF_CHAT"
-	ErrCodeSendFailed      WsErrorCode = "SEND_FAILED"
-	ErrCodeInternal        WsErrorCode = "INTERNAL_ERROR"
-	ErrCodeServerShutdown  WsErrorCode = "SERVER_SHUTDOWN"
+	ErrCodeInvalidEnvelope      WsErrorCode = "INVALID_ENVELOPE"
+	ErrCodeInvalidPayload       WsErrorCode = "INVALID_PAYLOAD"
+	ErrCodeUnknownType          WsErrorCode = "UNKNOWN_TYPE"
+	ErrCodeEmptyText            WsErrorCode = "EMPTY_TEXT"
+	ErrCodeMessageTooLong       WsErrorCode = "MESSAGE_TOO_LONG"
+	ErrCodeNotMemberOfChat      WsErrorCode = "NOT_MEMBER_OF_CHAT"
+	ErrCodeSendFailed           WsErrorCode = "SEND_FAILED"
+	ErrCodeInternal             WsErrorCode = "INTERNAL_ERROR"
+	ErrCodeServerShutdown       WsErrorCode = "SERVER_SHUTDOWN"
+	ErrOnlyOwnerCanSendMessaage WsErrorCode = "YOU_CANT_SEND_MESSAGE"
 )
 
 const (
-	ErrCodeInvalidEnvelopeMsg WsErrorMessage = "invalid envelope"
-	ErrCodeInvalidPayloadMsg  WsErrorMessage = "invalid payload"
-	ErrCodeUnknownTypeMsg     WsErrorMessage = "unknown type"
-	ErrCodeEmptyTextMsg       WsErrorMessage = "empty text"
-	ErrCodeMessageTooLongMsg  WsErrorMessage = "message too long"
-	ErrCodeNotMemberOfChatMsg WsErrorMessage = "not member of chat"
-	ErrCodeSendFailedMsg      WsErrorMessage = "send failed"
-	ErrCodeInternalMsg        WsErrorMessage = "internal error"
-	ErrCodeServerShutdownMsg  WsErrorMessage = "server shutdown"
+	ErrCodeInvalidEnvelopeMsg      WsErrorMessage = "invalid envelope"
+	ErrCodeInvalidPayloadMsg       WsErrorMessage = "invalid payload"
+	ErrCodeUnknownTypeMsg          WsErrorMessage = "unknown type"
+	ErrCodeEmptyTextMsg            WsErrorMessage = "empty text"
+	ErrCodeMessageTooLongMsg       WsErrorMessage = "message too long"
+	ErrCodeNotMemberOfChatMsg      WsErrorMessage = "not member of chat"
+	ErrCodeSendFailedMsg           WsErrorMessage = "send failed"
+	ErrCodeInternalMsg             WsErrorMessage = "internal error"
+	ErrCodeServerShutdownMsg       WsErrorMessage = "server shutdown"
+	ErrOnlyOwnerCanSendMessaageMsg WsErrorMessage = "only owner of channel can send message"
 )
 
 type WsRequest struct {
