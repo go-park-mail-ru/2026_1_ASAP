@@ -8,8 +8,10 @@ import (
 
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type MediaRepositoryInterface interface {
@@ -21,6 +23,7 @@ type MediaRepositoryInterface interface {
 type MediaServer struct {
 	mediav1.UnimplementedMediaServer
 	MediaRepository MediaRepositoryInterface
+	logger          *zap.Logger
 }
 
 func protoFileToValidatedInput(f *mediav1.File) (*mediadto.FileInput, error) {
@@ -52,64 +55,66 @@ func protoFileToValidatedInput(f *mediav1.File) (*mediadto.FileInput, error) {
 func statusFromAvatarFileError(err error) error {
 	switch {
 	case errors.Is(err, mediadto.ErrFileTooLarge):
-		return status.Error(codes.InvalidArgument, mediadto.ErrFileTooLarge.Error())
-	case errors.Is(err, mediadto.ErrInvalidFileType):
-		return status.Error(codes.InvalidArgument, mediadto.ErrInvalidFileType.Error())
+		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_TOO_LARGE), "file too large")
 	case errors.Is(err, mediadto.ErrEmptyFile):
-		return status.Error(codes.InvalidArgument, mediadto.ErrEmptyFile.Error())
+		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_EMPTY), "file is empty")
 	default:
-		return status.Error(codes.Internal, err.Error())
+		return grpcerr.New(codes.Internal, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INTERNAL), "internal server error")
 	}
 }
 
 func (m MediaServer) UpdateUserAvatar(ctx context.Context, req *mediav1.RequestUpdateUserAvatar) (*mediav1.ResponseUpdateUserAvatar, error) {
 	if req == nil || req.GetUserId() <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "user_id is required")
 	}
 	in, err := protoFileToValidatedInput(req.GetAvatar())
 	if err != nil {
+		m.Log(ctx).Info("invalid avatar file", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
 		return nil, statusFromAvatarFileError(err)
 	}
 	url, err := m.MediaRepository.UploadAvatar(ctx, req.GetUserId(), in)
 	if err != nil {
-		if errors.Is(err, mediadto.ErrEmptyFile) {
-			return nil, status.Error(codes.InvalidArgument, mediadto.ErrEmptyFile.Error())
-		}
-		return nil, status.Error(codes.Internal, "upload failed")
+		m.Log(ctx).Error("failed to upload user avatar", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+		return nil, statusFromAvatarFileError(err)
 	}
 	return &mediav1.ResponseUpdateUserAvatar{AvatarUrl: url}, nil
 }
 
 func (m MediaServer) UploadChatAvatar(ctx context.Context, req *mediav1.RequestUpdateChatAvatar) (*mediav1.ResponseUpdateChatAvatar, error) {
 	if req == nil || req.GetChatId() <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "chat_id is required")
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "chat_id is required")
 	}
 	in, err := protoFileToValidatedInput(req.GetAvatar())
 	if err != nil {
+		m.Log(ctx).Info("invalid chat avatar file", zap.Int64("chat_id", req.GetChatId()), zap.Error(err))
 		return nil, statusFromAvatarFileError(err)
 	}
 	url, err := m.MediaRepository.UploadChatAvatar(ctx, req.GetChatId(), in)
 	if err != nil {
-		if errors.Is(err, mediadto.ErrEmptyFile) {
-			return nil, status.Error(codes.InvalidArgument, mediadto.ErrEmptyFile.Error())
-		}
-		return nil, status.Error(codes.Internal, "upload failed")
+		m.Log(ctx).Error("failed to upload chat avatar", zap.Int64("chat_id", req.GetChatId()), zap.Error(err))
+		return nil, statusFromAvatarFileError(err)
 	}
 	return &mediav1.ResponseUpdateChatAvatar{AvatarUrl: url}, nil
 }
 
 func (m MediaServer) DeleteUserAvatar(ctx context.Context, req *mediav1.RequestDeleteUserAvatar) (*mediav1.ResponseDeleteUserAvatar, error) {
 	if req == nil || req.GetUserId() <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "user_id is required")
 	}
 	if err := m.MediaRepository.DeleteAvatar(ctx, req.GetUserId()); err != nil {
-		return nil, status.Error(codes.Internal, "delete failed")
+		m.Log(ctx).Error("failed to delete user avatar", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+		return nil, grpcerr.New(codes.Internal, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INTERNAL), "delete failed")
 	}
 	return &mediav1.ResponseDeleteUserAvatar{}, nil
 }
 
-func NewMediaServer(mediaRepository MediaRepositoryInterface) *MediaServer {
+func NewMediaServer(mediaRepository MediaRepositoryInterface, logger *zap.Logger) *MediaServer {
 	return &MediaServer{
 		MediaRepository: mediaRepository,
+		logger:          logger,
 	}
+}
+
+func (m MediaServer) Log(ctx context.Context) *zap.Logger {
+	return loggerctx.EnrichLoggerFromContext(ctx, m.logger)
 }

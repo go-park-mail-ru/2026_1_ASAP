@@ -35,7 +35,7 @@ func main() {
 	}
 	defer mRepo.Close()
 
-	mediaSrv := mediagrpc.NewMediaServer(mRepo)
+	mediaSrv := mediagrpc.NewMediaServer(mRepo, logger.Named("media_grpc"))
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())
 	if err != nil {

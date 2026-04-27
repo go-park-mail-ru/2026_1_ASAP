@@ -23,6 +23,79 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type AuthErrorCode int32
+
+const (
+	AuthErrorCode_AUTH_ERROR_UNSPECIFIED          AuthErrorCode = 0
+	AuthErrorCode_AUTH_ERROR_EMAIL_ALREADY_EXISTS AuthErrorCode = 1
+	AuthErrorCode_AUTH_ERROR_LOGIN_ALREADY_EXISTS AuthErrorCode = 2
+	AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS  AuthErrorCode = 3
+	AuthErrorCode_AUTH_ERROR_SESSION_EXPIRED      AuthErrorCode = 4
+	AuthErrorCode_AUTH_ERROR_CSRF_NOT_FOUND       AuthErrorCode = 5
+	AuthErrorCode_AUTH_ERROR_CSRF_EXPIRED         AuthErrorCode = 6
+	AuthErrorCode_AUTH_ERROR_SESSION_NOT_FOUND    AuthErrorCode = 7
+	AuthErrorCode_AUTH_ERROR_USER_NOT_FOUND       AuthErrorCode = 8
+	AuthErrorCode_AUTH_ERROR_INVALID_INPUT        AuthErrorCode = 9
+	AuthErrorCode_AUTH_ERROR_INTERNAL             AuthErrorCode = 10
+)
+
+// Enum value maps for AuthErrorCode.
+var (
+	AuthErrorCode_name = map[int32]string{
+		0:  "AUTH_ERROR_UNSPECIFIED",
+		1:  "AUTH_ERROR_EMAIL_ALREADY_EXISTS",
+		2:  "AUTH_ERROR_LOGIN_ALREADY_EXISTS",
+		3:  "AUTH_ERROR_INVALID_CREDENTIALS",
+		4:  "AUTH_ERROR_SESSION_EXPIRED",
+		5:  "AUTH_ERROR_CSRF_NOT_FOUND",
+		6:  "AUTH_ERROR_CSRF_EXPIRED",
+		7:  "AUTH_ERROR_SESSION_NOT_FOUND",
+		8:  "AUTH_ERROR_USER_NOT_FOUND",
+		9:  "AUTH_ERROR_INVALID_INPUT",
+		10: "AUTH_ERROR_INTERNAL",
+	}
+	AuthErrorCode_value = map[string]int32{
+		"AUTH_ERROR_UNSPECIFIED":          0,
+		"AUTH_ERROR_EMAIL_ALREADY_EXISTS": 1,
+		"AUTH_ERROR_LOGIN_ALREADY_EXISTS": 2,
+		"AUTH_ERROR_INVALID_CREDENTIALS":  3,
+		"AUTH_ERROR_SESSION_EXPIRED":      4,
+		"AUTH_ERROR_CSRF_NOT_FOUND":       5,
+		"AUTH_ERROR_CSRF_EXPIRED":         6,
+		"AUTH_ERROR_SESSION_NOT_FOUND":    7,
+		"AUTH_ERROR_USER_NOT_FOUND":       8,
+		"AUTH_ERROR_INVALID_INPUT":        9,
+		"AUTH_ERROR_INTERNAL":             10,
+	}
+)
+
+func (x AuthErrorCode) Enum() *AuthErrorCode {
+	p := new(AuthErrorCode)
+	*p = x
+	return p
+}
+
+func (x AuthErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AuthErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_auth_v1_auth_proto_enumTypes[0].Descriptor()
+}
+
+func (AuthErrorCode) Type() protoreflect.EnumType {
+	return &file_auth_v1_auth_proto_enumTypes[0]
+}
+
+func (x AuthErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AuthErrorCode.Descriptor instead.
+func (AuthErrorCode) EnumDescriptor() ([]byte, []int) {
+	return file_auth_v1_auth_proto_rawDescGZIP(), []int{0}
+}
+
 type RequestSetCSRFToken struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
@@ -663,6 +736,7 @@ type ResponseRegister struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Login         string                 `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"`
 	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	UserId        int64                  `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -709,6 +783,13 @@ func (x *ResponseRegister) GetEmail() string {
 		return x.Email
 	}
 	return ""
+}
+
+func (x *ResponseRegister) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
 }
 
 type SessionMeta struct {
@@ -823,10 +904,11 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"\x0fRequestRegister\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\">\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\"W\n" +
 	"\x10ResponseRegister\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\"\x9f\x01\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\x03R\x06userId\"\x9f\x01\n" +
 	"\vSessionMeta\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x1d\n" +
@@ -834,7 +916,20 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"csrf_token\x18\x02 \x01(\tR\tcsrfToken\x12\x17\n" +
 	"\auser_id\x18\x03 \x01(\x03R\x06userId\x129\n" +
 	"\n" +
-	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt2\xad\x04\n" +
+	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt*\xed\x02\n" +
+	"\rAuthErrorCode\x12\x1a\n" +
+	"\x16AUTH_ERROR_UNSPECIFIED\x10\x00\x12#\n" +
+	"\x1fAUTH_ERROR_EMAIL_ALREADY_EXISTS\x10\x01\x12#\n" +
+	"\x1fAUTH_ERROR_LOGIN_ALREADY_EXISTS\x10\x02\x12\"\n" +
+	"\x1eAUTH_ERROR_INVALID_CREDENTIALS\x10\x03\x12\x1e\n" +
+	"\x1aAUTH_ERROR_SESSION_EXPIRED\x10\x04\x12\x1d\n" +
+	"\x19AUTH_ERROR_CSRF_NOT_FOUND\x10\x05\x12\x1b\n" +
+	"\x17AUTH_ERROR_CSRF_EXPIRED\x10\x06\x12 \n" +
+	"\x1cAUTH_ERROR_SESSION_NOT_FOUND\x10\a\x12\x1d\n" +
+	"\x19AUTH_ERROR_USER_NOT_FOUND\x10\b\x12\x1c\n" +
+	"\x18AUTH_ERROR_INVALID_INPUT\x10\t\x12\x17\n" +
+	"\x13AUTH_ERROR_INTERNAL\x10\n" +
+	"2\xad\x04\n" +
 	"\x04Auth\x126\n" +
 	"\x05Login\x12\x15.auth.v1.RequestLogin\x1a\x16.auth.v1.ResponseLogin\x12?\n" +
 	"\bRegister\x12\x18.auth.v1.RequestRegister\x1a\x19.auth.v1.ResponseRegister\x129\n" +
@@ -857,45 +952,47 @@ func file_auth_v1_auth_proto_rawDescGZIP() []byte {
 	return file_auth_v1_auth_proto_rawDescData
 }
 
+var file_auth_v1_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_auth_v1_auth_proto_goTypes = []any{
-	(*RequestSetCSRFToken)(nil),     // 0: auth.v1.RequestSetCSRFToken
-	(*RequestGetCSRFToken)(nil),     // 1: auth.v1.RequestGetCSRFToken
-	(*ResponseGetCSRFToken)(nil),    // 2: auth.v1.ResponseGetCSRFToken
-	(*RequestValidateSession)(nil),  // 3: auth.v1.RequestValidateSession
-	(*ResponseValidateSession)(nil), // 4: auth.v1.ResponseValidateSession
-	(*RequestGetUserPublic)(nil),    // 5: auth.v1.RequestGetUserPublic
-	(*ResponseGetUserPublic)(nil),   // 6: auth.v1.ResponseGetUserPublic
-	(*RequestVKID)(nil),             // 7: auth.v1.RequestVKID
-	(*RequestLogout)(nil),           // 8: auth.v1.RequestLogout
-	(*ResponseLogout)(nil),          // 9: auth.v1.ResponseLogout
-	(*RequestLogin)(nil),            // 10: auth.v1.RequestLogin
-	(*ResponseLogin)(nil),           // 11: auth.v1.ResponseLogin
-	(*RequestRegister)(nil),         // 12: auth.v1.RequestRegister
-	(*ResponseRegister)(nil),        // 13: auth.v1.ResponseRegister
-	(*SessionMeta)(nil),             // 14: auth.v1.SessionMeta
-	(*timestamppb.Timestamp)(nil),   // 15: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),           // 16: google.protobuf.Empty
+	(AuthErrorCode)(0),              // 0: auth.v1.AuthErrorCode
+	(*RequestSetCSRFToken)(nil),     // 1: auth.v1.RequestSetCSRFToken
+	(*RequestGetCSRFToken)(nil),     // 2: auth.v1.RequestGetCSRFToken
+	(*ResponseGetCSRFToken)(nil),    // 3: auth.v1.ResponseGetCSRFToken
+	(*RequestValidateSession)(nil),  // 4: auth.v1.RequestValidateSession
+	(*ResponseValidateSession)(nil), // 5: auth.v1.ResponseValidateSession
+	(*RequestGetUserPublic)(nil),    // 6: auth.v1.RequestGetUserPublic
+	(*ResponseGetUserPublic)(nil),   // 7: auth.v1.ResponseGetUserPublic
+	(*RequestVKID)(nil),             // 8: auth.v1.RequestVKID
+	(*RequestLogout)(nil),           // 9: auth.v1.RequestLogout
+	(*ResponseLogout)(nil),          // 10: auth.v1.ResponseLogout
+	(*RequestLogin)(nil),            // 11: auth.v1.RequestLogin
+	(*ResponseLogin)(nil),           // 12: auth.v1.ResponseLogin
+	(*RequestRegister)(nil),         // 13: auth.v1.RequestRegister
+	(*ResponseRegister)(nil),        // 14: auth.v1.ResponseRegister
+	(*SessionMeta)(nil),             // 15: auth.v1.SessionMeta
+	(*timestamppb.Timestamp)(nil),   // 16: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),           // 17: google.protobuf.Empty
 }
 var file_auth_v1_auth_proto_depIdxs = []int32{
-	14, // 0: auth.v1.ResponseLogin.session:type_name -> auth.v1.SessionMeta
-	15, // 1: auth.v1.SessionMeta.expires_at:type_name -> google.protobuf.Timestamp
-	10, // 2: auth.v1.Auth.Login:input_type -> auth.v1.RequestLogin
-	12, // 3: auth.v1.Auth.Register:input_type -> auth.v1.RequestRegister
-	8,  // 4: auth.v1.Auth.Logout:input_type -> auth.v1.RequestLogout
-	7,  // 5: auth.v1.Auth.AuthVKID:input_type -> auth.v1.RequestVKID
-	3,  // 6: auth.v1.Auth.ValidateSession:input_type -> auth.v1.RequestValidateSession
-	5,  // 7: auth.v1.Auth.GetUserPublic:input_type -> auth.v1.RequestGetUserPublic
-	1,  // 8: auth.v1.Auth.GetCSRFToken:input_type -> auth.v1.RequestGetCSRFToken
-	0,  // 9: auth.v1.Auth.SetCSRFToken:input_type -> auth.v1.RequestSetCSRFToken
-	11, // 10: auth.v1.Auth.Login:output_type -> auth.v1.ResponseLogin
-	13, // 11: auth.v1.Auth.Register:output_type -> auth.v1.ResponseRegister
-	9,  // 12: auth.v1.Auth.Logout:output_type -> auth.v1.ResponseLogout
-	11, // 13: auth.v1.Auth.AuthVKID:output_type -> auth.v1.ResponseLogin
-	4,  // 14: auth.v1.Auth.ValidateSession:output_type -> auth.v1.ResponseValidateSession
-	6,  // 15: auth.v1.Auth.GetUserPublic:output_type -> auth.v1.ResponseGetUserPublic
-	2,  // 16: auth.v1.Auth.GetCSRFToken:output_type -> auth.v1.ResponseGetCSRFToken
-	16, // 17: auth.v1.Auth.SetCSRFToken:output_type -> google.protobuf.Empty
+	15, // 0: auth.v1.ResponseLogin.session:type_name -> auth.v1.SessionMeta
+	16, // 1: auth.v1.SessionMeta.expires_at:type_name -> google.protobuf.Timestamp
+	11, // 2: auth.v1.Auth.Login:input_type -> auth.v1.RequestLogin
+	13, // 3: auth.v1.Auth.Register:input_type -> auth.v1.RequestRegister
+	9,  // 4: auth.v1.Auth.Logout:input_type -> auth.v1.RequestLogout
+	8,  // 5: auth.v1.Auth.AuthVKID:input_type -> auth.v1.RequestVKID
+	4,  // 6: auth.v1.Auth.ValidateSession:input_type -> auth.v1.RequestValidateSession
+	6,  // 7: auth.v1.Auth.GetUserPublic:input_type -> auth.v1.RequestGetUserPublic
+	2,  // 8: auth.v1.Auth.GetCSRFToken:input_type -> auth.v1.RequestGetCSRFToken
+	1,  // 9: auth.v1.Auth.SetCSRFToken:input_type -> auth.v1.RequestSetCSRFToken
+	12, // 10: auth.v1.Auth.Login:output_type -> auth.v1.ResponseLogin
+	14, // 11: auth.v1.Auth.Register:output_type -> auth.v1.ResponseRegister
+	10, // 12: auth.v1.Auth.Logout:output_type -> auth.v1.ResponseLogout
+	12, // 13: auth.v1.Auth.AuthVKID:output_type -> auth.v1.ResponseLogin
+	5,  // 14: auth.v1.Auth.ValidateSession:output_type -> auth.v1.ResponseValidateSession
+	7,  // 15: auth.v1.Auth.GetUserPublic:output_type -> auth.v1.ResponseGetUserPublic
+	3,  // 16: auth.v1.Auth.GetCSRFToken:output_type -> auth.v1.ResponseGetCSRFToken
+	17, // 17: auth.v1.Auth.SetCSRFToken:output_type -> google.protobuf.Empty
 	10, // [10:18] is the sub-list for method output_type
 	2,  // [2:10] is the sub-list for method input_type
 	2,  // [2:2] is the sub-list for extension type_name
@@ -913,13 +1010,14 @@ func file_auth_v1_auth_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_v1_auth_proto_rawDesc), len(file_auth_v1_auth_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_auth_v1_auth_proto_goTypes,
 		DependencyIndexes: file_auth_v1_auth_proto_depIdxs,
+		EnumInfos:         file_auth_v1_auth_proto_enumTypes,
 		MessageInfos:      file_auth_v1_auth_proto_msgTypes,
 	}.Build()
 	File_auth_v1_auth_proto = out.File

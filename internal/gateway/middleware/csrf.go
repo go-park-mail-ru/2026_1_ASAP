@@ -8,8 +8,7 @@ import (
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/csrf"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 )
 
 var (
@@ -19,24 +18,15 @@ var (
 )
 
 func mapGetCSRFGRPCError(err error) error {
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-	switch st.Code() {
-	case codes.NotFound:
+	_, appCode, _ := grpcerr.Error(err)
+	switch authv1.AuthErrorCode(appCode) {
+	case authv1.AuthErrorCode_AUTH_ERROR_SESSION_NOT_FOUND,
+		authv1.AuthErrorCode_AUTH_ERROR_SESSION_EXPIRED:
 		return errCSRFSessionInvalid
-	case codes.FailedPrecondition:
-		switch st.Message() {
-		case "session expired":
-			return errCSRFSessionInvalid
-		case "csrf token not found":
-			return errCSRFNotInSession
-		case "csrf token expired":
-			return errCSRFExpiredToken
-		default:
-			return err
-		}
+	case authv1.AuthErrorCode_AUTH_ERROR_CSRF_NOT_FOUND:
+		return errCSRFNotInSession
+	case authv1.AuthErrorCode_AUTH_ERROR_CSRF_EXPIRED:
+		return errCSRFExpiredToken
 	default:
 		return err
 	}

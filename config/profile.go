@@ -9,10 +9,15 @@ import (
 
 // ProfileConfig is the profile (gRPC) service configuration.
 type ProfileConfig struct {
-	ServerConfig   ServerConfig
-	PostgresConfig PostgresConfig
-	S3Config       S3Config
-	AppConfig      AppConfig
+	ServerConfig       ServerConfig
+	PostgresConfig     PostgresConfig
+	ProfileMediaConfig ProfileMediaConfig
+	S3Config           S3Config
+	AppConfig          AppConfig
+}
+
+type ProfileMediaConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" env-default:"auth:8001"`
 }
 
 type profileFile struct {
@@ -27,18 +32,8 @@ type profileFile struct {
 		DB       string `yaml:"db"`
 		Password string `yaml:"password" env:"POSTGRES_PASSWORD" env-default:""`
 	} `yaml:"postgres"`
-	S3 struct {
-		Host         string `yaml:"host"`
-		Port         string `yaml:"port"`
-		Bucket       string `yaml:"bucket"`
-		AccessKey    string `env:"S3_ACCESS_KEY" env-default:"minioadmin"`
-		SecretKey    string `env:"S3_SECRET_KEY" env-default:"minioadmin"`
-		UseSSL       bool   `yaml:"use_ssl"`
-		PublicUseSSL bool   `yaml:"public_use_ssl"`
-		PublicHost   string `yaml:"public_host"`
-		PublicPort   string `yaml:"public_port"`
-	} `yaml:"s3"`
-	App struct {
+	ProfileMediaConfig ProfileMediaConfig `yaml:"media"`
+	App                struct {
 		ShutdownSeconds int    `yaml:"shutdown_seconds"`
 		LogLevel        string `yaml:"log_level"`
 	} `yaml:"app"`
@@ -74,16 +69,8 @@ func LoadProfileConfigFromPath(path string) (*ProfileConfig, error) {
 			Password: raw.Postgres.Password,
 			Database: raw.Postgres.DB,
 		},
-		S3Config: S3Config{
-			Host:         raw.S3.Host,
-			Port:         raw.S3.Port,
-			Bucket:       raw.S3.Bucket,
-			AccessKey:    raw.S3.AccessKey,
-			SecretKey:    raw.S3.SecretKey,
-			PublicHost:   raw.S3.PublicHost,
-			PublicPort:   raw.S3.PublicPort,
-			UseSSL:       raw.S3.UseSSL,
-			PublicUseSSL: raw.S3.PublicUseSSL,
+		ProfileMediaConfig: ProfileMediaConfig{
+			GRPCAddr: raw.ProfileMediaConfig.GRPCAddr,
 		},
 		AppConfig: AppConfig{
 			ShutdownTime: time.Duration(raw.App.ShutdownSeconds) * time.Second,

@@ -7,14 +7,17 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-// AuthConfig is the auth (gRPC) service configuration.
+type AuthProfileConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" env-default:"auth:8001"`
+}
 type AuthConfig struct {
-	PostgresConfig PostgresConfig
-	ServerConfig   ServerConfig
-	RedisConfig    RedisConfig
-	AppConfig      AppConfig
-	SessionConfig  SessionConfig
-	VKIDConfig     VKIDConfig
+	PostgresConfig    PostgresConfig
+	ServerConfig      ServerConfig
+	RedisConfig       RedisConfig
+	AuthProfileConfig AuthProfileConfig
+	AppConfig         AppConfig
+	SessionConfig     SessionConfig
+	VKIDConfig        VKIDConfig
 }
 
 type authFile struct {
@@ -31,6 +34,9 @@ type authFile struct {
 		Database int    `yaml:"database"`
 		Password string `yaml:"password" env:"REDIS_PASSWORD" env-default:""`
 	} `yaml:"redis"`
+	AuthProfileConfig struct {
+		GRPCAddr string `yaml:"grpc_addr" env-default:"auth:8001"`
+	} `yaml:"profile"`
 	Postgres struct {
 		Host     string `yaml:"host"`
 		Port     string `yaml:"port"`
@@ -77,6 +83,9 @@ func LoadAuthConfig() (*AuthConfig, error) {
 			Port:     raw.Redis.Port,
 			Password: raw.Redis.Password,
 			Database: raw.Redis.Database,
+		},
+		AuthProfileConfig: AuthProfileConfig{
+			GRPCAddr: raw.AuthProfileConfig.GRPCAddr,
 		},
 		PostgresConfig: PostgresConfig{
 			Host:     raw.Postgres.Host,

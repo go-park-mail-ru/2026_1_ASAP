@@ -2,6 +2,9 @@ package usersql
 
 import _ "embed"
 
+//go:embed create_profile.sql
+var CreateProfile string
+
 //go:embed upload_birth_date.sql
 var UploadBirthDate string
 

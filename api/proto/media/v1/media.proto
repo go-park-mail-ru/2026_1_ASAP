@@ -11,6 +11,15 @@ service Media {
   rpc DeleteUserAvatar(RequestDeleteUserAvatar) returns (ResponseDeleteUserAvatar);
 }
 
+enum MediaErrorCode {
+  MEDIA_ERROR_UNSPECIFIED      = 0;
+  MEDIA_ERROR_FILE_TOO_LARGE   = 1;
+  MEDIA_ERROR_FILE_INVALID_TYPE = 2;
+  MEDIA_ERROR_FILE_EMPTY       = 3;
+  MEDIA_ERROR_INTERNAL         = 4;
+  MEDIA_ERROR_INVALID_INPUT    = 5;
+}
+
 message File {
   bytes content = 1;
   string type = 2;

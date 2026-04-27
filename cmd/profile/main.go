@@ -9,15 +9,18 @@ import (
 	"syscall"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
+	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	contactrepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/contacts"
-	mediarepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/media"
 	profilerepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/profile"
 	grpcTransport "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/transport/grpc"
+	grpcMedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/transport/grpc/clients/media"
+
 	contactuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/contact"
 	profileuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/profile"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -39,11 +42,13 @@ func main() {
 	}
 	defer pRepo.Close()
 
-	mRepo, err := mediarepo.NewMediaRepository(ctx, cfg.S3Config, logger.Named("media_repo"))
+	mediaConn, err := grpc.NewClient(cfg.ProfileMediaConfig.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Fatal("init media repository", zap.Error(err))
+		log.Fatalf("dial profile grpc: %v", err)
 	}
+	defer func() { _ = mediaConn.Close() }()
 
+	mRepo := grpcMedia.New(mediav1.NewMediaClient(mediaConn))
 	cRepo, err := contactrepo.NewContactsRepository(ctx, cfg.PostgresConfig, logger.Named("contact_repo"))
 	if err != nil {
 		logger.Fatal("init contact repository", zap.Error(err))
@@ -52,7 +57,7 @@ func main() {
 
 	contactService := contactuc.NewContactService(cRepo, pRepo)
 	svc := profileuc.NewProfileService(pRepo, mRepo)
-	srv := grpcTransport.NewProfileServer(svc, contactService)
+	srv := grpcTransport.NewProfileServer(svc, contactService, logger.Named("profile.transport"))
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())
 	if err != nil {

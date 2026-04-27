@@ -5,8 +5,10 @@ package profile.v1;
 option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1;profilev1";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 service Profile {
+    rpc CreateProfile(RequestCreateProfile) returns (google.protobuf.Empty);
     rpc GetProfile(RequestGetProfile) returns (ResponseGetProfile);
     rpc UpdateProfileAvatar(RequestUpdateAvatar) returns (ResponseGetProfile);
     rpc UpdateProfileBio(RequestUpdateBio) returns (ResponseGetProfile);
@@ -16,6 +18,27 @@ service Profile {
     rpc ListContacts(RequestListContacts) returns (ResponseListContacts);
     rpc AddContact(RequestAddContact) returns (ResponseAddContact);
     rpc DeleteContact(RequestDeleteContact) returns (ResponseDeleteContact);
+}
+
+enum ProfileErrorCode {
+    PROFILE_ERROR_UNSPECIFIED          = 0;
+    PROFILE_ERROR_INVALID_INPUT        = 1;
+    PROFILE_ERROR_NOT_FOUND            = 2;
+    PROFILE_ERROR_INTERNAL             = 3;
+    PROFILE_ERROR_AVATAR_TOO_LARGE     = 4;
+    PROFILE_ERROR_AVATAR_INVALID_TYPE  = 5;
+    PROFILE_ERROR_AVATAR_EMPTY         = 6;
+    PROFILE_ERROR_BIRTH_DATE_INVALID   = 7;
+    PROFILE_ERROR_BIRTH_DATE_FORMAT    = 8;
+    PROFILE_ERROR_FIRST_NAME_EMPTY     = 9;
+    PROFILE_ERROR_CONTACT_SELF         = 10;
+    PROFILE_ERROR_CONTACT_ALREADY_EXISTS = 11;
+    PROFILE_ERROR_CONTACT_NOT_FOUND    = 12;
+}
+
+message RequestCreateProfile {
+    int64 profile_id = 1;
+    string first_name = 2;
 }
 
 message RequestUpdateName {

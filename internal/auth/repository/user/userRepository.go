@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -63,8 +62,7 @@ func (r *UserRepository) CreateUserByVKID(ctx context.Context, vkID int64, user 
 	}
 
 	err = tx.QueryRow(ctx, usersql.InsertUser,
-		userModel.Login, userModel.Login, sql.NullString{}, userModel.Email, userModel.PasswordHash,
-		sql.NullString{}, sql.NullString{}, sql.NullTime{}, sql.NullTime{},
+		userModel.Login, userModel.Email, userModel.PasswordHash,
 	).Scan(&userModel.ID, &userModel.CreatedAt, &userModel.UpdatedAt)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -102,19 +100,7 @@ func (r *UserRepository) GetUserByVKID(ctx context.Context, vkid int64) (*domain
 	row := r.db.QueryRow(ctx, q, vkUserID)
 
 	u := &UserModel{}
-	var (
-		firstName sql.NullString
-		lastName  sql.NullString
-		avatarURL sql.NullString
-		bio       sql.NullString
-		birthDate sql.NullTime
-		lastSeen  sql.NullTime
-	)
-	err := row.Scan(
-		&u.ID, &u.Login, &firstName, &lastName, &u.Email, &u.PasswordHash,
-		&avatarURL, &bio, &birthDate, &lastSeen,
-		&u.CreatedAt, &u.UpdatedAt,
-	)
+	err := row.Scan(&u.ID, &u.Login, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	sqllog.LogQuery(ctx, r.log(ctx), "GetUserByVKID", q, start, err, []any{vkUserID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -166,8 +152,7 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) (_ *doma
 	}
 
 	err = tx.QueryRow(ctx, usersql.InsertUser,
-		userModel.Login, userModel.Login, sql.NullString{}, userModel.Email, userModel.PasswordHash,
-		sql.NullString{}, sql.NullString{}, sql.NullTime{}, sql.NullTime{},
+		userModel.Login, userModel.Email, userModel.PasswordHash,
 	).Scan(&userModel.ID, &userModel.CreatedAt, &userModel.UpdatedAt)
 	sqllog.LogQuery(ctx, r.log(ctx), "Create", usersql.CreateUserTxDescription, start, err, []any{
 		userModel.Login, userModel.Email, sqllog.ArgRedacted,
@@ -198,19 +183,7 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*dom
 	row := r.db.QueryRow(ctx, q, email)
 
 	u := &UserModel{}
-	var (
-		firstName sql.NullString
-		lastName  sql.NullString
-		avatarURL sql.NullString
-		bio       sql.NullString
-		birthDate sql.NullTime
-		lastSeen  sql.NullTime
-	)
-	err := row.Scan(
-		&u.ID, &u.Login, &firstName, &lastName, &u.Email, &u.PasswordHash,
-		&avatarURL, &bio, &birthDate, &lastSeen,
-		&u.CreatedAt, &u.UpdatedAt,
-	)
+	err := row.Scan(&u.ID, &u.Login, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	sqllog.LogQuery(ctx, r.log(ctx), "GetUserByEmail", q, start, err, []any{email})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -227,19 +200,7 @@ func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*dom
 	row := r.db.QueryRow(ctx, q, login)
 
 	u := &UserModel{}
-	var (
-		firstName sql.NullString
-		lastName  sql.NullString
-		avatarURL sql.NullString
-		bio       sql.NullString
-		birthDate sql.NullTime
-		lastSeen  sql.NullTime
-	)
-	err := row.Scan(
-		&u.ID, &u.Login, &firstName, &lastName, &u.Email, &u.PasswordHash,
-		&avatarURL, &bio, &birthDate, &lastSeen,
-		&u.CreatedAt, &u.UpdatedAt,
-	)
+	err := row.Scan(&u.ID, &u.Login, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	sqllog.LogQuery(ctx, r.log(ctx), "GetUserByLogin", q, start, err, []any{login})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -256,19 +217,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id int64) (*domain.Use
 	row := r.db.QueryRow(ctx, q, id)
 
 	u := &UserModel{}
-	var (
-		firstName sql.NullString
-		lastName  sql.NullString
-		avatarURL sql.NullString
-		bio       sql.NullString
-		birthDate sql.NullTime
-		lastSeen  sql.NullTime
-	)
-	err := row.Scan(
-		&u.ID, &u.Login, &firstName, &lastName, &u.Email, &u.PasswordHash,
-		&avatarURL, &bio, &birthDate, &lastSeen,
-		&u.CreatedAt, &u.UpdatedAt,
-	)
+	err := row.Scan(&u.ID, &u.Login, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	sqllog.LogQuery(ctx, r.log(ctx), "GetUserByID", q, start, err, []any{id})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

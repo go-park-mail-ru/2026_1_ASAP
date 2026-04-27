@@ -1,2 +1,2 @@
-SELECT id, login, first_name, last_name, email, password_hash, avatar_url, bio, birth_date, last_seen, created_at, updated_at
+SELECT id, login, email, password_hash, created_at, updated_at
 FROM users WHERE login=$1

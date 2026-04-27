@@ -10,8 +10,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 )
 
 type GatewayAuthHandler struct {
@@ -26,36 +25,22 @@ func NewGatewayAuthHandler(authService authv1.AuthClient) *GatewayAuthHandler {
 
 func (h *GatewayAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
 	ctx := r.Context()
 
-	decoder := json.NewDecoder(r.Body)
 	newRequestLogin := new(auth2.RequestLogin)
-
-	err := decoder.Decode(newRequestLogin)
-	if err != nil {
-		resp := dtoApi.ApiErrorResponse{
+	if err := json.NewDecoder(r.Body).Decode(newRequestLogin); err != nil {
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{
-				{
-					Code:    dtoApi.InvalidJson,
-					Message: dtoApi.InvalidJsonMsg,
-				},
-			},
-		}
-		response.Send(w, http.StatusBadRequest, resp)
+			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
+		})
 		return
 	}
 
-	errs := validation.ValidationRequestLogin(newRequestLogin)
-	if len(errs) > 0 {
-		apiErrors := mapper.MapValidationErrorsToApiErrors(errs)
-		resp := dtoApi.ApiErrorResponse{
+	if errs := validation.ValidationRequestLogin(newRequestLogin); len(errs) > 0 {
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
-			Errors: apiErrors,
-		}
-
-		response.Send(w, http.StatusBadRequest, resp)
+			Errors: mapper.MapValidationErrorsToApiErrors(errs),
+		})
 		return
 	}
 
@@ -64,37 +49,24 @@ func (h *GatewayAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Password: newRequestLogin.Password,
 	})
 	if err != nil {
-		st, ok := status.FromError(err)
-		if ok {
-			switch st.Code() {
-			case codes.Unauthenticated, codes.NotFound:
-				response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
-					Status: dtoApi.Error,
-					Errors: []dtoApi.ApiError{{
-						Code:    dtoApi.InvalidCredentials,
-						Message: dtoApi.InvalidCredentialsMsg,
-					}},
-				})
-				return
-			case codes.InvalidArgument:
-				response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
-					Status: dtoApi.Error,
-					Errors: []dtoApi.ApiError{{
-						Code:    dtoApi.InvalidJson,
-						Message: dtoApi.InvalidJsonMsg,
-					}},
-				})
-				return
-			}
+		_, appCode, _ := grpcerr.Error(err)
+		switch authv1.AuthErrorCode(appCode) {
+		case authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS:
+			response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidCredentials, Message: dtoApi.InvalidCredentialsMsg}},
+			})
+		case authv1.AuthErrorCode_AUTH_ERROR_INVALID_INPUT:
+			response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
+			})
+		default:
+			response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.InternalError, Message: dtoApi.InternalErrorMsg}},
+			})
 		}
-
-		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
-			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{{
-				Code:    dtoApi.InternalError,
-				Message: dtoApi.InternalErrorMsg,
-			}},
-		})
 		return
 	}
 
@@ -106,39 +78,28 @@ func (h *GatewayAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		Secure:   true,
 	})
-
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.GetSession().GetCsrfToken())
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseLoginSuccess]{
 		Status: dtoApi.Success,
-		Body: auth2.ResponseLoginSuccess{
-			Login: session.GetLogin(),
-		},
+		Body:   auth2.ResponseLoginSuccess{Login: session.GetLogin()},
 	})
 }
 
 func (h *GatewayAuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
 	ctx := r.Context()
 
-	decoder := json.NewDecoder(r.Body)
 	newRequestRegister := new(auth2.RequestRegistrate)
-
-	err := decoder.Decode(newRequestRegister)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(newRequestRegister); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{{
-				Code:    dtoApi.InvalidJson,
-				Message: dtoApi.InvalidJsonMsg,
-			}},
+			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
 		})
 		return
 	}
 
-	errs := validation.ValidationRequestRegistrate(newRequestRegister)
-	if len(errs) > 0 {
+	if errs := validation.ValidationRequestRegistrate(newRequestRegister); len(errs) > 0 {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: mapper.MapValidationErrorsToApiErrors(errs),
@@ -152,46 +113,35 @@ func (h *GatewayAuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Password: newRequestRegister.Password,
 	})
 	if err != nil {
-		st, ok := status.FromError(err)
-		if ok {
-			switch st.Code() {
-			case codes.AlreadyExists:
-				response.Send(w, http.StatusConflict, dtoApi.ApiErrorResponse{
-					Status: dtoApi.Error,
-					Errors: []dtoApi.ApiError{{
-						Code:    dtoApi.LoginAlreadyRegistered,
-						Message: dtoApi.LoginAlreadyRegisteredMsg,
-					}},
-				})
-				return
-			case codes.InvalidArgument:
-				response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
-					Status: dtoApi.Error,
-					Errors: []dtoApi.ApiError{{
-						Code:    dtoApi.InvalidJson,
-						Message: dtoApi.InvalidJsonMsg,
-					}},
-				})
-				return
-			}
+		_, appCode, _ := grpcerr.Error(err)
+		switch authv1.AuthErrorCode(appCode) {
+		case authv1.AuthErrorCode_AUTH_ERROR_LOGIN_ALREADY_EXISTS:
+			response.Send(w, http.StatusConflict, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.LoginAlreadyRegistered, Message: dtoApi.LoginAlreadyRegisteredMsg}},
+			})
+		case authv1.AuthErrorCode_AUTH_ERROR_EMAIL_ALREADY_EXISTS:
+			response.Send(w, http.StatusConflict, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.EmailAlreadyRegistered, Message: dtoApi.EmailAlreadyRegisteredMsg}},
+			})
+		case authv1.AuthErrorCode_AUTH_ERROR_INVALID_INPUT:
+			response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
+			})
+		default:
+			response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.InternalError, Message: dtoApi.InternalErrorMsg}},
+			})
 		}
-
-		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
-			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{{
-				Code:    dtoApi.InternalError,
-				Message: dtoApi.InternalErrorMsg,
-			}},
-		})
 		return
 	}
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseRegisterSuccess]{
 		Status: dtoApi.Success,
-		Body: auth2.ResponseRegisterSuccess{
-			Login: resp.GetLogin(),
-			Email: resp.GetEmail(),
-		},
+		Body:   auth2.ResponseRegisterSuccess{Login: resp.GetLogin(), Email: resp.GetEmail()},
 	})
 }
 
@@ -202,40 +152,26 @@ func (h *GatewayAuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if err != nil || cookie.Value == "" {
 		response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{{
-				Code:    dtoApi.Unauthorized,
-				Message: dtoApi.UnauthorizedMsg,
-			}},
+			Errors: []dtoApi.ApiError{{Code: dtoApi.Unauthorized, Message: dtoApi.UnauthorizedMsg}},
 		})
 		return
 	}
 
-	_, err = h.AuthService.Logout(ctx, &authv1.RequestLogout{
-		SessionId: cookie.Value,
-	})
+	_, err = h.AuthService.Logout(ctx, &authv1.RequestLogout{SessionId: cookie.Value})
 	if err != nil {
-		st, ok := status.FromError(err)
-		if ok {
-			switch st.Code() {
-			case codes.Unauthenticated, codes.NotFound:
-				response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
-					Status: dtoApi.Error,
-					Errors: []dtoApi.ApiError{{
-						Code:    dtoApi.Unauthorized,
-						Message: dtoApi.UnauthorizedMsg,
-					}},
-				})
-				return
-			}
+		_, appCode, _ := grpcerr.Error(err)
+		switch authv1.AuthErrorCode(appCode) {
+		case authv1.AuthErrorCode_AUTH_ERROR_SESSION_NOT_FOUND:
+			response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.Unauthorized, Message: dtoApi.UnauthorizedMsg}},
+			})
+		default:
+			response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.InternalError, Message: dtoApi.InternalErrorMsg}},
+			})
 		}
-
-		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
-			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{{
-				Code:    dtoApi.InternalError,
-				Message: dtoApi.InternalErrorMsg,
-			}},
-		})
 		return
 	}
 

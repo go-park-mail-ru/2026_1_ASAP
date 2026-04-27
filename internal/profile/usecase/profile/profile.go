@@ -20,6 +20,7 @@ type MediaService interface {
 }
 
 type ProfileRepositoryInterface interface {
+	Create(ctx context.Context, profileId int64, first_name string) error
 	GetProfileById(ctx context.Context, profileId int64) (*pdomain.Profile, error)
 	UploadBio(ctx context.Context, userId int64, bio string) (*pdomain.Profile, error)
 	UploadAvatarUrl(ctx context.Context, userId int64, avatarUrl string) (*pdomain.Profile, error)
@@ -32,6 +33,14 @@ type ProfileRepositoryInterface interface {
 type ProfileService struct {
 	profileRepository ProfileRepositoryInterface
 	mediaRepository   MediaService
+}
+
+func (p ProfileService) CreateProfile(ctx context.Context, profile *profile2.RequestCreateProfile) error {
+	if err := p.profileRepository.Create(ctx, profile.ProfileID, profile.FirstName); err != nil {
+		return fmt.Errorf("create profile: %w", err)
+	}
+
+	return nil
 }
 
 func (p ProfileService) SearchIdByLogin(ctx context.Context, login *profile2.RequestSearchIdByLogin) (response *profile2.ResponseSearchIdByLogin, err error) {

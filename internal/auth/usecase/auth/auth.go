@@ -15,6 +15,10 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 )
 
+type ProfileService interface {
+	Create(ctx context.Context, profileId int64, firstName string) error
+}
+
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/auth_mock.go -package=mock
 type UserRepository interface {
 	Create(ctx context.Context, u *domain.User) (*domain.User, error)
@@ -37,6 +41,7 @@ type SessionService interface {
 type AuthService struct {
 	userRepository UserRepository
 	SessionService SessionService
+	ProfileService ProfileService
 }
 
 func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK.RequestAuth) (*dtoSession.SessionDTO, error) {
@@ -69,16 +74,17 @@ func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK
 	return sessionData, nil
 }
 
-func NewAuthService(userRepository UserRepository, sessionService SessionService) *AuthService {
+func NewAuthService(userRepository UserRepository, sessionService SessionService, service ProfileService) *AuthService {
 	return &AuthService{
 		userRepository: userRepository,
 		SessionService: sessionService,
+		ProfileService: service,
 	}
 }
 
-func (authService *AuthService) Register(ctx context.Context, request *dtoAuth.RequestRegistrate) (*dtoSession.SessionDTO, error) {
+func (authService *AuthService) Register(ctx context.Context, request *dtoAuth.RequestRegistrate) (int64, error) {
 	if errs := validation.ValidationRequestRegistrate(request); len(errs) > 0 {
-		return nil, fmt.Errorf("%w: %s", domain.ErrInvalidInput, errs[0].Message)
+		return 0, fmt.Errorf("%w: %s", domain.ErrInvalidInput, errs[0].Message)
 	}
 
 	user := &domain.User{
@@ -88,27 +94,25 @@ func (authService *AuthService) Register(ctx context.Context, request *dtoAuth.R
 
 	passwordHash, err := hash.HashPassword(request.Password)
 	if err != nil {
-		return nil, fmt.Errorf("failed to hash password: %w", err)
+		return 0, fmt.Errorf("failed to hash password: %w", err)
 	}
 	user.PasswordHash = passwordHash
 
 	createdUser, err := authService.userRepository.Create(ctx, user)
 	if err != nil {
 		if errors.Is(err, domain.ErrLoginAlreadyExists) {
-			return nil, domain.ErrLoginAlreadyExists
+			return 0, domain.ErrLoginAlreadyExists
 		} else if errors.Is(err, domain.ErrEmailAlreadyExists) {
-			return nil, domain.ErrEmailAlreadyExists
+			return 0, domain.ErrEmailAlreadyExists
 		}
-
-		return nil, fmt.Errorf("failed to create profile: %w", err)
+		return 0, fmt.Errorf("failed to create profile: %w", err)
 	}
 
-	sessionData, err := authService.SessionService.CreateSession(ctx, createdUser.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create session: %w", err)
+	if err := authService.ProfileService.Create(ctx, createdUser.ID, createdUser.Login); err != nil {
+		return 0, fmt.Errorf("failed to create profile: %w", err)
 	}
 
-	return sessionData, nil
+	return createdUser.ID, nil
 }
 
 func (authService *AuthService) Login(ctx context.Context, request *dtoAuth.RequestLogin) (*dtoSession.SessionDTO, error) {

@@ -10,13 +10,16 @@ import (
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
+	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	sessionRepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/repository/sessions"
 	userRepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/repository/user"
 	grpcTransport "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/transport/grpc"
+	grpcProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/transport/grpc/clients/profile"
 	authUsecase "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/usecase/auth"
 	sessionUsecase "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/usecase/session"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -24,6 +27,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("load config: %v", err)
 	}
+
+	profileConn, err := grpc.NewClient(cfg.AuthProfileConfig.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("dial profile grpc: %v", err)
+	}
+	defer func() { _ = profileConn.Close() }()
 
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -41,9 +50,11 @@ func main() {
 	sRepo := sessionRepo.NewSessionRepository(cfg.SessionConfig, cfg.RedisConfig, logger.Named("session_repo"))
 	defer sRepo.Close()
 
+	profileService := grpcProfile.NewProfileAdapter(profilev1.NewProfileClient(profileConn))
+
 	sSession := sessionUsecase.NewSessionService(sRepo, cfg.SessionConfig.SessionTTL)
-	sAuth := authUsecase.NewAuthService(uRepo, sSession)
-	authServer := grpcTransport.NewServer(sAuth, sSession)
+	sAuth := authUsecase.NewAuthService(uRepo, sSession, profileService)
+	authServer := grpcTransport.NewServer(sAuth, sSession, logger.Named("auth.transport"))
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())
 	if err != nil {

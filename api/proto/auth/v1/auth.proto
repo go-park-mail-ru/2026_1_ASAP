@@ -20,6 +20,20 @@ service Auth {
   rpc SetCSRFToken(RequestSetCSRFToken) returns (google.protobuf.Empty);
 }
 
+enum AuthErrorCode {
+  AUTH_ERROR_UNSPECIFIED          = 0;
+  AUTH_ERROR_EMAIL_ALREADY_EXISTS = 1;
+  AUTH_ERROR_LOGIN_ALREADY_EXISTS = 2;
+  AUTH_ERROR_INVALID_CREDENTIALS  = 3;
+  AUTH_ERROR_SESSION_EXPIRED      = 4;
+  AUTH_ERROR_CSRF_NOT_FOUND       = 5;
+  AUTH_ERROR_CSRF_EXPIRED         = 6;
+  AUTH_ERROR_SESSION_NOT_FOUND    = 7;
+  AUTH_ERROR_USER_NOT_FOUND       = 8;
+  AUTH_ERROR_INVALID_INPUT        = 9;
+  AUTH_ERROR_INTERNAL             = 10;
+}
+
 message RequestSetCSRFToken {
   string session_id = 1;
   string csrf_token = 2;
@@ -84,6 +98,7 @@ message RequestRegister {
 message ResponseRegister {
   string login = 1;
   string email = 2;
+  int64  user_id = 3;
 }
 
 message SessionMeta {

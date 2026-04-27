@@ -21,6 +21,64 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type MediaErrorCode int32
+
+const (
+	MediaErrorCode_MEDIA_ERROR_UNSPECIFIED       MediaErrorCode = 0
+	MediaErrorCode_MEDIA_ERROR_FILE_TOO_LARGE    MediaErrorCode = 1
+	MediaErrorCode_MEDIA_ERROR_FILE_INVALID_TYPE MediaErrorCode = 2
+	MediaErrorCode_MEDIA_ERROR_FILE_EMPTY        MediaErrorCode = 3
+	MediaErrorCode_MEDIA_ERROR_INTERNAL          MediaErrorCode = 4
+	MediaErrorCode_MEDIA_ERROR_INVALID_INPUT     MediaErrorCode = 5
+)
+
+// Enum value maps for MediaErrorCode.
+var (
+	MediaErrorCode_name = map[int32]string{
+		0: "MEDIA_ERROR_UNSPECIFIED",
+		1: "MEDIA_ERROR_FILE_TOO_LARGE",
+		2: "MEDIA_ERROR_FILE_INVALID_TYPE",
+		3: "MEDIA_ERROR_FILE_EMPTY",
+		4: "MEDIA_ERROR_INTERNAL",
+		5: "MEDIA_ERROR_INVALID_INPUT",
+	}
+	MediaErrorCode_value = map[string]int32{
+		"MEDIA_ERROR_UNSPECIFIED":       0,
+		"MEDIA_ERROR_FILE_TOO_LARGE":    1,
+		"MEDIA_ERROR_FILE_INVALID_TYPE": 2,
+		"MEDIA_ERROR_FILE_EMPTY":        3,
+		"MEDIA_ERROR_INTERNAL":          4,
+		"MEDIA_ERROR_INVALID_INPUT":     5,
+	}
+)
+
+func (x MediaErrorCode) Enum() *MediaErrorCode {
+	p := new(MediaErrorCode)
+	*p = x
+	return p
+}
+
+func (x MediaErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MediaErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_media_v1_media_proto_enumTypes[0].Descriptor()
+}
+
+func (MediaErrorCode) Type() protoreflect.EnumType {
+	return &file_media_v1_media_proto_enumTypes[0]
+}
+
+func (x MediaErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MediaErrorCode.Descriptor instead.
+func (MediaErrorCode) EnumDescriptor() ([]byte, []int) {
+	return file_media_v1_media_proto_rawDescGZIP(), []int{0}
+}
+
 type File struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Content       []byte                 `protobuf:"bytes,1,opt,name=content,proto3" json:"content,omitempty"`
@@ -376,7 +434,14 @@ const file_media_v1_media_proto_rawDesc = "" +
 	"avatar_url\x18\x01 \x01(\tR\tavatarUrl\"2\n" +
 	"\x17RequestDeleteUserAvatar\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\"\x1a\n" +
-	"\x18ResponseDeleteUserAvatar2\x98\x02\n" +
+	"\x18ResponseDeleteUserAvatar*\xc5\x01\n" +
+	"\x0eMediaErrorCode\x12\x1b\n" +
+	"\x17MEDIA_ERROR_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aMEDIA_ERROR_FILE_TOO_LARGE\x10\x01\x12!\n" +
+	"\x1dMEDIA_ERROR_FILE_INVALID_TYPE\x10\x02\x12\x1a\n" +
+	"\x16MEDIA_ERROR_FILE_EMPTY\x10\x03\x12\x18\n" +
+	"\x14MEDIA_ERROR_INTERNAL\x10\x04\x12\x1d\n" +
+	"\x19MEDIA_ERROR_INVALID_INPUT\x10\x052\x98\x02\n" +
 	"\x05Media\x12Y\n" +
 	"\x10UpdateUserAvatar\x12!.media.v1.RequestUpdateUserAvatar\x1a\".media.v1.ResponseUpdateUserAvatar\x12Y\n" +
 	"\x10UploadChatAvatar\x12!.media.v1.RequestUpdateChatAvatar\x1a\".media.v1.ResponseUpdateChatAvatar\x12Y\n" +
@@ -394,25 +459,27 @@ func file_media_v1_media_proto_rawDescGZIP() []byte {
 	return file_media_v1_media_proto_rawDescData
 }
 
+var file_media_v1_media_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_media_v1_media_proto_goTypes = []any{
-	(*File)(nil),                     // 0: media.v1.File
-	(*RequestUpdateUserAvatar)(nil),  // 1: media.v1.RequestUpdateUserAvatar
-	(*ResponseUpdateUserAvatar)(nil), // 2: media.v1.ResponseUpdateUserAvatar
-	(*RequestUpdateChatAvatar)(nil),  // 3: media.v1.RequestUpdateChatAvatar
-	(*ResponseUpdateChatAvatar)(nil), // 4: media.v1.ResponseUpdateChatAvatar
-	(*RequestDeleteUserAvatar)(nil),  // 5: media.v1.RequestDeleteUserAvatar
-	(*ResponseDeleteUserAvatar)(nil), // 6: media.v1.ResponseDeleteUserAvatar
+	(MediaErrorCode)(0),              // 0: media.v1.MediaErrorCode
+	(*File)(nil),                     // 1: media.v1.File
+	(*RequestUpdateUserAvatar)(nil),  // 2: media.v1.RequestUpdateUserAvatar
+	(*ResponseUpdateUserAvatar)(nil), // 3: media.v1.ResponseUpdateUserAvatar
+	(*RequestUpdateChatAvatar)(nil),  // 4: media.v1.RequestUpdateChatAvatar
+	(*ResponseUpdateChatAvatar)(nil), // 5: media.v1.ResponseUpdateChatAvatar
+	(*RequestDeleteUserAvatar)(nil),  // 6: media.v1.RequestDeleteUserAvatar
+	(*ResponseDeleteUserAvatar)(nil), // 7: media.v1.ResponseDeleteUserAvatar
 }
 var file_media_v1_media_proto_depIdxs = []int32{
-	0, // 0: media.v1.RequestUpdateUserAvatar.avatar:type_name -> media.v1.File
-	0, // 1: media.v1.RequestUpdateChatAvatar.avatar:type_name -> media.v1.File
-	1, // 2: media.v1.Media.UpdateUserAvatar:input_type -> media.v1.RequestUpdateUserAvatar
-	3, // 3: media.v1.Media.UploadChatAvatar:input_type -> media.v1.RequestUpdateChatAvatar
-	5, // 4: media.v1.Media.DeleteUserAvatar:input_type -> media.v1.RequestDeleteUserAvatar
-	2, // 5: media.v1.Media.UpdateUserAvatar:output_type -> media.v1.ResponseUpdateUserAvatar
-	4, // 6: media.v1.Media.UploadChatAvatar:output_type -> media.v1.ResponseUpdateChatAvatar
-	6, // 7: media.v1.Media.DeleteUserAvatar:output_type -> media.v1.ResponseDeleteUserAvatar
+	1, // 0: media.v1.RequestUpdateUserAvatar.avatar:type_name -> media.v1.File
+	1, // 1: media.v1.RequestUpdateChatAvatar.avatar:type_name -> media.v1.File
+	2, // 2: media.v1.Media.UpdateUserAvatar:input_type -> media.v1.RequestUpdateUserAvatar
+	4, // 3: media.v1.Media.UploadChatAvatar:input_type -> media.v1.RequestUpdateChatAvatar
+	6, // 4: media.v1.Media.DeleteUserAvatar:input_type -> media.v1.RequestDeleteUserAvatar
+	3, // 5: media.v1.Media.UpdateUserAvatar:output_type -> media.v1.ResponseUpdateUserAvatar
+	5, // 6: media.v1.Media.UploadChatAvatar:output_type -> media.v1.ResponseUpdateChatAvatar
+	7, // 7: media.v1.Media.DeleteUserAvatar:output_type -> media.v1.ResponseDeleteUserAvatar
 	5, // [5:8] is the sub-list for method output_type
 	2, // [2:5] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -430,13 +497,14 @@ func file_media_v1_media_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_media_v1_media_proto_rawDesc), len(file_media_v1_media_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_media_v1_media_proto_goTypes,
 		DependencyIndexes: file_media_v1_media_proto_depIdxs,
+		EnumInfos:         file_media_v1_media_proto_enumTypes,
 		MessageInfos:      file_media_v1_media_proto_msgTypes,
 	}.Build()
 	File_media_v1_media_proto = out.File

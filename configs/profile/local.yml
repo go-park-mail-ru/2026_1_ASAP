@@ -18,6 +18,9 @@ s3:
   public_host: localhost
   public_port: "9000"
 
+media:
+  grpc_addr: "media:8003"
+
 app:
   shutdown_seconds: 10
   log_level: info

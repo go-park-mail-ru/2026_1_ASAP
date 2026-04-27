@@ -9,6 +9,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
@@ -19,12 +20,25 @@ import (
 
 type dbPool interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
 	Close()
 }
 
 type UserRepository struct {
 	db     dbPool
 	logger *zap.Logger
+}
+
+func (r *UserRepository) Create(ctx context.Context, profileId int64, first_name string) error {
+	q := usersql.CreateProfile
+	start := time.Now()
+	_, err := r.db.Exec(ctx, q, profileId, first_name)
+
+	sqllog.LogQuery(ctx, r.log(ctx), "CreateProfile", q, start, err, []any{profileId, first_name})
+	if err != nil {
+		return fmt.Errorf("userRepository failed create profile: %w", err)
+	}
+	return nil
 }
 
 func (r *UserRepository) GetProfileIdByLogin(ctx context.Context, login string) (int64, error) {

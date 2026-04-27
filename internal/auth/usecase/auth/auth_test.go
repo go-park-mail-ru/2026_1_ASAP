@@ -28,16 +28,14 @@ func TestPositiveAuthService_Register(t *testing.T) {
 		request *dtoAuth.RequestRegistrate
 	}
 
-	sessionExpire := time.Date(2030, 6, 1, 12, 0, 0, 0, time.UTC)
-
 	tests := []struct {
 		args    args
 		prepare func(*fields)
-		want    *dtoSession.SessionDTO
+		wantID  int64
 		name    string
 	}{
 		{
-			name: "Registers profile and returns session",
+			name: "Registers user and returns user_id",
 			prepare: func(f *fields) {
 				f.userRepository.EXPECT().
 					Create(context.Background(), gomock.AssignableToTypeOf(&domain.User{})).
@@ -51,13 +49,6 @@ func TestPositiveAuthService_Register(t *testing.T) {
 							Email: u.Email,
 						}, nil
 					})
-				f.sessionService.EXPECT().
-					CreateSession(context.Background(), int64(55)).
-					Return(&dtoSession.SessionDTO{
-						SessionID: "sid-55",
-						CSRFToken: "csrf-55",
-						Expire:    sessionExpire,
-					}, nil)
 			},
 			args: args{
 				ctx: context.Background(),
@@ -67,11 +58,7 @@ func TestPositiveAuthService_Register(t *testing.T) {
 					Password: "SecurePassw0rd!",
 				},
 			},
-			want: &dtoSession.SessionDTO{
-				SessionID: "sid-55",
-				CSRFToken: "csrf-55",
-				Expire:    sessionExpire,
-			},
+			wantID: 55,
 		},
 	}
 
@@ -94,7 +81,7 @@ func TestPositiveAuthService_Register(t *testing.T) {
 			}
 			result, err := s.Register(tt.args.ctx, tt.args.request)
 			require.NoError(t, err)
-			require.Equal(t, tt.want, result)
+			require.Equal(t, tt.wantID, result)
 		})
 	}
 }

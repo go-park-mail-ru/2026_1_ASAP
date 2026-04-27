@@ -7,8 +7,7 @@ import (
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 )
 
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/session_service_mock.go -package=mock
@@ -39,40 +38,20 @@ func AuthMiddleware(sessionService authv1.AuthClient) func(http.Handler) http.Ha
 				SessionId: cookie.Value,
 			})
 			if err != nil {
-				st, ok := status.FromError(err)
-				if ok {
-					if st.Code() == codes.NotFound || st.Code() == codes.FailedPrecondition {
-						response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
-							Status: dtoApi.Error,
-							Errors: []dtoApi.ApiError{
-								{
-									Code:    dtoApi.Unauthorized,
-									Message: dtoApi.UnauthorizedMsg,
-								},
-							},
-						})
-						return
-					}
+				_, appCode, _ := grpcerr.Error(err)
+				switch authv1.AuthErrorCode(appCode) {
+				case authv1.AuthErrorCode_AUTH_ERROR_SESSION_NOT_FOUND,
+					authv1.AuthErrorCode_AUTH_ERROR_SESSION_EXPIRED:
 					response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
 						Status: dtoApi.Error,
-						Errors: []dtoApi.ApiError{
-							{
-								Code:    dtoApi.InternalError,
-								Message: dtoApi.InternalErrorMsg,
-							},
-						},
+						Errors: []dtoApi.ApiError{{Code: dtoApi.Unauthorized, Message: dtoApi.UnauthorizedMsg}},
 					})
-					return
+				default:
+					response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+						Status: dtoApi.Error,
+						Errors: []dtoApi.ApiError{{Code: dtoApi.InternalError, Message: dtoApi.InternalErrorMsg}},
+					})
 				}
-				response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
-					Status: dtoApi.Error,
-					Errors: []dtoApi.ApiError{
-						{
-							Code:    dtoApi.Unauthorized,
-							Message: dtoApi.UnauthorizedMsg,
-						},
-					},
-				})
 				return
 			}
 			if sess == nil {
