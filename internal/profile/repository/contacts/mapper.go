@@ -2,7 +2,7 @@ package contacts
 
 import (
 	contactdom "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/contact"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/null"
 )
 
 func toDomainContact(contactModel *ContactModel) *contactdom.Contact {

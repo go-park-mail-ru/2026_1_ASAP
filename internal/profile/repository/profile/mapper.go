@@ -2,7 +2,7 @@ package profile
 
 import (
 	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/null"
 )
 
 func toDomainProfile(profileModel *ProfileModel) *pdomain.Profile {

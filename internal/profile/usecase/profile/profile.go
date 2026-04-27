@@ -10,7 +10,7 @@ import (
 	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
 	media2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	profile2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sanitize"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=profile.go -destination=mock/profile_mock.go -package=mock

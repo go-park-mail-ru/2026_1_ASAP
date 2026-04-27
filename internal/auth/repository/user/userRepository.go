@@ -8,17 +8,16 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
-	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/repository/user/sql"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
-
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/user"
+	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/repository/user/sql"
 )
 
 type dbPool interface {

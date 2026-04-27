@@ -5,10 +5,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 	"github.com/gomodule/redigo/redis"
 	"go.uber.org/zap"
-
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
 )
 
 // ArgRedacted вместо value в args (тело сессии и т.п.).

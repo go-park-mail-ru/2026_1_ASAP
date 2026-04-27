@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 	minio "github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
-
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/sqllog"
 )
 
 func LogOp(ctx context.Context, logger *zap.Logger, op, objectKey string, start time.Time, err error, args []any) {

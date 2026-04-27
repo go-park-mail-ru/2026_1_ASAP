@@ -6,13 +6,13 @@ import (
 	"time"
 
 	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/s3log"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"go.uber.org/zap"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/s3log"
 )
 
 type MediaRepository struct {

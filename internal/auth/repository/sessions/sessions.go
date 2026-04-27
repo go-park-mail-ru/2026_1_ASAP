@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/redislog"
 	"github.com/gomodule/redigo/redis"
 	"go.uber.org/zap"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/session"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/loggerctx"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/redislog"
 )
 
 type SessionRepository struct {

@@ -7,7 +7,7 @@ import (
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	auth2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/mapper"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 	"google.golang.org/grpc/codes"

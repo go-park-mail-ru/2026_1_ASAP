@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/null"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,6 @@ import (
 
 	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
 	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/profile/sql"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
 )
 
 func ptr[T any](v T) *T {
