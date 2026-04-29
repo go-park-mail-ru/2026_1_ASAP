@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -27,27 +26,44 @@ import (
 )
 
 func main() {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = logger.Sync() }()
+
 	cfg, err := config.LoadGatewayConfig(os.Getenv("CONFIG_PATH"))
 	if err != nil {
-		log.Fatalf("load gateway config: %v", err)
+		logger.Fatal("load gateway config", zap.Error(err))
 	}
+	logger.Info(
+		"gateway config loaded",
+		zap.String("http_addr", cfg.Server.Host+":"+cfg.Server.Port),
+		zap.String("auth_grpc", cfg.Auth.GRPCAddr),
+		zap.String("profile_grpc", cfg.Profile.GRPCAddr),
+		zap.String("chat_grpc", cfg.Chat.GRPCAddr),
+		zap.String("chat_ws", cfg.Chat.WSAddr),
+	)
 
 	authConn, err := grpc.NewClient(cfg.Auth.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("dial auth grpc: %v", err)
+		logger.Fatal("dial auth grpc", zap.String("addr", cfg.Auth.GRPCAddr), zap.Error(err))
 	}
+	logger.Info("connected to auth grpc", zap.String("addr", cfg.Auth.GRPCAddr))
 	defer func() { _ = authConn.Close() }()
 
 	profileConn, err := grpc.NewClient(cfg.Profile.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("dial profile grpc: %v", err)
+		logger.Fatal("dial profile grpc", zap.String("addr", cfg.Profile.GRPCAddr), zap.Error(err))
 	}
+	logger.Info("connected to profile grpc", zap.String("addr", cfg.Profile.GRPCAddr))
 	defer func() { _ = profileConn.Close() }()
 
 	chatConn, err := grpc.NewClient(cfg.Chat.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("dial chat grpc: %v", err)
+		logger.Fatal("dial chat grpc", zap.String("addr", cfg.Chat.GRPCAddr), zap.Error(err))
 	}
+	logger.Info("connected to chat grpc", zap.String("addr", cfg.Chat.GRPCAddr))
 	defer func() { _ = chatConn.Close() }()
 
 	authClient := authv1.NewAuthClient(authConn)
@@ -118,13 +134,19 @@ func main() {
 	defer stop()
 
 	go func() {
+		logger.Info("gateway http server listening", zap.String("addr", server.Addr))
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("gateway listen: %v", err)
+			logger.Fatal("gateway listen", zap.Error(err))
 		}
 	}()
 
 	<-ctx.Done()
+	logger.Info("shutdown signal received, stopping gateway")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_ = server.Shutdown(shutdownCtx)
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Error("gateway shutdown error", zap.Error(err))
+		return
+	}
+	logger.Info("gateway stopped gracefully")
 }
