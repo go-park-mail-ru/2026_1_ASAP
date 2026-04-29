@@ -25,6 +25,6 @@ app:
 
 vkid:
   client_id: ""
-  redirect_uri: https://pulseapp.space/api/v1/chats
+  redirect_uri: https://pulseapp.space/chats
   auth_url: https://id.vk.ru/oauth2/auth
   public_info_url: https://id.vk.ru/oauth2/public_info

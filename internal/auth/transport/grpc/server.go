@@ -275,9 +275,43 @@ func (a *AuthServer) AuthVKID(ctx context.Context, req *authv1.RequestVKID) (*au
 		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid token exchange failed")
 	}
 
+	tokenRaw, err := io.ReadAll(tokenResp.Body)
+	if err != nil {
+		a.Log(ctx).Warn("vkid: read token response body", zap.Error(err))
+		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid token exchange failed")
+	}
+	a.Log(ctx).Info(
+		"vkid: token exchange http response",
+		zap.Int("status", tokenResp.StatusCode),
+		zap.String("redirect_uri", a.vkidConfig.RedirectURI),
+		zap.String("content_type", tokenResp.Header.Get("Content-Type")),
+		zap.Int("content_length", len(tokenRaw)),
+		zap.String("body", truncateForLog(tokenRaw, 1024)),
+	)
+
 	var token dtoVK.CallbackResponseFromVKID
-	if err := json.NewDecoder(tokenResp.Body).Decode(&token); err != nil {
-		a.Log(ctx).Warn("vkid: decode token response", zap.Error(err))
+	if err := json.Unmarshal(tokenRaw, &token); err != nil {
+		a.Log(ctx).Warn(
+			"vkid: decode token response",
+			zap.Error(err),
+			zap.Int("status", tokenResp.StatusCode),
+			zap.String("redirect_uri", a.vkidConfig.RedirectURI),
+			zap.String("content_type", tokenResp.Header.Get("Content-Type")),
+			zap.Int("content_length", len(tokenRaw)),
+			zap.String("body", truncateForLog(tokenRaw, 1024)),
+		)
+		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid token exchange failed")
+	}
+	a.Log(ctx).Info(
+		"vkid: token response",
+		zap.String("raw", truncateForLog(tokenRaw, 1024)),
+		zap.Int64("user_id", token.UserID),
+		zap.String("token_type", token.TokenType),
+		zap.String("scope", token.Scope),
+		zap.Bool("has_id_token", token.IDToken != ""),
+	)
+	if token.IDToken == "" {
+		a.Log(ctx).Warn("vkid: empty id_token in token response", zap.String("body", truncateForLog(tokenRaw, 512)))
 		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid token exchange failed")
 	}
 

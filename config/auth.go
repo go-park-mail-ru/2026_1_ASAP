@@ -50,9 +50,9 @@ type authFile struct {
 	} `yaml:"app"`
 	VKID struct {
 		ClientID      string `yaml:"client_id" env:"VKID_CLIENT_ID" env-default:""`
-		RedirectURI   string `yaml:"redirect_uri"`
-		AuthURL       string `yaml:"auth_url"`
-		PublicInfoURL string `yaml:"public_info_url"`
+		RedirectURI   string `yaml:"redirect_uri" env:"VKID_REDIRECT_URI"`
+		AuthURL       string `yaml:"auth_url" env:"VKID_AUTH_URL"`
+		PublicInfoURL string `yaml:"public_info_url" env:"VKID_PUBLIC_INFO_URL"`
 	} `yaml:"vkid"`
 }
 
