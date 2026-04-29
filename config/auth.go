@@ -49,7 +49,7 @@ type authFile struct {
 		LogLevel        string `yaml:"log_level"`
 	} `yaml:"app"`
 	VKID struct {
-		ClientID      string `yaml:"client_id"`
+		ClientID      string `yaml:"client_id" env:"VKID_CLIENT_ID" env-default:""`
 		RedirectURI   string `yaml:"redirect_uri"`
 		AuthURL       string `yaml:"auth_url"`
 		PublicInfoURL string `yaml:"public_info_url"`

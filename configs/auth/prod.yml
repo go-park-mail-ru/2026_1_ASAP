@@ -1,0 +1,30 @@
+server:
+  host: 0.0.0.0
+  port: "8001"
+
+session:
+  ttl_seconds: 86400
+
+redis:
+  host: redis
+  port: "6379"
+  database: 0
+
+profile:
+  grpc_addr: profile:8002
+
+postgres:
+  host: postgres
+  port: "5432"
+  user: postgres
+  db: asap
+
+app:
+  shutdown_seconds: 20
+  log_level: info
+
+vkid:
+  client_id: ""
+  redirect_uri: https://pulseapp.space/api/v1/auth/vk
+  auth_url: https://id.vk.ru/oauth2/auth
+  public_info_url: https://id.vk.ru/oauth2/public_info
