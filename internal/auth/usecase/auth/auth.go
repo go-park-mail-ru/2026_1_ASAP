@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/session"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/user"
@@ -17,6 +18,7 @@ import (
 
 type ProfileService interface {
 	Create(ctx context.Context, profileId int64, firstName string) error
+	UpdateName(ctx context.Context, profileId int64, firstName, secondName string) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/auth_mock.go -package=mock
@@ -45,16 +47,33 @@ type AuthService struct {
 }
 
 func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK.RequestAuth) (*dtoSession.SessionDTO, error) {
+	login := fmt.Sprintf("vk_%d", request.VKUserID)
+	firstName := strings.TrimSpace(request.FirstName)
+	if firstName == "" {
+		firstName = login
+	}
+	lastName := strings.TrimSpace(request.LastName)
+
 	user, err := authService.userRepository.GetUserByVKID(ctx, request.VKUserID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			user := &domain.User{
-				Login: fmt.Sprintf("vk_%d", request.VKUserID),
+				Login: login,
 				Email: request.Email,
 			}
 			createdUser, err := authService.userRepository.CreateUserByVKID(ctx, request.VKUserID, user)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create profile: %w", err)
+			}
+			if authService.ProfileService != nil {
+				if err := authService.ProfileService.Create(ctx, createdUser.ID, firstName); err != nil {
+					return nil, fmt.Errorf("failed to create profile: %w", err)
+				}
+				if lastName != "" {
+					if err := authService.ProfileService.UpdateName(ctx, createdUser.ID, firstName, lastName); err != nil {
+						return nil, fmt.Errorf("failed to update vk profile name: %w", err)
+					}
+				}
 			}
 			sessionData, err := authService.SessionService.CreateSession(ctx, createdUser.ID)
 			if err != nil {
@@ -108,8 +127,10 @@ func (authService *AuthService) Register(ctx context.Context, request *dtoAuth.R
 		return 0, fmt.Errorf("failed to create profile: %w", err)
 	}
 
-	if err := authService.ProfileService.Create(ctx, createdUser.ID, createdUser.Login); err != nil {
-		return 0, fmt.Errorf("failed to create profile: %w", err)
+	if authService.ProfileService != nil {
+		if err := authService.ProfileService.Create(ctx, createdUser.ID, createdUser.Login); err != nil {
+			return 0, fmt.Errorf("failed to create profile: %w", err)
+		}
 	}
 
 	return createdUser.ID, nil

@@ -19,6 +19,18 @@ func (p ProfileAdapter) Create(ctx context.Context, profileId int64, firstName s
 	return err
 }
 
+func (p ProfileAdapter) UpdateName(ctx context.Context, profileId int64, firstName, secondName string) error {
+	req := &profilev1.RequestUpdateName{
+		UserId:    profileId,
+		FirstName: firstName,
+	}
+	if secondName != "" {
+		req.SecondName = &secondName
+	}
+	_, err := p.profileService.UpdateProfileName(ctx, req)
+	return err
+}
+
 func NewProfileAdapter(profileService profilev1.ProfileClient) *ProfileAdapter {
 	return &ProfileAdapter{profileService}
 }
