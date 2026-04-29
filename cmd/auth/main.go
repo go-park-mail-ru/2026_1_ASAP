@@ -54,7 +54,7 @@ func main() {
 
 	sSession := sessionUsecase.NewSessionService(sRepo, cfg.SessionConfig.SessionTTL)
 	sAuth := authUsecase.NewAuthService(uRepo, sSession, profileService)
-	authServer := grpcTransport.NewServer(sAuth, sSession, logger.Named("auth.transport"))
+	authServer := grpcTransport.NewServer(sAuth, sSession, cfg.VKIDConfig, logger.Named("auth.transport"))
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())
 	if err != nil {

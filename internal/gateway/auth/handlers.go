@@ -224,9 +224,9 @@ func (h *GatewayAuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request) {
 				Errors: []dtoApi.ApiError{{Code: dtoApi.VKIDFailed, Message: dtoApi.VKIDFailedMsg}},
 			})
 		default:
-			response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+			response.Send(w, http.StatusBadGateway, dtoApi.ApiErrorResponse{
 				Status: dtoApi.Error,
-				Errors: []dtoApi.ApiError{{Code: dtoApi.InternalError, Message: dtoApi.InternalErrorMsg}},
+				Errors: []dtoApi.ApiError{{Code: dtoApi.VKIDFailed, Message: dtoApi.VKIDFailedMsg}},
 			})
 		}
 		return

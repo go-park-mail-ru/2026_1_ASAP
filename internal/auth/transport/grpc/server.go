@@ -2,8 +2,16 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/session"
 	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/user"
@@ -38,14 +46,16 @@ type AuthServer struct {
 
 	authUsecase    AuthUsecaseInterface
 	sessionUsecase SessionUsecaseInterface
+	vkidConfig     config.VKIDConfig
 
 	logger *zap.Logger
 }
 
-func NewServer(authUsecase AuthUsecaseInterface, sessionUsecase SessionUsecaseInterface, logger *zap.Logger) *AuthServer {
+func NewServer(authUsecase AuthUsecaseInterface, sessionUsecase SessionUsecaseInterface, vkidConfig config.VKIDConfig, logger *zap.Logger) *AuthServer {
 	return &AuthServer{
 		authUsecase:    authUsecase,
 		sessionUsecase: sessionUsecase,
+		vkidConfig:     vkidConfig,
 		logger:         logger,
 	}
 }
@@ -223,10 +233,120 @@ func (a *AuthServer) GetUserPublic(ctx context.Context, req *authv1.RequestGetUs
 	}, nil
 }
 
-func (a *AuthServer) AuthVKID(context.Context, *authv1.RequestVKID) (*authv1.ResponseLogin, error) {
-	return nil, authErr(codes.Unimplemented, authv1.AuthErrorCode_AUTH_ERROR_INTERNAL, "AuthVKID not implemented on auth service")
+func (a *AuthServer) AuthVKID(ctx context.Context, req *authv1.RequestVKID) (*authv1.ResponseLogin, error) {
+	if req == nil || req.GetCode() == "" || req.GetCodeVerifier() == "" || req.GetDeviceId() == "" {
+		return nil, authErr(codes.InvalidArgument, authv1.AuthErrorCode_AUTH_ERROR_INVALID_INPUT, "code, code_verifier and device_id are required")
+	}
+
+	tokenParams := url.Values{
+		"grant_type":    []string{"authorization_code"},
+		"code_verifier": []string{req.GetCodeVerifier()},
+		"redirect_uri":  []string{a.vkidConfig.RedirectURI},
+		"code":          []string{req.GetCode()},
+		"client_id":     []string{a.vkidConfig.ClientID},
+		"device_id":     []string{req.GetDeviceId()},
+		"state":         []string{req.GetState()},
+	}
+
+	tokenCtx, cancelToken := context.WithTimeout(ctx, 5*time.Second)
+	defer cancelToken()
+
+	tokenReq, err := http.NewRequestWithContext(
+		tokenCtx,
+		http.MethodPost,
+		a.vkidConfig.AuthURL,
+		strings.NewReader(tokenParams.Encode()),
+	)
+	if err != nil {
+		return nil, authErr(codes.Internal, authv1.AuthErrorCode_AUTH_ERROR_INTERNAL, "build vkid token request")
+	}
+	tokenReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	tokenResp, err := http.DefaultClient.Do(tokenReq)
+	if err != nil {
+		a.Log(ctx).Warn("vkid: token exchange request failed", zap.Error(err))
+		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid token exchange failed")
+	}
+	defer tokenResp.Body.Close()
+
+	if tokenResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(tokenResp.Body)
+		a.Log(ctx).Warn("vkid: token exchange non-200", zap.Int("status", tokenResp.StatusCode), zap.String("body", truncateForLog(body, 512)))
+		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid token exchange failed")
+	}
+
+	var token dtoVK.CallbackResponseFromVKID
+	if err := json.NewDecoder(tokenResp.Body).Decode(&token); err != nil {
+		a.Log(ctx).Warn("vkid: decode token response", zap.Error(err))
+		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid token exchange failed")
+	}
+
+	infoParams := url.Values{
+		"client_id": []string{a.vkidConfig.ClientID},
+		"id_token":  []string{token.IDToken},
+	}
+
+	infoCtx, cancelInfo := context.WithTimeout(ctx, 5*time.Second)
+	defer cancelInfo()
+
+	infoReq, err := http.NewRequestWithContext(
+		infoCtx,
+		http.MethodPost,
+		a.vkidConfig.PublicInfoURL,
+		strings.NewReader(infoParams.Encode()),
+	)
+	if err != nil {
+		return nil, authErr(codes.Internal, authv1.AuthErrorCode_AUTH_ERROR_INTERNAL, "build vkid public_info request")
+	}
+	infoReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	infoResp, err := http.DefaultClient.Do(infoReq)
+	if err != nil {
+		a.Log(ctx).Warn("vkid: public_info request failed", zap.Error(err))
+		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid public_info failed")
+	}
+	defer infoResp.Body.Close()
+
+	if infoResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(infoResp.Body)
+		a.Log(ctx).Warn("vkid: public_info non-200", zap.Int("status", infoResp.StatusCode), zap.String("body", truncateForLog(body, 512)))
+		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid public_info failed")
+	}
+
+	publicInfoRaw, err := io.ReadAll(infoResp.Body)
+	if err != nil {
+		return nil, authErr(codes.Internal, authv1.AuthErrorCode_AUTH_ERROR_INTERNAL, "read vkid public_info body")
+	}
+
+	authRequest, err := dtoVK.RequestAuthFromPublicInfoJSON(publicInfoRaw, token.UserID)
+	if err != nil {
+		a.Log(ctx).Warn("vkid: parse public_info payload", zap.Error(err))
+		return nil, authErr(codes.Unauthenticated, authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS, "vkid public_info payload invalid")
+	}
+
+	sessionData, err := a.authUsecase.AuthWithVKID(ctx, authRequest)
+	if err != nil {
+		a.Log(ctx).Error("vkid: auth usecase failed", zap.Error(err))
+		return nil, authErr(codes.Internal, authv1.AuthErrorCode_AUTH_ERROR_INTERNAL, "failed to auth with vkid")
+	}
+
+	return &authv1.ResponseLogin{
+		Login: fmt.Sprintf("vk_%d", authRequest.VKUserID),
+		Session: &authv1.SessionMeta{
+			SessionId: sessionData.SessionID,
+			CsrfToken: sessionData.CSRFToken,
+			ExpiresAt: timestamppb.New(sessionData.Expire),
+		},
+	}, nil
 }
 
 func (a *AuthServer) Log(ctx context.Context) *zap.Logger {
 	return loggerctx.EnrichLoggerFromContext(ctx, a.logger)
+}
+
+func truncateForLog(b []byte, max int) string {
+	if len(b) <= max {
+		return string(b)
+	}
+	return string(b[:max]) + "..."
 }
