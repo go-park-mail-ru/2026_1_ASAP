@@ -23,6 +23,7 @@ const (
 	Profile_CreateProfile_FullMethodName          = "/profile.v1.Profile/CreateProfile"
 	Profile_GetProfile_FullMethodName             = "/profile.v1.Profile/GetProfile"
 	Profile_UpdateProfileAvatar_FullMethodName    = "/profile.v1.Profile/UpdateProfileAvatar"
+	Profile_UpdateProfileAvatarURL_FullMethodName = "/profile.v1.Profile/UpdateProfileAvatarURL"
 	Profile_UpdateProfileBio_FullMethodName       = "/profile.v1.Profile/UpdateProfileBio"
 	Profile_UpdateProfileBirthDate_FullMethodName = "/profile.v1.Profile/UpdateProfileBirthDate"
 	Profile_UpdateProfileName_FullMethodName      = "/profile.v1.Profile/UpdateProfileName"
@@ -39,6 +40,7 @@ type ProfileClient interface {
 	CreateProfile(ctx context.Context, in *RequestCreateProfile, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetProfile(ctx context.Context, in *RequestGetProfile, opts ...grpc.CallOption) (*ResponseGetProfile, error)
 	UpdateProfileAvatar(ctx context.Context, in *RequestUpdateAvatar, opts ...grpc.CallOption) (*ResponseGetProfile, error)
+	UpdateProfileAvatarURL(ctx context.Context, in *RequestUpdateAvatarURL, opts ...grpc.CallOption) (*ResponseGetProfile, error)
 	UpdateProfileBio(ctx context.Context, in *RequestUpdateBio, opts ...grpc.CallOption) (*ResponseGetProfile, error)
 	UpdateProfileBirthDate(ctx context.Context, in *RequestUpdateBirthDate, opts ...grpc.CallOption) (*ResponseGetProfile, error)
 	UpdateProfileName(ctx context.Context, in *RequestUpdateName, opts ...grpc.CallOption) (*ResponseGetProfile, error)
@@ -80,6 +82,16 @@ func (c *profileClient) UpdateProfileAvatar(ctx context.Context, in *RequestUpda
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResponseGetProfile)
 	err := c.cc.Invoke(ctx, Profile_UpdateProfileAvatar_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) UpdateProfileAvatarURL(ctx context.Context, in *RequestUpdateAvatarURL, opts ...grpc.CallOption) (*ResponseGetProfile, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseGetProfile)
+	err := c.cc.Invoke(ctx, Profile_UpdateProfileAvatarURL_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -163,6 +175,7 @@ type ProfileServer interface {
 	CreateProfile(context.Context, *RequestCreateProfile) (*emptypb.Empty, error)
 	GetProfile(context.Context, *RequestGetProfile) (*ResponseGetProfile, error)
 	UpdateProfileAvatar(context.Context, *RequestUpdateAvatar) (*ResponseGetProfile, error)
+	UpdateProfileAvatarURL(context.Context, *RequestUpdateAvatarURL) (*ResponseGetProfile, error)
 	UpdateProfileBio(context.Context, *RequestUpdateBio) (*ResponseGetProfile, error)
 	UpdateProfileBirthDate(context.Context, *RequestUpdateBirthDate) (*ResponseGetProfile, error)
 	UpdateProfileName(context.Context, *RequestUpdateName) (*ResponseGetProfile, error)
@@ -188,6 +201,9 @@ func (UnimplementedProfileServer) GetProfile(context.Context, *RequestGetProfile
 }
 func (UnimplementedProfileServer) UpdateProfileAvatar(context.Context, *RequestUpdateAvatar) (*ResponseGetProfile, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateProfileAvatar not implemented")
+}
+func (UnimplementedProfileServer) UpdateProfileAvatarURL(context.Context, *RequestUpdateAvatarURL) (*ResponseGetProfile, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateProfileAvatarURL not implemented")
 }
 func (UnimplementedProfileServer) UpdateProfileBio(context.Context, *RequestUpdateBio) (*ResponseGetProfile, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateProfileBio not implemented")
@@ -281,6 +297,24 @@ func _Profile_UpdateProfileAvatar_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProfileServer).UpdateProfileAvatar(ctx, req.(*RequestUpdateAvatar))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_UpdateProfileAvatarURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestUpdateAvatarURL)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).UpdateProfileAvatarURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Profile_UpdateProfileAvatarURL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).UpdateProfileAvatarURL(ctx, req.(*RequestUpdateAvatarURL))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -429,6 +463,10 @@ var Profile_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateProfileAvatar",
 			Handler:    _Profile_UpdateProfileAvatar_Handler,
+		},
+		{
+			MethodName: "UpdateProfileAvatarURL",
+			Handler:    _Profile_UpdateProfileAvatarURL_Handler,
 		},
 		{
 			MethodName: "UpdateProfileBio",

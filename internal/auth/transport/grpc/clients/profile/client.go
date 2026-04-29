@@ -31,6 +31,14 @@ func (p ProfileAdapter) UpdateName(ctx context.Context, profileId int64, firstNa
 	return err
 }
 
+func (p ProfileAdapter) UpdateAvatarFromURL(ctx context.Context, profileId int64, avatarURL string) error {
+	_, err := p.profileService.UpdateProfileAvatarURL(ctx, &profilev1.RequestUpdateAvatarURL{
+		UserId:    profileId,
+		AvatarUrl: avatarURL,
+	})
+	return err
+}
+
 func NewProfileAdapter(profileService profilev1.ProfileClient) *ProfileAdapter {
 	return &ProfileAdapter{profileService}
 }

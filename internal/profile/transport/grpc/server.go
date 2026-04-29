@@ -29,6 +29,7 @@ type ProfileServiceInterface interface {
 	GetUserProfile(ctx context.Context, userID int64) (response *profile.ResponseGetProfile, err error)
 	UpdateProfileBio(ctx context.Context, userID int64, request *profile.RequestUpdateBio) (response *profile.ResponseUpdateProfile, err error)
 	UpdateProfileAvatar(ctx context.Context, userID int64, request *profile.RequestUpdateAvatar) (response *profile.ResponseUpdateProfile, err error)
+	UpdateProfileAvatarURL(ctx context.Context, userID int64, request *profile.RequestUpdateAvatarURL) (response *profile.ResponseUpdateProfile, err error)
 	UpdateProfileBirthDate(ctx context.Context, userID int64, request *profile.RequestUpdateBirthDate) (response *profile.ResponseUpdateProfile, err error)
 	SearchIdByLogin(ctx context.Context, login *profile.RequestSearchIdByLogin) (response *profile.ResponseSearchIdByLogin, err error)
 	UpdateProfileName(ctx context.Context, userID int64, request *profile.RequestUpdateName) (*profile.ResponseUpdateProfile, error)
@@ -111,6 +112,33 @@ func (p ProfileServer) UpdateProfileAvatar(ctx context.Context, avatar *profilev
 			return nil, grpcerr.New(codes.NotFound, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_NOT_FOUND), "profile not found")
 		default:
 			p.Log(ctx).Error("failed to update profile avatar", zap.Int64("user_id", avatar.GetUserId()), zap.Error(err))
+			return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "profile internal error")
+		}
+	}
+	return mapUpdateProfileToProto(profileDTO), nil
+}
+
+func (p ProfileServer) UpdateProfileAvatarURL(ctx context.Context, req *profilev1.RequestUpdateAvatarURL) (*profilev1.ResponseGetProfile, error) {
+	if req == nil || req.GetUserId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INVALID_INPUT), "user_id is required")
+	}
+	if strings.TrimSpace(req.GetAvatarUrl()) == "" {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_AVATAR_EMPTY), "avatar_url is required")
+	}
+
+	profileDTO, err := p.profileUseCase.UpdateProfileAvatarURL(ctx, req.GetUserId(), &profile.RequestUpdateAvatarURL{
+		AvatarURL: strings.TrimSpace(req.GetAvatarUrl()),
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, pdomain.ErrEmptyAvatar):
+			p.Log(ctx).Info("avatar url is empty", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+			return nil, grpcerr.New(codes.InvalidArgument, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_AVATAR_EMPTY), "avatar_url is empty")
+		case errors.Is(err, pdomain.ErrNotFound):
+			p.Log(ctx).Info("profile not found", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+			return nil, grpcerr.New(codes.NotFound, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_NOT_FOUND), "profile not found")
+		default:
+			p.Log(ctx).Error("failed to update profile avatar url", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
 			return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "profile internal error")
 		}
 	}

@@ -179,6 +179,36 @@ func (p ProfileService) UpdateProfileAvatar(ctx context.Context, userID int64, r
 	}, nil
 }
 
+func (p ProfileService) UpdateProfileAvatarURL(ctx context.Context, userID int64, request *profile2.RequestUpdateAvatarURL) (response *profile2.ResponseUpdateProfile, err error) {
+	if request == nil {
+		return nil, errors.New("update profile avatar url nil request")
+	}
+	if request.AvatarURL == "" {
+		return nil, profile3.ErrEmptyAvatar
+	}
+
+	profile, err := p.profileRepository.UploadAvatarUrl(ctx, userID, request.AvatarURL)
+	if err != nil {
+		return nil, fmt.Errorf("upload avatar url: %w", err)
+	}
+
+	var birthDate *string
+	if profile.BirthDate != nil {
+		date := profile.BirthDate.UTC().Format(time.DateOnly)
+		birthDate = &date
+	}
+
+	return &profile2.ResponseUpdateProfile{
+		UserId:    profile.UserId,
+		FirstName: sanitize.Text(profile.FirstName),
+		LastName:  sanitize.TextPtr(profile.LastName),
+		Avatar:    profile.Avatar,
+		BirthDate: birthDate,
+		Bio:       sanitize.TextPtr(profile.Bio),
+		LastSeen:  profile.LastSeen,
+	}, nil
+}
+
 func NewProfileService(profileRepository ProfileRepositoryInterface, mediaRepositoryInterface MediaService) *ProfileService {
 	return &ProfileService{profileRepository: profileRepository,
 		mediaRepository: mediaRepositoryInterface}

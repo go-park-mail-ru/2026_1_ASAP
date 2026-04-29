@@ -11,6 +11,7 @@ service Profile {
     rpc CreateProfile(RequestCreateProfile) returns (google.protobuf.Empty);
     rpc GetProfile(RequestGetProfile) returns (ResponseGetProfile);
     rpc UpdateProfileAvatar(RequestUpdateAvatar) returns (ResponseGetProfile);
+    rpc UpdateProfileAvatarURL(RequestUpdateAvatarURL) returns (ResponseGetProfile);
     rpc UpdateProfileBio(RequestUpdateBio) returns (ResponseGetProfile);
     rpc UpdateProfileBirthDate(RequestUpdateBirthDate) returns (ResponseGetProfile);
     rpc UpdateProfileName(RequestUpdateName) returns (ResponseGetProfile);
@@ -61,6 +62,11 @@ message RequestUpdateAvatar {
     int64 user_id = 1;
     bytes content = 2;
     string type = 3;
+}
+
+message RequestUpdateAvatarURL {
+    int64 user_id = 1;
+    string avatar_url = 2;
 }
 
 message RequestGetProfile {

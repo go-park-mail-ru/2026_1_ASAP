@@ -19,6 +19,7 @@ import (
 type ProfileService interface {
 	Create(ctx context.Context, profileId int64, firstName string) error
 	UpdateName(ctx context.Context, profileId int64, firstName, secondName string) error
+	UpdateAvatarFromURL(ctx context.Context, profileId int64, avatarURL string) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/auth_mock.go -package=mock
@@ -74,6 +75,9 @@ func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK
 						return nil, fmt.Errorf("failed to update vk profile name: %w", err)
 					}
 				}
+				if avatarURL := strings.TrimSpace(request.AvatarURL); avatarURL != "" {
+					_ = authService.ProfileService.UpdateAvatarFromURL(ctx, createdUser.ID, avatarURL)
+				}
 			}
 			sessionData, err := authService.SessionService.CreateSession(ctx, createdUser.ID)
 			if err != nil {
@@ -90,6 +94,9 @@ func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK
 		_ = authService.ProfileService.Create(ctx, user.ID, firstName)
 		if lastName != "" {
 			_ = authService.ProfileService.UpdateName(ctx, user.ID, firstName, lastName)
+		}
+		if avatarURL := strings.TrimSpace(request.AvatarURL); avatarURL != "" {
+			_ = authService.ProfileService.UpdateAvatarFromURL(ctx, user.ID, avatarURL)
 		}
 	}
 

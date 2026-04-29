@@ -20,6 +20,10 @@ type RequestUpdateAvatar struct {
 	File *media.FileInput
 }
 
+type RequestUpdateAvatarURL struct {
+	AvatarURL string `json:"avatar_url"`
+}
+
 type RequestUpdateBirthDate struct {
 	BirthDate *string `json:"birth_date,omitempty"`
 }
