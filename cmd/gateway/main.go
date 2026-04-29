@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -32,7 +31,7 @@ func main() {
 	}
 	defer func() { _ = logger.Sync() }()
 
-	cfg, err := config.LoadGatewayConfig(os.Getenv("CONFIG_PATH"))
+	cfg, err := config.LoadGatewayConfig("")
 	if err != nil {
 		logger.Fatal("load gateway config", zap.Error(err))
 	}
