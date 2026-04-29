@@ -9,14 +9,6 @@ postgres:
   user: postgres
   db: asap
 
-s3:
-  host: minio
-  port: "9000"
-  bucket: media
-  use_ssl: false
-  public_use_ssl: false
-  public_host: pulseapp.space
-  public_port: "9000"
 
 media:
   grpc_addr: "media:8003"

@@ -63,6 +63,7 @@ type S3Config struct {
 	SecretKey    string
 	PublicHost   string
 	PublicPort   string
+	PublicPath   string
 	UseSSL       bool
 	PublicUseSSL bool
 }
@@ -84,10 +85,13 @@ func (c S3Config) PublicURL() string {
 	if c.PublicUseSSL {
 		scheme = "https"
 	}
+	var base string
 	if c.PublicPort == "" || c.PublicPort == "80" || c.PublicPort == "443" {
-		return scheme + "://" + c.PublicHost
+		base = scheme + "://" + c.PublicHost
+	} else {
+		base = scheme + "://" + c.PublicHost + ":" + c.PublicPort
 	}
-	return scheme + "://" + c.PublicHost + ":" + c.PublicPort
+	return base + c.PublicPath
 }
 
 func parseZapLevel(s string) (zapcore.Level, error) {

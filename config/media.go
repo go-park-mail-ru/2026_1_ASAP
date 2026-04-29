@@ -28,6 +28,7 @@ type mediaFile struct {
 		PublicUseSSL bool   `yaml:"public_use_ssl"`
 		PublicHost   string `yaml:"public_host"`
 		PublicPort   string `yaml:"public_port"`
+		PublicPath   string `yaml:"public_path"`
 	} `yaml:"s3"`
 	App struct {
 		ShutdownSeconds int    `yaml:"shutdown_seconds"`
@@ -64,6 +65,7 @@ func LoadMediaConfigFromPath(path string) (*MediaConfig, error) {
 			SecretKey:    raw.S3.SecretKey,
 			PublicHost:   raw.S3.PublicHost,
 			PublicPort:   raw.S3.PublicPort,
+			PublicPath:   raw.S3.PublicPath,
 			UseSSL:       raw.S3.UseSSL,
 			PublicUseSSL: raw.S3.PublicUseSSL,
 		},

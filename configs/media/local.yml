@@ -7,9 +7,10 @@ s3:
   port: "9000"
   bucket: repository
   use_ssl: false
-  public_use_ssl: false
+  public_use_ssl: true
   public_host: pulseapp.space
-  public_port: "9000"
+  public_port: ""
+  public_path: /media
 
 app:
   shutdown_seconds: 10
