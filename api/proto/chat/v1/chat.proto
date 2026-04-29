@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+package chat.v1;
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1;chatv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service Chat {
+  rpc GetChats(RequestGetUserChats) returns (ResponseGetUserChats);
+  rpc Create(RequestChatCreate) returns (ChatInformation);
+  rpc GetChatByID(RequestGetChatByID) returns(ChatInformation);
+  rpc DeleteChat(RequestDeleteChat) returns (google.protobuf.Empty);
+
+  rpc UpdateChatAvatar(RequestUpdateAvatar) returns (ChatInformation);
+  rpc UpdateChatTitle(RequestUpdateTitle) returns (ChatInformation);
+  rpc AddMembersToChat(RequestAddMembersToChat) returns (google.protobuf.Empty);
+  rpc DeleteMemberFromChat(RequestDeleteMemberFromChat) returns (google.protobuf.Empty);
+  rpc GetChatMembers(RequestChatMembers) returns (ResponseGetChatMembers);
+  rpc QuitChat(RequestQuitChat) returns (google.protobuf.Empty);
+
+}
+
+enum ChatErrorCode {
+  CHAT_ERROR_UNSPECIFIED = 0;
+
+  CHAT_ERROR_INVALID_INPUT = 1;
+  CHAT_ERROR_NOT_FOUND = 2;
+  CHAT_ERROR_INTERNAL = 3;
+
+  CHAT_ERROR_DIALOG_EXISTS = 4;
+  CHAT_ERROR_CHAT_ALREADY_EXISTS = 5;
+  CHAT_ERROR_CHAT_NOT_FOUND = 6;
+
+  CHAT_ERROR_USER_NOT_FOUND = 7;
+  CHAT_ERROR_USER_NOT_MEMBER = 8;
+
+  CHAT_ERROR_ONLY_OWNER_CAN_DELETE_CHAT = 9;
+  CHAT_ERROR_ONLY_OWNER_CAN_ADD_PEOPLE = 10;
+  CHAT_ERROR_ONLY_OWNER_CAN_DELETE_PEOPLE = 11;
+
+  CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_TITLE = 12;
+  CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_AVATAR = 13;
+  CHAT_ERROR_CANT_CREATE_DIALOG_WITH_YOURSELF = 14;
+  CHAT_ERROR_DIALOG_MUST_HAVE_2_USERS = 15;
+
+  CHAT_ERROR_NO_MESSAGE = 16;
+  CHAT_ERROR_MESSAGE_EMPTY = 17;
+  CHAT_ERROR_MESSAGE_TOO_LONG = 18;
+  CHAT_ERROR_MESSAGE_NOT_MEMBER = 19;
+
+  CHAT_ERROR_MEMBER_ALREADY_IN_CHAT = 20;
+  CHAT_ERROR_MEMBER_NOT_FOUND = 21;
+  CHAT_ERROR_NOT_MEMBER = 22;
+
+  CHAT_ERROR_CANT_ADD_MEMBER_TO_DIALOG = 23;
+  CHAT_ERROR_CANT_DELETE_MEMBER_FROM_DIALOG = 24;
+  CHAT_ERROR_CANT_DELETE_OWNER_OF_CHAT = 25;
+  CHAT_ERROR_CANT_QUIT_DIALOG = 26;
+  CHAT_ERROR_OWNER_CANT_QUIT_GROUP = 27;
+}
+
+message RequestQuitChat {
+  int64 user_id = 1;
+  int64 chat_id = 2;
+}
+
+message RequestChatMembers {
+  int64 user_id = 1;
+  int64 chat_id = 2;
+}
+
+message ResponseGetChatMembers {
+  repeated int64 members_id = 1;
+}
+
+message RequestDeleteMemberFromChat {
+  int64 user_id = 1;
+  int64 chat_id = 2;
+  int64 member_id = 3;
+}
+
+message RequestAddMembersToChat {
+  int64 user_id = 1;
+  int64 chat_id = 2;
+  repeated int64 members_id = 3;
+}
+
+message RequestUpdateTitle {
+  int64 user_id = 1;
+  int64 chat_id = 2;
+  string title = 3;
+}
+
+message RequestUpdateAvatar {
+  int64 user_id = 1;
+  bytes content = 2;
+  string type = 3;
+  int64 chat_id = 4;
+}
+
+message RequestDeleteChat {
+  int64 user_id = 1;
+  int64 chat_id = 2;
+}
+
+message RequestGetChatByID {
+  int64 user_id = 1;
+  int64 chat_id = 2;
+}
+
+message RequestChatCreate {
+  int64 user_id = 1;
+  ChatType type = 2;
+  string title = 3;
+  repeated int64 members_id = 4;
+}
+
+message RequestGetUserChats {
+  int64 user_id = 1;
+}
+
+message ResponseGetUserChats {
+  repeated ChatInformation chats = 1;
+}
+
+message MessageInformation {
+  int64 sender_id = 1;
+  string text = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message ChatInformation {
+  int64 id = 1;
+  ChatType type = 2;
+  string title = 3;
+  MessageInformation last_message = 4;
+  optional string avatar = 5;
+}
+
+enum ChatType {
+  DIALOG = 0;
+  GROUP = 1;
+  CHANNEL = 2;
+}

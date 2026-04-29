@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
+	profile3 "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	media2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	profile2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
@@ -21,13 +21,13 @@ type MediaService interface {
 
 type ProfileRepositoryInterface interface {
 	Create(ctx context.Context, profileId int64, first_name string) error
-	GetProfileById(ctx context.Context, profileId int64) (*pdomain.Profile, error)
-	UploadBio(ctx context.Context, userId int64, bio string) (*pdomain.Profile, error)
-	UploadAvatarUrl(ctx context.Context, userId int64, avatarUrl string) (*pdomain.Profile, error)
-	UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*pdomain.Profile, error)
+	GetProfileById(ctx context.Context, profileId int64) (*profile3.Profile, error)
+	UploadBio(ctx context.Context, userId int64, bio string) (*profile3.Profile, error)
+	UploadAvatarUrl(ctx context.Context, userId int64, avatarUrl string) (*profile3.Profile, error)
+	UploadBirthDate(ctx context.Context, userId int64, birthDate *time.Time) (*profile3.Profile, error)
 	GetProfileIdByLogin(ctx context.Context, login string) (int64, error)
-	UploadName(ctx context.Context, userID int64, firstName string, lastName *string) (*pdomain.Profile, error)
-	DeleteUserAvatar(ctx context.Context, userId int64) (*pdomain.Profile, error)
+	UploadName(ctx context.Context, userID int64, firstName string, lastName *string) (*profile3.Profile, error)
+	DeleteUserAvatar(ctx context.Context, userId int64) (*profile3.Profile, error)
 }
 
 type ProfileService struct {
@@ -50,8 +50,8 @@ func (p ProfileService) SearchIdByLogin(ctx context.Context, login *profile2.Req
 
 	userID, err := p.profileRepository.GetProfileIdByLogin(ctx, login.Login)
 	if err != nil {
-		if errors.Is(err, pdomain.ErrNotFound) {
-			return nil, pdomain.ErrNotFound
+		if errors.Is(err, profile3.ErrNotFound) {
+			return nil, profile3.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to search profile by id: %w", err)
 	}
@@ -67,24 +67,24 @@ func (p ProfileService) UpdateProfileBirthDate(ctx context.Context, userID int64
 		return nil, errors.New("update profile bio nil request")
 	}
 	if request.BirthDate == nil {
-		return nil, pdomain.ErrInvalidBirthDate
+		return nil, profile3.ErrInvalidBirthDate
 	}
 
 	date, err := time.Parse(time.DateOnly, *request.BirthDate)
 	if err != nil {
-		return nil, pdomain.ErrInvalidBirthDateFormat
+		return nil, profile3.ErrInvalidBirthDateFormat
 	}
 	if date.After(time.Now()) {
-		return nil, pdomain.ErrInvalidBirthDate
+		return nil, profile3.ErrInvalidBirthDate
 	}
 	if date.Before(time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)) {
-		return nil, pdomain.ErrInvalidBirthDate
+		return nil, profile3.ErrInvalidBirthDate
 	}
 
 	profile, err := p.profileRepository.UploadBirthDate(ctx, userID, &date)
 	if err != nil {
-		if errors.Is(err, pdomain.ErrInvalidBirthDate) {
-			return nil, pdomain.ErrInvalidBirthDate
+		if errors.Is(err, profile3.ErrInvalidBirthDate) {
+			return nil, profile3.ErrInvalidBirthDate
 		}
 		return nil, fmt.Errorf("upload birth date: %w", err)
 	}
@@ -110,7 +110,7 @@ func (p ProfileService) UpdateProfileBio(ctx context.Context, userID int64, requ
 		return nil, errors.New("update profile bio nil request")
 	}
 	if request.Bio == nil {
-		return nil, pdomain.ErrEmptyBio
+		return nil, profile3.ErrEmptyBio
 	}
 
 	profile, err := p.profileRepository.UploadBio(ctx, userID, *request.Bio)
@@ -142,11 +142,11 @@ func (p ProfileService) UpdateProfileAvatar(ctx context.Context, userID int64, r
 	if err != nil {
 		switch {
 		case errors.Is(err, media2.ErrFileTooLarge):
-			return nil, pdomain.ErrAvatarTooLarge
+			return nil, profile3.ErrAvatarTooLarge
 		case errors.Is(err, media2.ErrInvalidFileType):
-			return nil, pdomain.ErrInvalidAvatarType
+			return nil, profile3.ErrInvalidAvatarType
 		case errors.Is(err, media2.ErrEmptyFile):
-			return nil, pdomain.ErrEmptyAvatar
+			return nil, profile3.ErrEmptyAvatar
 		}
 
 		return nil, fmt.Errorf("invalid avatar: %w", err)
@@ -187,8 +187,8 @@ func NewProfileService(profileRepository ProfileRepositoryInterface, mediaReposi
 func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (response *profile2.ResponseGetProfile, err error) {
 	profile, err := p.profileRepository.GetProfileById(ctx, userID)
 	if err != nil {
-		if errors.Is(err, pdomain.ErrNotFound) {
-			return nil, pdomain.ErrNotFound
+		if errors.Is(err, profile3.ErrNotFound) {
+			return nil, profile3.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get profile: %w", err)
 	}
@@ -215,7 +215,7 @@ func (p ProfileService) UpdateProfileName(ctx context.Context, userID int64, req
 		return nil, errors.New("update profile bio nil request")
 	}
 	if request.FirstName == "" {
-		return nil, pdomain.ErrEmptyFirstName
+		return nil, profile3.ErrEmptyFirstName
 	}
 
 	profile, err := p.profileRepository.UploadName(ctx, userID, request.FirstName, request.LastName)

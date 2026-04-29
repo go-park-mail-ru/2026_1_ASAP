@@ -1,7 +1,7 @@
 package profile
 
 import (
-	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/null"
 )
 

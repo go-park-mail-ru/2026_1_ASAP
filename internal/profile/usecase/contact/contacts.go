@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/contact"
-	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 )
 
@@ -20,7 +20,7 @@ type ContactRepositoryInterface interface {
 }
 
 type ProfileRepositoryInterface interface {
-	GetProfileById(ctx context.Context, id int64) (*pdomain.Profile, error)
+	GetProfileById(ctx context.Context, id int64) (*profile.Profile, error)
 }
 
 type ContactService struct {
@@ -67,8 +67,8 @@ func (s *ContactService) AddContact(ctx context.Context, contactRequest dto.AddC
 
 	contactUser, err := s.profileRepo.GetProfileById(ctx, contactRequest.ContactUserID)
 	if err != nil {
-		if errors.Is(err, pdomain.ErrNotFound) {
-			return nil, pdomain.ErrNotFound
+		if errors.Is(err, profile.ErrNotFound) {
+			return nil, profile.ErrNotFound
 		}
 
 		return nil, fmt.Errorf("failed to check contact user id: %w", err)
@@ -115,8 +115,8 @@ func (s *ContactService) AddContact(ctx context.Context, contactRequest dto.AddC
 func (s *ContactService) DeleteContact(ctx context.Context, contactRequest dto.DeleteContactRequest, userID int64) error {
 	_, err := s.profileRepo.GetProfileById(ctx, contactRequest.ContactUserID)
 	if err != nil {
-		if errors.Is(err, pdomain.ErrNotFound) {
-			return pdomain.ErrNotFound
+		if errors.Is(err, profile.ErrNotFound) {
+			return profile.ErrNotFound
 		}
 
 		return fmt.Errorf("failed to check contact user id: %w", err)

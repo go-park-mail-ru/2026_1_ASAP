@@ -737,6 +737,7 @@ type ResponseRegister struct {
 	Login         string                 `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"`
 	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
 	UserId        int64                  `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Session       *SessionMeta           `protobuf:"bytes,4,opt,name=session,proto3" json:"session,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -790,6 +791,13 @@ func (x *ResponseRegister) GetUserId() int64 {
 		return x.UserId
 	}
 	return 0
+}
+
+func (x *ResponseRegister) GetSession() *SessionMeta {
+	if x != nil {
+		return x.Session
+	}
+	return nil
 }
 
 type SessionMeta struct {
@@ -904,11 +912,12 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"\x0fRequestRegister\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\"W\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\"\x87\x01\n" +
 	"\x10ResponseRegister\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x17\n" +
-	"\auser_id\x18\x03 \x01(\x03R\x06userId\"\x9f\x01\n" +
+	"\auser_id\x18\x03 \x01(\x03R\x06userId\x12.\n" +
+	"\asession\x18\x04 \x01(\v2\x14.auth.v1.SessionMetaR\asession\"\x9f\x01\n" +
 	"\vSessionMeta\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x1d\n" +
@@ -976,28 +985,29 @@ var file_auth_v1_auth_proto_goTypes = []any{
 }
 var file_auth_v1_auth_proto_depIdxs = []int32{
 	15, // 0: auth.v1.ResponseLogin.session:type_name -> auth.v1.SessionMeta
-	16, // 1: auth.v1.SessionMeta.expires_at:type_name -> google.protobuf.Timestamp
-	11, // 2: auth.v1.Auth.Login:input_type -> auth.v1.RequestLogin
-	13, // 3: auth.v1.Auth.Register:input_type -> auth.v1.RequestRegister
-	9,  // 4: auth.v1.Auth.Logout:input_type -> auth.v1.RequestLogout
-	8,  // 5: auth.v1.Auth.AuthVKID:input_type -> auth.v1.RequestVKID
-	4,  // 6: auth.v1.Auth.ValidateSession:input_type -> auth.v1.RequestValidateSession
-	6,  // 7: auth.v1.Auth.GetUserPublic:input_type -> auth.v1.RequestGetUserPublic
-	2,  // 8: auth.v1.Auth.GetCSRFToken:input_type -> auth.v1.RequestGetCSRFToken
-	1,  // 9: auth.v1.Auth.SetCSRFToken:input_type -> auth.v1.RequestSetCSRFToken
-	12, // 10: auth.v1.Auth.Login:output_type -> auth.v1.ResponseLogin
-	14, // 11: auth.v1.Auth.Register:output_type -> auth.v1.ResponseRegister
-	10, // 12: auth.v1.Auth.Logout:output_type -> auth.v1.ResponseLogout
-	12, // 13: auth.v1.Auth.AuthVKID:output_type -> auth.v1.ResponseLogin
-	5,  // 14: auth.v1.Auth.ValidateSession:output_type -> auth.v1.ResponseValidateSession
-	7,  // 15: auth.v1.Auth.GetUserPublic:output_type -> auth.v1.ResponseGetUserPublic
-	3,  // 16: auth.v1.Auth.GetCSRFToken:output_type -> auth.v1.ResponseGetCSRFToken
-	17, // 17: auth.v1.Auth.SetCSRFToken:output_type -> google.protobuf.Empty
-	10, // [10:18] is the sub-list for method output_type
-	2,  // [2:10] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	15, // 1: auth.v1.ResponseRegister.session:type_name -> auth.v1.SessionMeta
+	16, // 2: auth.v1.SessionMeta.expires_at:type_name -> google.protobuf.Timestamp
+	11, // 3: auth.v1.Auth.Login:input_type -> auth.v1.RequestLogin
+	13, // 4: auth.v1.Auth.Register:input_type -> auth.v1.RequestRegister
+	9,  // 5: auth.v1.Auth.Logout:input_type -> auth.v1.RequestLogout
+	8,  // 6: auth.v1.Auth.AuthVKID:input_type -> auth.v1.RequestVKID
+	4,  // 7: auth.v1.Auth.ValidateSession:input_type -> auth.v1.RequestValidateSession
+	6,  // 8: auth.v1.Auth.GetUserPublic:input_type -> auth.v1.RequestGetUserPublic
+	2,  // 9: auth.v1.Auth.GetCSRFToken:input_type -> auth.v1.RequestGetCSRFToken
+	1,  // 10: auth.v1.Auth.SetCSRFToken:input_type -> auth.v1.RequestSetCSRFToken
+	12, // 11: auth.v1.Auth.Login:output_type -> auth.v1.ResponseLogin
+	14, // 12: auth.v1.Auth.Register:output_type -> auth.v1.ResponseRegister
+	10, // 13: auth.v1.Auth.Logout:output_type -> auth.v1.ResponseLogout
+	12, // 14: auth.v1.Auth.AuthVKID:output_type -> auth.v1.ResponseLogin
+	5,  // 15: auth.v1.Auth.ValidateSession:output_type -> auth.v1.ResponseValidateSession
+	7,  // 16: auth.v1.Auth.GetUserPublic:output_type -> auth.v1.ResponseGetUserPublic
+	3,  // 17: auth.v1.Auth.GetCSRFToken:output_type -> auth.v1.ResponseGetCSRFToken
+	17, // 18: auth.v1.Auth.SetCSRFToken:output_type -> google.protobuf.Empty
+	11, // [11:19] is the sub-list for method output_type
+	3,  // [3:11] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_auth_v1_auth_proto_init() }

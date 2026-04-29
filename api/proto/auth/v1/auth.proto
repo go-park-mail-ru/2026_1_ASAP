@@ -99,6 +99,7 @@ message ResponseRegister {
   string login = 1;
   string email = 2;
   int64  user_id = 3;
+  SessionMeta session = 4;
 }
 
 message SessionMeta {

@@ -27,6 +27,7 @@ type AuthUsecaseInterface interface {
 }
 
 type SessionUsecaseInterface interface {
+	CreateSession(ctx context.Context, userID int64) (*dtoSession.SessionDTO, error)
 	GetUserID(ctx context.Context, sessionID string) (int64, error)
 	GetCSRFToken(ctx context.Context, sessionID string) (string, error)
 	SetCSRFToken(ctx context.Context, sessionID string, token string) error
@@ -105,10 +106,21 @@ func (a *AuthServer) Register(ctx context.Context, req *authv1.RequestRegister) 
 		return nil, authErr(codes.Internal, authv1.AuthErrorCode_AUTH_ERROR_INTERNAL, "failed to register")
 	}
 
+	sessionData, err := a.sessionUsecase.CreateSession(ctx, userID)
+	if err != nil {
+		a.Log(ctx).Error("failed to create session after register", zap.Error(err))
+		return nil, authErr(codes.Internal, authv1.AuthErrorCode_AUTH_ERROR_INTERNAL, "failed to create session")
+	}
+
 	return &authv1.ResponseRegister{
 		Login:  req.GetLogin(),
 		Email:  req.GetEmail(),
 		UserId: userID,
+		Session: &authv1.SessionMeta{
+			SessionId: sessionData.SessionID,
+			CsrfToken: sessionData.CSRFToken,
+			ExpiresAt: timestamppb.New(sessionData.Expire),
+		},
 	}, nil
 }
 

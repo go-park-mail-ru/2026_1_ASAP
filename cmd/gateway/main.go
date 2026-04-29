@@ -13,11 +13,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
+	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	gwauth "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/auth"
+	gwchat "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/chat"
 	gwcontacts "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/contacts"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	gwprofile "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/profile"
+	gwws "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/ws"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -41,12 +44,20 @@ func main() {
 	}
 	defer func() { _ = profileConn.Close() }()
 
+	chatConn, err := grpc.NewClient(cfg.Chat.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("dial chat grpc: %v", err)
+	}
+	defer func() { _ = chatConn.Close() }()
+
 	authClient := authv1.NewAuthClient(authConn)
 	profileClient := profilev1.NewProfileClient(profileConn)
+	chatClient := chatv1.NewChatClient(chatConn)
 
 	authHandler := gwauth.NewGatewayAuthHandler(authClient)
 	profileHandler := gwprofile.NewGatewayProfileHandler(authClient, profileClient)
 	contactsHandler := gwcontacts.NewGatewayContactsHandler(profileClient)
+	chatHandler := gwchat.NewGatewayChatHandler(chatClient)
 	accessLogger, _ := zap.NewProduction()
 
 	authMiddleware := middleware.AuthMiddleware(authClient)
@@ -68,6 +79,8 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Delete("/{contact_user_id}", contactsHandler.DeleteContact)
 	})
 
+	router.With(authMiddleware).Handle("/api/v1/ws", gwws.NewProxy(cfg.Chat.WSAddr))
+
 	router.Route("/api/v1/profiles", func(mux chi.Router) {
 		mux.With(authMiddleware, csrfMiddleware).Get("/me", profileHandler.GetMyProfile)
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/bio", profileHandler.UpdateUserBio)
@@ -77,6 +90,19 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", profileHandler.GetUserProfile)
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/birth", profileHandler.UpdateUserBirthDate)
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/name", profileHandler.UpdateProfileName)
+	})
+
+	router.Route("/api/v1/chats", func(mux chi.Router) {
+		mux.With(authMiddleware, csrfMiddleware).Get("/", chatHandler.GetChats)
+		mux.With(authMiddleware, csrfMiddleware).Post("/", chatHandler.CreateChat)
+		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", chatHandler.GetChatByID)
+		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}", chatHandler.DeleteChat)
+		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/avatar", chatHandler.UpdateChatAvatar)
+		mux.With(authMiddleware, csrfMiddleware).Put("/{id}/title", chatHandler.UpdateChatTitle)
+		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/members", chatHandler.AddMembers)
+		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}/members/{member_id}", chatHandler.DeleteMember)
+		mux.With(authMiddleware, csrfMiddleware).Get("/{id}/members", chatHandler.GetChatMembers)
+		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}/quit", chatHandler.QuitChat)
 	})
 
 	server := &http.Server{

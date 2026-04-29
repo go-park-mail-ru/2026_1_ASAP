@@ -14,6 +14,23 @@ services:
       - profile
     restart: always
 
+  chat:
+    build:
+      context: .
+      dockerfile: ./docker/chat.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      CONFIG_PATH: configs/chat/local.yml
+    ports:
+      - "8004:8004"
+    depends_on:
+      - db
+      - migrate
+      - media
+      - profile
+    restart: always
+
   media:
     build:
       context: .

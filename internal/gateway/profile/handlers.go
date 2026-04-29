@@ -116,8 +116,8 @@ func profileResponseToDTO(resp *profilev1.ResponseGetProfile) *dto.ResponseGetPr
 		UserId:    resp.GetUserId(),
 		FirstName: resp.GetFirstName(),
 	}
-	if resp.SecondName != nil {
-		out.LastName = resp.SecondName
+	if resp.LastName != nil {
+		out.LastName = resp.LastName
 	}
 	if b := resp.GetBio(); b != "" {
 		out.Bio = &b
@@ -143,8 +143,8 @@ func updateProfileResponseToDTO(resp *profilev1.ResponseGetProfile) *dto.Respons
 		UserId:    resp.GetUserId(),
 		FirstName: resp.GetFirstName(),
 	}
-	if resp.SecondName != nil {
-		out.LastName = resp.SecondName
+	if resp.LastName != nil {
+		out.LastName = resp.LastName
 	}
 	if b := resp.GetBio(); b != "" {
 		out.Bio = &b

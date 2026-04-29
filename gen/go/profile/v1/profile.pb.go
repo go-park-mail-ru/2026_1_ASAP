@@ -894,7 +894,7 @@ type ResponseGetProfile struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	FirstName     string                 `protobuf:"bytes,2,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
-	SecondName    *string                `protobuf:"bytes,3,opt,name=second_name,json=secondName,proto3,oneof" json:"second_name,omitempty"`
+	LastName      *string                `protobuf:"bytes,3,opt,name=last_name,json=lastName,proto3,oneof" json:"last_name,omitempty"`
 	LastSeen      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_seen,json=lastSeen,proto3,oneof" json:"last_seen,omitempty"`
 	Bio           string                 `protobuf:"bytes,5,opt,name=bio,proto3" json:"bio,omitempty"`
 	BirthDate     string                 `protobuf:"bytes,6,opt,name=birth_date,json=birthDate,proto3" json:"birth_date,omitempty"`
@@ -947,9 +947,9 @@ func (x *ResponseGetProfile) GetFirstName() string {
 	return ""
 }
 
-func (x *ResponseGetProfile) GetSecondName() string {
-	if x != nil && x.SecondName != nil {
-		return *x.SecondName
+func (x *ResponseGetProfile) GetLastName() string {
+	if x != nil && x.LastName != nil {
+		return *x.LastName
 	}
 	return ""
 }
@@ -1049,19 +1049,19 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\x14RequestDeleteContact\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12&\n" +
 	"\x0fcontact_user_id\x18\x02 \x01(\x03R\rcontactUserId\"\x17\n" +
-	"\x15ResponseDeleteContact\"\x97\x02\n" +
+	"\x15ResponseDeleteContact\"\x91\x02\n" +
 	"\x12ResponseGetProfile\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1d\n" +
 	"\n" +
-	"first_name\x18\x02 \x01(\tR\tfirstName\x12$\n" +
-	"\vsecond_name\x18\x03 \x01(\tH\x00R\n" +
-	"secondName\x88\x01\x01\x12<\n" +
+	"first_name\x18\x02 \x01(\tR\tfirstName\x12 \n" +
+	"\tlast_name\x18\x03 \x01(\tH\x00R\blastName\x88\x01\x01\x12<\n" +
 	"\tlast_seen\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\blastSeen\x88\x01\x01\x12\x10\n" +
 	"\x03bio\x18\x05 \x01(\tR\x03bio\x12\x1d\n" +
 	"\n" +
 	"birth_date\x18\x06 \x01(\tR\tbirthDate\x12\x16\n" +
-	"\x06avatar\x18\a \x01(\tR\x06avatarB\x0e\n" +
-	"\f_second_nameB\f\n" +
+	"\x06avatar\x18\a \x01(\tR\x06avatarB\f\n" +
+	"\n" +
+	"_last_nameB\f\n" +
 	"\n" +
 	"_last_seen*\xd4\x03\n" +
 	"\x10ProfileErrorCode\x12\x1d\n" +

@@ -76,7 +76,7 @@ func (h *GatewayAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
+		Secure:   false,
 	})
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.GetSession().GetCsrfToken())
 
@@ -138,6 +138,15 @@ func (h *GatewayAuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    resp.GetSession().GetSessionId(),
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   false,
+	})
+	w.Header().Set("X-NEW-CSRF-TOKEN", resp.GetSession().GetCsrfToken())
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseRegisterSuccess]{
 		Status: dtoApi.Success,

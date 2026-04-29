@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
-	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/profile"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"

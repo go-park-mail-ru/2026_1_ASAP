@@ -20,7 +20,7 @@ func mapGetProfileToProto(profileDTO *dto.ResponseGetProfile) *profilev1.Respons
 	}
 
 	if profileDTO.LastName != nil {
-		resp.SecondName = profileDTO.LastName
+		resp.LastName = profileDTO.LastName
 	}
 	if profileDTO.LastSeen != nil {
 		resp.LastSeen = timestamppb.New(*profileDTO.LastSeen)
@@ -43,7 +43,7 @@ func mapUpdateProfileToProto(profileDTO *dto.ResponseUpdateProfile) *profilev1.R
 	}
 
 	if profileDTO.LastName != nil {
-		resp.SecondName = profileDTO.LastName
+		resp.LastName = profileDTO.LastName
 	}
 	if profileDTO.LastSeen != nil {
 		resp.LastSeen = timestamppb.New(*profileDTO.LastSeen)
@@ -66,7 +66,7 @@ func mapDeleteProfileToProto(profileDTO *dto.ResponseDeleteProfile) *profilev1.R
 	}
 
 	if profileDTO.LastName != nil {
-		resp.SecondName = profileDTO.LastName
+		resp.LastName = profileDTO.LastName
 	}
 	if profileDTO.LastSeen != nil {
 		resp.LastSeen = timestamppb.New(*profileDTO.LastSeen)

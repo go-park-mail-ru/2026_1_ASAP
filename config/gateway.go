@@ -10,6 +10,7 @@ type GatewayConfig struct {
 	Server  GatewayServerConfig  `yaml:"server"`
 	Auth    GatewayAuthConfig    `yaml:"auth"`
 	Profile GatewayProfileConfig `yaml:"profile"`
+	Chat    GatewayChatConfig    `yaml:"chat"`
 }
 
 type GatewayServerConfig struct {
@@ -23,6 +24,11 @@ type GatewayAuthConfig struct {
 
 type GatewayProfileConfig struct {
 	GRPCAddr string `yaml:"grpc_addr" env-default:"profile:8002"`
+}
+
+type GatewayChatConfig struct {
+	WSAddr   string `yaml:"ws_addr" env-default:"chat:8005"`
+	GRPCAddr string `yaml:"grpc_addr" env-default:"chat:8004"`
 }
 
 func LoadGatewayConfig(path string) (*GatewayConfig, error) {
