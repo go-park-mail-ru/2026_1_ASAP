@@ -56,3 +56,14 @@ func TestRequestAuthFromPublicInfoJSON_apiError(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "invalid_id_token")
 }
+
+func TestRequestAuthFromPublicInfoJSON_userWithAltFieldNames(t *testing.T) {
+	raw := `{"user":{"id":"42","given_name":"John","family_name":"Doe","mail":"john@doe.test","avatar_url":"https://example/avatar.png"}}`
+	got, err := RequestAuthFromPublicInfoJSON([]byte(raw), 0)
+	require.NoError(t, err)
+	require.Equal(t, int64(42), got.VKUserID)
+	require.Equal(t, "John", got.FirstName)
+	require.Equal(t, "Doe", got.LastName)
+	require.Equal(t, "john@doe.test", got.Email)
+	require.Equal(t, "https://example/avatar.png", got.AvatarURL)
+}

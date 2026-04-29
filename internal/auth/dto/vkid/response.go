@@ -44,8 +44,10 @@ func RequestAuthFromPublicInfoJSON(body []byte, oauthUserID int64) (*RequestAuth
 		return nil, fmt.Errorf("public_info api: %s", apiErr.Error)
 	}
 
-	if userRaw, ok := root["profile"]; ok && len(userRaw) > 0 && string(userRaw) != "null" {
-		return decodePublicInfoUser(userRaw, oauthUserID)
+	for _, key := range []string{"profile", "user", "response", "data"} {
+		if userRaw, ok := root[key]; ok && len(userRaw) > 0 && string(userRaw) != "null" {
+			return decodePublicInfoUser(userRaw, oauthUserID)
+		}
 	}
 
 	var flat RequestAuth
@@ -71,15 +73,28 @@ func decodePublicInfoUser(userRaw json.RawMessage, oauthUserID int64) (*RequestA
 		return nil, err
 	}
 
-	if len(u.UserIDRaw) == 0 {
-		var loose map[string]json.RawMessage
-		if err := json.Unmarshal(userRaw, &loose); err == nil {
+	var loose map[string]json.RawMessage
+	if err := json.Unmarshal(userRaw, &loose); err == nil {
+		if len(u.UserIDRaw) == 0 {
 			for _, key := range []string{"user_id", "id"} {
 				if v, ok := loose[key]; ok && len(v) > 0 && string(v) != "null" {
 					u.UserIDRaw = v
 					break
 				}
 			}
+		}
+		// VK can return differently named fields depending on scopes/version.
+		if u.Email == "" {
+			u.Email = extractStringField(loose, "email", "mail")
+		}
+		if u.FirstName == "" {
+			u.FirstName = extractStringField(loose, "first_name", "firstName", "given_name", "name")
+		}
+		if u.LastName == "" {
+			u.LastName = extractStringField(loose, "last_name", "lastName", "family_name", "surname")
+		}
+		if u.Avatar == "" {
+			u.Avatar = extractStringField(loose, "avatar", "avatar_url", "picture")
 		}
 	}
 
@@ -101,6 +116,20 @@ func decodePublicInfoUser(userRaw json.RawMessage, oauthUserID int64) (*RequestA
 		LastName:  u.LastName,
 		AvatarURL: u.Avatar,
 	}, nil
+}
+
+func extractStringField(obj map[string]json.RawMessage, keys ...string) string {
+	for _, key := range keys {
+		raw, ok := obj[key]
+		if !ok || len(raw) == 0 || string(raw) == "null" {
+			continue
+		}
+		var s string
+		if err := json.Unmarshal(raw, &s); err == nil && s != "" {
+			return s
+		}
+	}
+	return ""
 }
 
 func truncateRunes(s string, maxRunes int) string {
