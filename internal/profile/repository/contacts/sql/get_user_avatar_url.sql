@@ -1,3 +1,3 @@
 SELECT avatar_url
-FROM users
-WHERE id = $1
+FROM profiles
+WHERE user_id = $1

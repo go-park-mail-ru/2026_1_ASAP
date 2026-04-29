@@ -1,3 +1,3 @@
-SELECT user_id
-FROM profiles
+SELECT id
+FROM users
 WHERE login = $1;
