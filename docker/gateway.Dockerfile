@@ -23,6 +23,6 @@ COPY --from=build_stage /app/gateway ./gateway
 COPY --from=build_stage /app/configs ./configs
 RUN chmod +x ./gateway
 
-EXPOSE 8080/tcp
+EXPOSE 8088/tcp
 
 ENTRYPOINT ["./gateway"]
