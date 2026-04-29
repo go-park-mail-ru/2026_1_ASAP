@@ -15,7 +15,7 @@ s3:
   bucket: media
   use_ssl: false
   public_use_ssl: false
-  public_host: localhost
+  public_host: pulseapp.space
   public_port: "9000"
 
 media:

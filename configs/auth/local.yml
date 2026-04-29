@@ -25,7 +25,7 @@ s3:
   bucket: media
   use_ssl: false
   public_use_ssl: false
-  public_host: localhost
+  public_host: pulseapp.space
   public_port: "9000"
 
 app:
@@ -34,6 +34,6 @@ app:
 
 vkid:
   client_id: test-client-id
-  redirect_uri: http://localhost:8080/api/v1/auth/vk
+  redirect_uri: https://pulseapp.space/api/v1/auth/vk
   auth_url: https://id.vk.ru/oauth2/auth
   public_info_url: https://id.vk.ru/oauth2/public_info

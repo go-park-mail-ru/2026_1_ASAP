@@ -8,10 +8,11 @@ services:
     environment:
       CONFIG_PATH: configs/gateway/local.yml
     ports:
-      - "8080:8080"
+      - "8088:8088"
     depends_on:
       - auth
       - profile
+      - chat
     restart: always
 
   chat:
@@ -24,6 +25,7 @@ services:
       CONFIG_PATH: configs/chat/local.yml
     ports:
       - "8004:8004"
+      - "8005:8005"
     depends_on:
       - db
       - migrate
