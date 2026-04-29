@@ -69,6 +69,7 @@ func main() {
 
 	router.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", authHandler.Login)
+		mux.Post("/vk", authHandler.VkIDLogin)
 		mux.Post("/register", authHandler.Register)
 		mux.With(authMiddleware, csrfMiddleware).Post("/logout", authHandler.Logout)
 	})

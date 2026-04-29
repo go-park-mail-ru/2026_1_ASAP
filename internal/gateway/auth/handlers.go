@@ -6,6 +6,7 @@ import (
 
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	auth2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
+	dtoVK "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/vkid"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
@@ -187,5 +188,62 @@ func (h *GatewayAuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseLogoutSuccess]{
 		Status: dtoApi.Success,
 		Body:   auth2.ResponseLogoutSuccess{},
+	})
+}
+
+func (h *GatewayAuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ctx := r.Context()
+
+	var request dtoVK.RequestVKID
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
+		})
+		return
+	}
+
+	session, err := h.AuthService.AuthVKID(ctx, &authv1.RequestVKID{
+		Code:         request.Code,
+		State:        request.State,
+		CodeVerifier: request.CodeVerifier,
+		DeviceId:     request.DeviceID,
+	})
+	if err != nil {
+		_, appCode, _ := grpcerr.Error(err)
+		switch authv1.AuthErrorCode(appCode) {
+		case authv1.AuthErrorCode_AUTH_ERROR_INVALID_INPUT:
+			response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
+			})
+		case authv1.AuthErrorCode_AUTH_ERROR_INVALID_CREDENTIALS:
+			response.Send(w, http.StatusUnauthorized, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.VKIDFailed, Message: dtoApi.VKIDFailedMsg}},
+			})
+		default:
+			response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
+				Status: dtoApi.Error,
+				Errors: []dtoApi.ApiError{{Code: dtoApi.InternalError, Message: dtoApi.InternalErrorMsg}},
+			})
+		}
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    session.GetSession().GetSessionId(),
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   false,
+	})
+	w.Header().Set("X-NEW-CSRF-TOKEN", session.GetSession().GetCsrfToken())
+
+	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseLoginSuccess]{
+		Status: dtoApi.Success,
+		Body:   auth2.ResponseLoginSuccess{Login: session.GetLogin()},
 	})
 }
