@@ -14,7 +14,7 @@ profile:
   grpc_addr: profile:8002
 
 postgres:
-  host: postgres
+  host: db
   port: "5432"
   user: postgres
   db: asap

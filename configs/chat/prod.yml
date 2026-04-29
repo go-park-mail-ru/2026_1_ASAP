@@ -7,7 +7,7 @@ ws_server:
   port: "8005"
 
 postgres:
-  host: postgres
+  host: db
   port: "5432"
   user: postgres
   db: asap
