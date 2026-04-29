@@ -86,6 +86,13 @@ func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK
 		return nil, fmt.Errorf("failed to get profile: %w", err)
 	}
 
+	if authService.ProfileService != nil {
+		_ = authService.ProfileService.Create(ctx, user.ID, firstName)
+		if lastName != "" {
+			_ = authService.ProfileService.UpdateName(ctx, user.ID, firstName, lastName)
+		}
+	}
+
 	sessionData, err := authService.SessionService.CreateSession(ctx, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
