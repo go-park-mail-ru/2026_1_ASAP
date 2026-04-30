@@ -110,13 +110,23 @@ func (h *GatewayComplaintHandler) createComplaint(w http.ResponseWriter, r *http
 			sendInvalidJSON(w)
 			return
 		}
-		req.Type = mapComplaintTypeFromString(r.FormValue("type"))
-		req.Body = r.FormValue("body")
-		req.Feedback = &complaintv1.Feedback{
-			FeedbackName:  r.FormValue("feedback_name"),
-			FeedbackEmail: r.FormValue("feedback_email"),
+		payloadRaw := strings.TrimSpace(r.FormValue("payload"))
+		if payloadRaw == "" {
+			sendInvalidJSON(w)
+			return
 		}
-		file, header, err := r.FormFile("file")
+		var payload createComplaintRequest
+		if err := json.Unmarshal([]byte(payloadRaw), &payload); err != nil {
+			sendInvalidJSON(w)
+			return
+		}
+		req.Type = mapComplaintTypeFromString(payload.Type)
+		req.Body = payload.Body
+		req.Feedback = &complaintv1.Feedback{
+			FeedbackName:  payload.Feedback.FeedbackName,
+			FeedbackEmail: payload.Feedback.FeedbackEmail,
+		}
+		file, header, err := r.FormFile("attachment")
 		if err == nil {
 			defer file.Close()
 			content, readErr := io.ReadAll(file)
