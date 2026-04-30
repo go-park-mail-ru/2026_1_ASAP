@@ -57,6 +57,8 @@ func mapDomainErr(err error) error {
 
 	case errors.Is(err, domain.ErrOnlyOwnerCanDeleteChat),
 		errors.Is(err, domain.ErrOnlyOwnerCanAddPeople),
+		errors.Is(err, domain.ErrOnlyOwnerCanChangeAvatar),
+		errors.Is(err, domain.ErrOnlyOwnerCanChangeTitle),
 		errors.Is(err, domain.ErrOnlyOwnerCanDeletePeople):
 		return grpcerr.New(
 			codes.PermissionDenied,
