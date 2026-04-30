@@ -23,6 +23,10 @@ func EncodeMessageGet(m *dto.ResponseGetMessages) ([]byte, error) {
 	return Encode(MessageGet, m)
 }
 
+func EncodeMessageEdit(m *dto.ResponseSendMessage) ([]byte, error) {
+	return Encode(MessageUpdate, m)
+}
+
 func EncodeChatNew(c *chatdto.ChatInformationDTO) ([]byte, error) {
 	return Encode(ChatNew, c)
 }

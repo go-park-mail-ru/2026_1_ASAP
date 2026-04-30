@@ -17,6 +17,7 @@ const maxMessageRunes = 2000
 type MessageRepositoryInterface interface {
 	CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
 	GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error)
+	UpdateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
 }
 
 type ChatRepositoryInterface interface {
@@ -135,6 +136,49 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 		SenderID:  createdMessage.SenderId,
 		Text:      sanitize.Text(createdMessage.Content),
 		CreatedAt: createdMessage.CreatedAt,
+	}, nil
+}
+
+func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseSendMessage, error) {
+	if req == nil {
+		return nil, errors.New("edit message nil request")
+	}
+
+	if req.Text == "" {
+		return nil, domain.ErrMessageEmpty
+	}
+
+	if utf8.RuneCountInString(req.Text) > maxMessageRunes {
+		return nil, domain.ErrMessageTooLong
+	}
+
+	isUserMember, err := m.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("chatrepo check is member: %w", err)
+	}
+
+	if !isUserMember {
+		return nil, domain.ErrMessageNotMember
+	}
+
+	message := &domain.Message{
+		Id:       req.MessageID,
+		ChatId:   chatID,
+		SenderId: userID,
+		Content:  req.Text,
+	}
+
+	editedMessage, err := m.messageRepo.UpdateMessage(ctx, message)
+	if err != nil {
+		return nil, fmt.Errorf("messageRepo updated message: %w", err)
+	}
+
+	return &dto.ResponseSendMessage{
+		ID:        editedMessage.Id,
+		ChatID:    editedMessage.ChatId,
+		SenderID:  editedMessage.SenderId,
+		Text:      sanitize.Text(editedMessage.Content),
+		CreatedAt: editedMessage.CreatedAt,
 	}, nil
 }
 

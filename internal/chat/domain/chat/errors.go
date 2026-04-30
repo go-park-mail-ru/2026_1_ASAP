@@ -31,4 +31,5 @@ var (
 	ErrOnlyOwnerCanSendMessaage     = errors.New("Only owner can send message in this chat")
 	ErrOnlyOwnerCanChangeAvatar     = errors.New("Only owner can change avatar")
 	ErrOnlyOwnerCanChangeTitle      = errors.New("Only owner can change title")
+	ErrCantEditMessage              = errors.New("You cant edit this message")
 )

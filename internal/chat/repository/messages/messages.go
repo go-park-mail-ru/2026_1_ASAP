@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,6 +22,7 @@ type dbPool interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	Close()
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
+	QueryRow(ctx context.Context, sql string, args ...any) (pgx.Row)
 }
 
 type MessageRepository struct {
@@ -89,6 +91,31 @@ func (m *MessageRepository) CreateMessage(ctx context.Context, message *domain.M
 		return nil, fmt.Errorf("commit tx: %w", err)
 	}
 	sqllog.LogQuery(ctx, m.log(ctx), "CreateMessage.commit", "COMMIT", start, nil, []any{messageModel.ChatId})
+
+	return toDomainModel(messageModel), nil
+}
+
+func (m *MessageRepository) UpdateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error) {
+	q := messagessql.UpdateMessage
+	messageModel := toModel(message)
+	start := time.Now()
+	row := m.db.QueryRow(ctx, q, messageModel.Content, messageModel.Id, messageModel.ChatId, messageModel.SenderId)
+	err := row.Scan(
+		&messageModel.Id,
+		&messageModel.ChatId,
+		&messageModel.SenderId,
+		&messageModel.Content,
+		&messageModel.CreatedAt,
+		&messageModel.UpdatedAt,
+		&messageModel.Edited,
+	)
+	sqllog.LogQuery(ctx, m.log(ctx), "UpdateMessage", q, start, err, []any{messageModel.Content, messageModel.Id, messageModel.ChatId, messageModel.SenderId})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrNoMessage
+		}
+		return nil, fmt.Errorf("failed to scan message: %w", err)
+	}
 
 	return toDomainModel(messageModel), nil
 }
