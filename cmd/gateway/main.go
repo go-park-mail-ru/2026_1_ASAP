@@ -128,7 +128,7 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", chatHandler.GetChatByID)
 		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}", chatHandler.DeleteChat)
 		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/avatar", chatHandler.UpdateChatAvatar)
-		mux.With(authMiddleware, csrfMiddleware).Put("/{id}/title", chatHandler.UpdateChatTitle)
+		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/title", chatHandler.UpdateChatTitle)
 		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/members", chatHandler.AddMembers)
 		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}/members/{member_id}", chatHandler.DeleteMember)
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}/members", chatHandler.GetChatMembers)
