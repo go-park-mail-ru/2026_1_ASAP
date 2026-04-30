@@ -331,6 +331,102 @@ func (x *ResponseUpdateChatAvatar) GetAvatarUrl() string {
 	return ""
 }
 
+type RequestUpdateComplaintAttachment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ComplaintId   int64                  `protobuf:"varint,1,opt,name=complaint_id,json=complaintId,proto3" json:"complaint_id,omitempty"`
+	Attachment    *File                  `protobuf:"bytes,2,opt,name=attachment,proto3" json:"attachment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestUpdateComplaintAttachment) Reset() {
+	*x = RequestUpdateComplaintAttachment{}
+	mi := &file_media_v1_media_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestUpdateComplaintAttachment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestUpdateComplaintAttachment) ProtoMessage() {}
+
+func (x *RequestUpdateComplaintAttachment) ProtoReflect() protoreflect.Message {
+	mi := &file_media_v1_media_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestUpdateComplaintAttachment.ProtoReflect.Descriptor instead.
+func (*RequestUpdateComplaintAttachment) Descriptor() ([]byte, []int) {
+	return file_media_v1_media_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RequestUpdateComplaintAttachment) GetComplaintId() int64 {
+	if x != nil {
+		return x.ComplaintId
+	}
+	return 0
+}
+
+func (x *RequestUpdateComplaintAttachment) GetAttachment() *File {
+	if x != nil {
+		return x.Attachment
+	}
+	return nil
+}
+
+type ResponseUpdateComplaintAttachment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AttachmentUrl string                 `protobuf:"bytes,1,opt,name=attachment_url,json=attachmentUrl,proto3" json:"attachment_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResponseUpdateComplaintAttachment) Reset() {
+	*x = ResponseUpdateComplaintAttachment{}
+	mi := &file_media_v1_media_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResponseUpdateComplaintAttachment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResponseUpdateComplaintAttachment) ProtoMessage() {}
+
+func (x *ResponseUpdateComplaintAttachment) ProtoReflect() protoreflect.Message {
+	mi := &file_media_v1_media_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResponseUpdateComplaintAttachment.ProtoReflect.Descriptor instead.
+func (*ResponseUpdateComplaintAttachment) Descriptor() ([]byte, []int) {
+	return file_media_v1_media_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ResponseUpdateComplaintAttachment) GetAttachmentUrl() string {
+	if x != nil {
+		return x.AttachmentUrl
+	}
+	return ""
+}
+
 type RequestDeleteUserAvatar struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -340,7 +436,7 @@ type RequestDeleteUserAvatar struct {
 
 func (x *RequestDeleteUserAvatar) Reset() {
 	*x = RequestDeleteUserAvatar{}
-	mi := &file_media_v1_media_proto_msgTypes[5]
+	mi := &file_media_v1_media_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -352,7 +448,7 @@ func (x *RequestDeleteUserAvatar) String() string {
 func (*RequestDeleteUserAvatar) ProtoMessage() {}
 
 func (x *RequestDeleteUserAvatar) ProtoReflect() protoreflect.Message {
-	mi := &file_media_v1_media_proto_msgTypes[5]
+	mi := &file_media_v1_media_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -365,7 +461,7 @@ func (x *RequestDeleteUserAvatar) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestDeleteUserAvatar.ProtoReflect.Descriptor instead.
 func (*RequestDeleteUserAvatar) Descriptor() ([]byte, []int) {
-	return file_media_v1_media_proto_rawDescGZIP(), []int{5}
+	return file_media_v1_media_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RequestDeleteUserAvatar) GetUserId() int64 {
@@ -383,7 +479,7 @@ type ResponseDeleteUserAvatar struct {
 
 func (x *ResponseDeleteUserAvatar) Reset() {
 	*x = ResponseDeleteUserAvatar{}
-	mi := &file_media_v1_media_proto_msgTypes[6]
+	mi := &file_media_v1_media_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -395,7 +491,7 @@ func (x *ResponseDeleteUserAvatar) String() string {
 func (*ResponseDeleteUserAvatar) ProtoMessage() {}
 
 func (x *ResponseDeleteUserAvatar) ProtoReflect() protoreflect.Message {
-	mi := &file_media_v1_media_proto_msgTypes[6]
+	mi := &file_media_v1_media_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -408,7 +504,7 @@ func (x *ResponseDeleteUserAvatar) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResponseDeleteUserAvatar.ProtoReflect.Descriptor instead.
 func (*ResponseDeleteUserAvatar) Descriptor() ([]byte, []int) {
-	return file_media_v1_media_proto_rawDescGZIP(), []int{6}
+	return file_media_v1_media_proto_rawDescGZIP(), []int{8}
 }
 
 var File_media_v1_media_proto protoreflect.FileDescriptor
@@ -431,7 +527,14 @@ const file_media_v1_media_proto_rawDesc = "" +
 	"\x06avatar\x18\x02 \x01(\v2\x0e.media.v1.FileR\x06avatar\"9\n" +
 	"\x18ResponseUpdateChatAvatar\x12\x1d\n" +
 	"\n" +
-	"avatar_url\x18\x01 \x01(\tR\tavatarUrl\"2\n" +
+	"avatar_url\x18\x01 \x01(\tR\tavatarUrl\"u\n" +
+	" RequestUpdateComplaintAttachment\x12!\n" +
+	"\fcomplaint_id\x18\x01 \x01(\x03R\vcomplaintId\x12.\n" +
+	"\n" +
+	"attachment\x18\x02 \x01(\v2\x0e.media.v1.FileR\n" +
+	"attachment\"J\n" +
+	"!ResponseUpdateComplaintAttachment\x12%\n" +
+	"\x0eattachment_url\x18\x01 \x01(\tR\rattachmentUrl\"2\n" +
 	"\x17RequestDeleteUserAvatar\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\"\x1a\n" +
 	"\x18ResponseDeleteUserAvatar*\xc5\x01\n" +
@@ -441,10 +544,11 @@ const file_media_v1_media_proto_rawDesc = "" +
 	"\x1dMEDIA_ERROR_FILE_INVALID_TYPE\x10\x02\x12\x1a\n" +
 	"\x16MEDIA_ERROR_FILE_EMPTY\x10\x03\x12\x18\n" +
 	"\x14MEDIA_ERROR_INTERNAL\x10\x04\x12\x1d\n" +
-	"\x19MEDIA_ERROR_INVALID_INPUT\x10\x052\x98\x02\n" +
+	"\x19MEDIA_ERROR_INVALID_INPUT\x10\x052\x8e\x03\n" +
 	"\x05Media\x12Y\n" +
 	"\x10UpdateUserAvatar\x12!.media.v1.RequestUpdateUserAvatar\x1a\".media.v1.ResponseUpdateUserAvatar\x12Y\n" +
-	"\x10UploadChatAvatar\x12!.media.v1.RequestUpdateChatAvatar\x1a\".media.v1.ResponseUpdateChatAvatar\x12Y\n" +
+	"\x10UploadChatAvatar\x12!.media.v1.RequestUpdateChatAvatar\x1a\".media.v1.ResponseUpdateChatAvatar\x12t\n" +
+	"\x19UploadComplaintAttachment\x12*.media.v1.RequestUpdateComplaintAttachment\x1a+.media.v1.ResponseUpdateComplaintAttachment\x12Y\n" +
 	"\x10DeleteUserAvatar\x12!.media.v1.RequestDeleteUserAvatar\x1a\".media.v1.ResponseDeleteUserAvatarB@Z>github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1;mediav1b\x06proto3"
 
 var (
@@ -460,31 +564,36 @@ func file_media_v1_media_proto_rawDescGZIP() []byte {
 }
 
 var file_media_v1_media_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_media_v1_media_proto_goTypes = []any{
-	(MediaErrorCode)(0),              // 0: media.v1.MediaErrorCode
-	(*File)(nil),                     // 1: media.v1.File
-	(*RequestUpdateUserAvatar)(nil),  // 2: media.v1.RequestUpdateUserAvatar
-	(*ResponseUpdateUserAvatar)(nil), // 3: media.v1.ResponseUpdateUserAvatar
-	(*RequestUpdateChatAvatar)(nil),  // 4: media.v1.RequestUpdateChatAvatar
-	(*ResponseUpdateChatAvatar)(nil), // 5: media.v1.ResponseUpdateChatAvatar
-	(*RequestDeleteUserAvatar)(nil),  // 6: media.v1.RequestDeleteUserAvatar
-	(*ResponseDeleteUserAvatar)(nil), // 7: media.v1.ResponseDeleteUserAvatar
+	(MediaErrorCode)(0),                       // 0: media.v1.MediaErrorCode
+	(*File)(nil),                              // 1: media.v1.File
+	(*RequestUpdateUserAvatar)(nil),           // 2: media.v1.RequestUpdateUserAvatar
+	(*ResponseUpdateUserAvatar)(nil),          // 3: media.v1.ResponseUpdateUserAvatar
+	(*RequestUpdateChatAvatar)(nil),           // 4: media.v1.RequestUpdateChatAvatar
+	(*ResponseUpdateChatAvatar)(nil),          // 5: media.v1.ResponseUpdateChatAvatar
+	(*RequestUpdateComplaintAttachment)(nil),  // 6: media.v1.RequestUpdateComplaintAttachment
+	(*ResponseUpdateComplaintAttachment)(nil), // 7: media.v1.ResponseUpdateComplaintAttachment
+	(*RequestDeleteUserAvatar)(nil),           // 8: media.v1.RequestDeleteUserAvatar
+	(*ResponseDeleteUserAvatar)(nil),          // 9: media.v1.ResponseDeleteUserAvatar
 }
 var file_media_v1_media_proto_depIdxs = []int32{
 	1, // 0: media.v1.RequestUpdateUserAvatar.avatar:type_name -> media.v1.File
 	1, // 1: media.v1.RequestUpdateChatAvatar.avatar:type_name -> media.v1.File
-	2, // 2: media.v1.Media.UpdateUserAvatar:input_type -> media.v1.RequestUpdateUserAvatar
-	4, // 3: media.v1.Media.UploadChatAvatar:input_type -> media.v1.RequestUpdateChatAvatar
-	6, // 4: media.v1.Media.DeleteUserAvatar:input_type -> media.v1.RequestDeleteUserAvatar
-	3, // 5: media.v1.Media.UpdateUserAvatar:output_type -> media.v1.ResponseUpdateUserAvatar
-	5, // 6: media.v1.Media.UploadChatAvatar:output_type -> media.v1.ResponseUpdateChatAvatar
-	7, // 7: media.v1.Media.DeleteUserAvatar:output_type -> media.v1.ResponseDeleteUserAvatar
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	1, // 2: media.v1.RequestUpdateComplaintAttachment.attachment:type_name -> media.v1.File
+	2, // 3: media.v1.Media.UpdateUserAvatar:input_type -> media.v1.RequestUpdateUserAvatar
+	4, // 4: media.v1.Media.UploadChatAvatar:input_type -> media.v1.RequestUpdateChatAvatar
+	6, // 5: media.v1.Media.UploadComplaintAttachment:input_type -> media.v1.RequestUpdateComplaintAttachment
+	8, // 6: media.v1.Media.DeleteUserAvatar:input_type -> media.v1.RequestDeleteUserAvatar
+	3, // 7: media.v1.Media.UpdateUserAvatar:output_type -> media.v1.ResponseUpdateUserAvatar
+	5, // 8: media.v1.Media.UploadChatAvatar:output_type -> media.v1.ResponseUpdateChatAvatar
+	7, // 9: media.v1.Media.UploadComplaintAttachment:output_type -> media.v1.ResponseUpdateComplaintAttachment
+	9, // 10: media.v1.Media.DeleteUserAvatar:output_type -> media.v1.ResponseDeleteUserAvatar
+	7, // [7:11] is the sub-list for method output_type
+	3, // [3:7] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_media_v1_media_proto_init() }
@@ -498,7 +607,7 @@ func file_media_v1_media_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_media_v1_media_proto_rawDesc), len(file_media_v1_media_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

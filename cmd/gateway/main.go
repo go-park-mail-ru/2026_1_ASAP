@@ -12,9 +12,11 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
+	complaintv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/complaint/v1"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	gwauth "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/auth"
 	gwchat "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/chat"
+	gwcomplaint "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/complaint"
 	gwcontacts "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/contacts"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	gwprofile "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/profile"
@@ -41,6 +43,7 @@ func main() {
 		zap.String("auth_grpc", cfg.Auth.GRPCAddr),
 		zap.String("profile_grpc", cfg.Profile.GRPCAddr),
 		zap.String("chat_grpc", cfg.Chat.GRPCAddr),
+		zap.String("complaint_grpc", cfg.Complaint.GRPCAddr),
 		zap.String("chat_ws", cfg.Chat.WSAddr),
 	)
 
@@ -65,18 +68,29 @@ func main() {
 	logger.Info("connected to chat grpc", zap.String("addr", cfg.Chat.GRPCAddr))
 	defer func() { _ = chatConn.Close() }()
 
+	complaintConn, err := grpc.NewClient(cfg.Complaint.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Fatal("dial complaint grpc", zap.String("addr", cfg.Complaint.GRPCAddr), zap.Error(err))
+	}
+	logger.Info("connected to complaint grpc", zap.String("addr", cfg.Complaint.GRPCAddr))
+	defer func() { _ = complaintConn.Close() }()
+
 	authClient := authv1.NewAuthClient(authConn)
 	profileClient := profilev1.NewProfileClient(profileConn)
 	chatClient := chatv1.NewChatClient(chatConn)
+	complaintClient := complaintv1.NewComplaintClient(complaintConn)
 
 	authHandler := gwauth.NewGatewayAuthHandler(authClient)
 	profileHandler := gwprofile.NewGatewayProfileHandler(authClient, profileClient)
 	contactsHandler := gwcontacts.NewGatewayContactsHandler(profileClient)
 	chatHandler := gwchat.NewGatewayChatHandler(chatClient)
+	complaintHandler := gwcomplaint.NewGatewayComplaintHandler(complaintClient)
+	analyticHandler := gwcomplaint.NewGatewayAnalyticHandler(complaintClient)
 	accessLogger, _ := zap.NewProduction()
 
 	authMiddleware := middleware.AuthMiddleware(authClient)
 	csrfMiddleware := middleware.CSRFMiddleware(authClient)
+	adminMiddleware := func(next http.Handler) http.Handler { return next }
 
 	router := chi.NewRouter()
 	router.Use(middleware.RequestIDMiddleware())
@@ -119,6 +133,19 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}/members/{member_id}", chatHandler.DeleteMember)
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}/members", chatHandler.GetChatMembers)
 		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}/quit", chatHandler.QuitChat)
+	})
+
+	router.Route("/api/v1/complaints", func(mux chi.Router) {
+		mux.Post("/createUnauthorized", complaintHandler.CreateComplaintUnAuthorized)
+		mux.With(authMiddleware, csrfMiddleware).Post("/create", complaintHandler.CreateComplaintAuthorized)
+		mux.With(authMiddleware, csrfMiddleware).Get("/my", complaintHandler.GetMyComplaints)
+		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", complaintHandler.GetComplaint)
+		mux.With(authMiddleware, csrfMiddleware, adminMiddleware).Post("/update", complaintHandler.UpdateComplaintStatus)
+		mux.With(authMiddleware, csrfMiddleware, adminMiddleware).Get("/all", complaintHandler.GetAllComplaints)
+	})
+
+	router.Route("/api/v1/analytics", func(mux chi.Router) {
+		mux.With(authMiddleware, csrfMiddleware).Get("/complaint", analyticHandler.GetUserComplaintAnalytic)
 	})
 
 	server := &http.Server{

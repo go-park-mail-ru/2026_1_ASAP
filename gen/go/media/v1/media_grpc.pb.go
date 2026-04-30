@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Media_UpdateUserAvatar_FullMethodName = "/media.v1.Media/UpdateUserAvatar"
-	Media_UploadChatAvatar_FullMethodName = "/media.v1.Media/UploadChatAvatar"
-	Media_DeleteUserAvatar_FullMethodName = "/media.v1.Media/DeleteUserAvatar"
+	Media_UpdateUserAvatar_FullMethodName          = "/media.v1.Media/UpdateUserAvatar"
+	Media_UploadChatAvatar_FullMethodName          = "/media.v1.Media/UploadChatAvatar"
+	Media_UploadComplaintAttachment_FullMethodName = "/media.v1.Media/UploadComplaintAttachment"
+	Media_DeleteUserAvatar_FullMethodName          = "/media.v1.Media/DeleteUserAvatar"
 )
 
 // MediaClient is the client API for Media service.
@@ -30,6 +31,7 @@ const (
 type MediaClient interface {
 	UpdateUserAvatar(ctx context.Context, in *RequestUpdateUserAvatar, opts ...grpc.CallOption) (*ResponseUpdateUserAvatar, error)
 	UploadChatAvatar(ctx context.Context, in *RequestUpdateChatAvatar, opts ...grpc.CallOption) (*ResponseUpdateChatAvatar, error)
+	UploadComplaintAttachment(ctx context.Context, in *RequestUpdateComplaintAttachment, opts ...grpc.CallOption) (*ResponseUpdateComplaintAttachment, error)
 	DeleteUserAvatar(ctx context.Context, in *RequestDeleteUserAvatar, opts ...grpc.CallOption) (*ResponseDeleteUserAvatar, error)
 }
 
@@ -61,6 +63,16 @@ func (c *mediaClient) UploadChatAvatar(ctx context.Context, in *RequestUpdateCha
 	return out, nil
 }
 
+func (c *mediaClient) UploadComplaintAttachment(ctx context.Context, in *RequestUpdateComplaintAttachment, opts ...grpc.CallOption) (*ResponseUpdateComplaintAttachment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseUpdateComplaintAttachment)
+	err := c.cc.Invoke(ctx, Media_UploadComplaintAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mediaClient) DeleteUserAvatar(ctx context.Context, in *RequestDeleteUserAvatar, opts ...grpc.CallOption) (*ResponseDeleteUserAvatar, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResponseDeleteUserAvatar)
@@ -77,6 +89,7 @@ func (c *mediaClient) DeleteUserAvatar(ctx context.Context, in *RequestDeleteUse
 type MediaServer interface {
 	UpdateUserAvatar(context.Context, *RequestUpdateUserAvatar) (*ResponseUpdateUserAvatar, error)
 	UploadChatAvatar(context.Context, *RequestUpdateChatAvatar) (*ResponseUpdateChatAvatar, error)
+	UploadComplaintAttachment(context.Context, *RequestUpdateComplaintAttachment) (*ResponseUpdateComplaintAttachment, error)
 	DeleteUserAvatar(context.Context, *RequestDeleteUserAvatar) (*ResponseDeleteUserAvatar, error)
 	mustEmbedUnimplementedMediaServer()
 }
@@ -93,6 +106,9 @@ func (UnimplementedMediaServer) UpdateUserAvatar(context.Context, *RequestUpdate
 }
 func (UnimplementedMediaServer) UploadChatAvatar(context.Context, *RequestUpdateChatAvatar) (*ResponseUpdateChatAvatar, error) {
 	return nil, status.Error(codes.Unimplemented, "method UploadChatAvatar not implemented")
+}
+func (UnimplementedMediaServer) UploadComplaintAttachment(context.Context, *RequestUpdateComplaintAttachment) (*ResponseUpdateComplaintAttachment, error) {
+	return nil, status.Error(codes.Unimplemented, "method UploadComplaintAttachment not implemented")
 }
 func (UnimplementedMediaServer) DeleteUserAvatar(context.Context, *RequestDeleteUserAvatar) (*ResponseDeleteUserAvatar, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteUserAvatar not implemented")
@@ -154,6 +170,24 @@ func _Media_UploadChatAvatar_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Media_UploadComplaintAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestUpdateComplaintAttachment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MediaServer).UploadComplaintAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Media_UploadComplaintAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MediaServer).UploadComplaintAttachment(ctx, req.(*RequestUpdateComplaintAttachment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Media_DeleteUserAvatar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RequestDeleteUserAvatar)
 	if err := dec(in); err != nil {
@@ -186,6 +220,10 @@ var Media_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UploadChatAvatar",
 			Handler:    _Media_UploadChatAvatar_Handler,
+		},
+		{
+			MethodName: "UploadComplaintAttachment",
+			Handler:    _Media_UploadComplaintAttachment_Handler,
 		},
 		{
 			MethodName: "DeleteUserAvatar",

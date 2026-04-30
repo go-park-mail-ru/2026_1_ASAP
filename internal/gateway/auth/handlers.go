@@ -77,7 +77,7 @@ func (h *GatewayAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   false,
+		Secure:   true,
 	})
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.GetSession().GetCsrfToken())
 
@@ -145,7 +145,7 @@ func (h *GatewayAuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   false,
+		Secure:   true,
 	})
 	w.Header().Set("X-NEW-CSRF-TOKEN", resp.GetSession().GetCsrfToken())
 

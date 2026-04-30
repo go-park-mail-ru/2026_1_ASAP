@@ -8,6 +8,7 @@ option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1;medi
 service Media {
   rpc UpdateUserAvatar(RequestUpdateUserAvatar) returns (ResponseUpdateUserAvatar);
   rpc UploadChatAvatar(RequestUpdateChatAvatar) returns (ResponseUpdateChatAvatar);
+  rpc UploadComplaintAttachment(RequestUpdateComplaintAttachment) returns (ResponseUpdateComplaintAttachment);
   rpc DeleteUserAvatar(RequestDeleteUserAvatar) returns (ResponseDeleteUserAvatar);
 }
 
@@ -42,6 +43,15 @@ message RequestUpdateChatAvatar {
 
 message ResponseUpdateChatAvatar {
   string avatar_url = 1;
+}
+
+message RequestUpdateComplaintAttachment {
+  int64 complaint_id = 1;
+  File attachment = 2;
+}
+
+message ResponseUpdateComplaintAttachment {
+  string attachment_url = 1;
 }
 
 message RequestDeleteUserAvatar {

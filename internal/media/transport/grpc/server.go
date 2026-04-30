@@ -17,6 +17,7 @@ import (
 type MediaRepositoryInterface interface {
 	UploadAvatar(ctx context.Context, userId int64, input *mediadto.FileInput) (string, error)
 	UploadChatAvatar(ctx context.Context, chatID int64, input *mediadto.FileInput) (string, error)
+	UploadComplaint(ctx context.Context, complaintID int64, input *mediadto.FileInput) (string, error)
 	DeleteAvatar(ctx context.Context, userID int64) error
 }
 
@@ -95,6 +96,23 @@ func (m MediaServer) UploadChatAvatar(ctx context.Context, req *mediav1.RequestU
 		return nil, statusFromAvatarFileError(err)
 	}
 	return &mediav1.ResponseUpdateChatAvatar{AvatarUrl: url}, nil
+}
+
+func (m MediaServer) UploadComplaintAttachment(ctx context.Context, req *mediav1.RequestUpdateComplaintAttachment) (*mediav1.ResponseUpdateComplaintAttachment, error) {
+	if req == nil || req.GetComplaintId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "complaint_id is required")
+	}
+	in, err := protoFileToValidatedInput(req.GetAttachment())
+	if err != nil {
+		m.Log(ctx).Info("invalid complaint attachment file", zap.Int64("complaint_id", req.GetComplaintId()), zap.Error(err))
+		return nil, statusFromAvatarFileError(err)
+	}
+	url, err := m.MediaRepository.UploadComplaint(ctx, req.GetComplaintId(), in)
+	if err != nil {
+		m.Log(ctx).Error("failed to upload complaint attachment", zap.Int64("complaint_id", req.GetComplaintId()), zap.Error(err))
+		return nil, statusFromAvatarFileError(err)
+	}
+	return &mediav1.ResponseUpdateComplaintAttachment{AttachmentUrl: url}, nil
 }
 
 func (m MediaServer) DeleteUserAvatar(ctx context.Context, req *mediav1.RequestDeleteUserAvatar) (*mediav1.ResponseDeleteUserAvatar, error) {

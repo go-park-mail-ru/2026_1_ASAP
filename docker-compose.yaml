@@ -13,6 +13,7 @@ services:
       - auth
       - profile
       - chat
+      - complaint
     restart: always
 
   chat:
@@ -86,6 +87,22 @@ services:
       - db
       - migrate
       - minio
+    restart: always
+
+  complaint:
+    build:
+      context: .
+      dockerfile: ./docker/complaint.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+    ports:
+      - "8006:8006"
+    depends_on:
+      - db
+      - migrate
+      - media
     restart: always
 
   redis:

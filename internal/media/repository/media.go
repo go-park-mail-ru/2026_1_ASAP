@@ -108,6 +108,26 @@ func (m *MediaRepository) UploadChatAvatar(ctx context.Context, chatID int64, in
 	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucket, objectName), nil
 }
 
+func (m *MediaRepository) UploadComplaint(ctx context.Context, complaintID int64, input *mediadto.FileInput) (string, error) {
+	if input == nil || input.Body == nil {
+		return "", mediadto.ErrEmptyFile
+	}
+
+	extension := getExtensionFromContentType(input.ContentType)
+	objectName := fmt.Sprintf("complaint/%d_%d%s", complaintID, time.Now().UnixNano(), extension)
+
+	start := time.Now()
+	_, err := m.client.PutObject(ctx, m.bucket, objectName, input.Body, input.Size, minio.PutObjectOptions{
+		ContentType: input.ContentType,
+	})
+	s3log.LogOp(ctx, m.log(ctx), "UploadComplaint", objectName, start, err, []any{complaintID, input.ContentType, input.Size})
+	if err != nil {
+		return "", fmt.Errorf("upload complaint attachment: %w", err)
+	}
+
+	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucket, objectName), nil
+}
+
 func (m *MediaRepository) DeleteAvatar(ctx context.Context, userID int64) error {
 	extensions := []string{".jpg", ".png", ".webp"}
 

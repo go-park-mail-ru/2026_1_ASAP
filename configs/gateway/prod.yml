@@ -11,3 +11,6 @@ profile:
 chat:
   ws_addr: chat:8005
   grpc_addr: chat:8004
+
+complaint:
+  grpc_addr: complaint:8006
