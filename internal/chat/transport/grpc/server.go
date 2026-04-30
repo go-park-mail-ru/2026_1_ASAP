@@ -131,6 +131,7 @@ func (s *ChatServer) GetChats(ctx context.Context, chats *chatv1.RequestGetUserC
 
 func (s *ChatServer) Create(ctx context.Context, create *chatv1.RequestChatCreate) (*chatv1.ChatInformation, error) {
 	createdChat, err := s.chatUsecase.CreateChat(ctx, dto.ChatCreate{
+		Title:     create.GetTitle(),
 		Type:      mapProtoToChatType(create.GetType()),
 		MembersID: create.GetMembersId(),
 	}, create.GetUserId())
