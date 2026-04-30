@@ -326,6 +326,13 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 	if err != nil {
 		return nil, err
 	}
+
+	if chat.Type == domain.ChatTypeChannel {
+		if chat.OwnerId != userID {
+			return nil, domain.ErrOnlyOwnerCanChangeAvatar
+		}
+	}
+
 	if chat.Type == domain.ChatTypeDialog {
 		return nil, domain.ErrDialogCannotHaveCustomAvatar
 	}
@@ -372,6 +379,13 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 	if err != nil {
 		return nil, err
 	}
+
+	if chat.Type == domain.ChatTypeChannel {
+		if chat.OwnerId != userID {
+			return nil, domain.ErrOnlyOwnerCanChangeTitle
+		}
+	}
+
 	if chat.Type == domain.ChatTypeDialog {
 		return nil, domain.ErrDialogCannotHaveCustomTitle
 	}

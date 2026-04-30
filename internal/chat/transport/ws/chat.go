@@ -377,6 +377,11 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 						Code:    dtoWs.ErrCodeNotMemberOfChat,
 						Message: dtoWs.ErrCodeNotMemberOfChatMsg,
 					})
+				case errors.Is(err, domain.ErrOnlyOwnerCanSendMessaage):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeOnlyOwnerCanSendMessaage,
+						Message: dtoWs.ErrCodeOnlyOwnerCanSendMessaageMsg,
+					})
 				default:
 					s.sendErr(sub, dtoWs.WsErrorPayload{
 						Code:    dtoWs.ErrCodeSendFailed,
