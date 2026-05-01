@@ -919,6 +919,7 @@ type ChatInformation struct {
 	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	LastMessage   *MessageInformation    `protobuf:"bytes,4,opt,name=last_message,json=lastMessage,proto3" json:"last_message,omitempty"`
 	Avatar        *string                `protobuf:"bytes,5,opt,name=avatar,proto3,oneof" json:"avatar,omitempty"`
+	OwnerId       int64                  `protobuf:"varint,6,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -988,6 +989,13 @@ func (x *ChatInformation) GetAvatar() string {
 	return ""
 }
 
+func (x *ChatInformation) GetOwnerId() int64 {
+	if x != nil {
+		return x.OwnerId
+	}
+	return 0
+}
+
 var File_chat_v1_chat_proto protoreflect.FileDescriptor
 
 const file_chat_v1_chat_proto_rawDesc = "" +
@@ -1040,13 +1048,14 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\tsender_id\x18\x01 \x01(\x03R\bsenderId\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x129\n" +
 	"\n" +
-	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xc6\x01\n" +
+	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xe1\x01\n" +
 	"\x0fChatInformation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12%\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x11.chat.v1.ChatTypeR\x04type\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12>\n" +
 	"\flast_message\x18\x04 \x01(\v2\x1b.chat.v1.MessageInformationR\vlastMessage\x12\x1b\n" +
-	"\x06avatar\x18\x05 \x01(\tH\x00R\x06avatar\x88\x01\x01B\t\n" +
+	"\x06avatar\x18\x05 \x01(\tH\x00R\x06avatar\x88\x01\x01\x12\x19\n" +
+	"\bowner_id\x18\x06 \x01(\x03R\aownerIdB\t\n" +
 	"\a_avatar*\xff\a\n" +
 	"\rChatErrorCode\x12\x1a\n" +
 	"\x16CHAT_ERROR_UNSPECIFIED\x10\x00\x12\x1c\n" +

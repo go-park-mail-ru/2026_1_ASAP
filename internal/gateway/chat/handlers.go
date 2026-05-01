@@ -41,6 +41,7 @@ type ChatInfoResponse struct {
 	Title       string              `json:"title"`
 	LastMessage MessageInfoResponse `json:"last_message"`
 	ID          int64               `json:"id"`
+	OwnerID     int64               `json:"owner_id"`
 }
 
 type CreateChatRequest struct {
@@ -208,6 +209,7 @@ func mapChatInfo(c *chatv1.ChatInformation) ChatInfoResponse {
 		ID:    c.GetId(),
 		Type:  mapChatType(c.GetType()),
 		Title: c.GetTitle(),
+		OwnerID: c.GetOwnerId(),
 	}
 	if a := c.GetAvatar(); a != "" {
 		v := a
