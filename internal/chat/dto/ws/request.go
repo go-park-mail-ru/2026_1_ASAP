@@ -7,9 +7,10 @@ type WsErrorCode string
 type WsErrorMessage string
 
 const (
-	MessageSend WsRequestType = "message.Send"
-	MessageRecv WsRequestType = "message.Receive"
-	MessageEdit WsRequestType = "message.Edit"
+	MessageSend   WsRequestType = "message.Send"
+	MessageRecv   WsRequestType = "message.Receive"
+	MessageEdit   WsRequestType = "message.Edit"
+	MessageDelete WsRequestType = "message.Delete"
 )
 
 const (
@@ -23,6 +24,7 @@ const (
 	ErrCodeInternal                 WsErrorCode = "INTERNAL_ERROR"
 	ErrCodeServerShutdown           WsErrorCode = "SERVER_SHUTDOWN"
 	ErrCodeOnlyOwnerCanSendMessaage WsErrorCode = "YOU_CANT_SEND_MESSAGE"
+	ErrCodeCantDeleteMessage        WsErrorCode = "YOU_CANT_DELETE_THIS_MESSAGE"
 )
 
 const (
@@ -36,6 +38,7 @@ const (
 	ErrCodeInternalMsg                 WsErrorMessage = "internal error"
 	ErrCodeServerShutdownMsg           WsErrorMessage = "server shutdown"
 	ErrCodeOnlyOwnerCanSendMessaageMsg WsErrorMessage = "only owner of channel can send message"
+	ErrCodeCantDeleteMessageMsg        WsErrorMessage = "you cant delete this message"
 )
 
 type WsRequest struct {

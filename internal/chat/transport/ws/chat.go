@@ -47,6 +47,7 @@ type MessagesServiceInterface interface {
 	SendMessage(ctx context.Context, userID int64, chatID int64, req *dto.RequestSendMessage) (*dto.ResponseSendMessage, error)
 	GetMessagesByChatId(ctx context.Context, userID int64, chatID int64, req *dto.RequestGetMessages) (*dto.ResponseGetMessages, error)
 	EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseSendMessage, error)
+	DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseDeleteMessage, error)
 }
 
 type ChatServiceInterface interface {
@@ -506,7 +507,66 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 			out, err := dtoWs.EncodeMessageEdit(resp)
 			if err != nil {
-				log.Error("ws encode message get", zap.Error(err))
+				log.Error("ws encode message edit", zap.Error(err))
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInternal,
+					Message: dtoWs.ErrCodeInternalMsg,
+				})
+				continue
+			}
+
+			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+		
+		case dtoWs.MessageDelete:
+			var req dto.RequestDeleteMessage
+			if len(env.Payload) == 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if err := json.Unmarshal(env.Payload, &req); err != nil {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if req.ChatID <= 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if req.MessageID <= 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+
+			resp, err := s.messageService.DeleteMessage(ctx, userID, req.ChatID, &req)
+			if err != nil {
+				if errors.Is(err, domain.ErrMessageNotMember) {
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeNotMemberOfChat,
+						Message: dtoWs.ErrCodeNotMemberOfChatMsg,
+					})
+					continue
+				}
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInternal,
+					Message: dtoWs.ErrCodeInternalMsg,
+				})
+				continue
+			}
+
+			out, err := dtoWs.EncodeMessageDelete(resp)
+			if err != nil {
+				log.Error("ws encode message delete", zap.Error(err))
 				s.sendErr(sub, dtoWs.WsErrorPayload{
 					Code:    dtoWs.ErrCodeInternal,
 					Message: dtoWs.ErrCodeInternalMsg,

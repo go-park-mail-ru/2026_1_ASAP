@@ -145,7 +145,7 @@ func (r *ChatRepository) GetLastMessageOfChat(ctx context.Context, chatID int64)
 	sqllog.LogQuery(ctx, r.log(ctx), "GetLastMessageOfChat", q, start, err, []any{chatID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return toDomainMessage(msg), nil
+			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to get last message: %w", err)
 	}

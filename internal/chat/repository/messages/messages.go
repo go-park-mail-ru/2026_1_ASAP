@@ -120,6 +120,29 @@ func (m *MessageRepository) UpdateMessage(ctx context.Context, message *domain.M
 	return toDomainModel(messageModel), nil
 }
 
+func (m *MessageRepository) DeleteMessage(ctx context.Context, message *domain.Message) (*domain.Message, error) {
+	q := messagessql.DeleteMessage
+	messageModel := toModel(message)
+	start := time.Now()
+	row := m.db.QueryRow(ctx, q, messageModel.Id, messageModel.ChatId, messageModel.SenderId)
+	err := row.Scan(
+		&messageModel.Id,
+		&messageModel.ChatId,
+		&messageModel.SenderId,
+		&messageModel.DeletedAt,
+		&messageModel.UpdatedAt,
+	)
+	sqllog.LogQuery(ctx, m.log(ctx), "DeleteMessage", q, start, err, []any{messageModel.Id, messageModel.ChatId, messageModel.SenderId})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrNoMessage
+		}
+		return nil, fmt.Errorf("failed to scan message: %w", err)
+	}
+
+	return toDomainModel(messageModel), nil
+}
+
 func (m *MessageRepository) GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error) {
 	var (
 		rows pgx.Rows
