@@ -19,7 +19,6 @@ service Chat {
   rpc DeleteMemberFromChat(RequestDeleteMemberFromChat) returns (google.protobuf.Empty);
   rpc GetChatMembers(RequestChatMembers) returns (ResponseGetChatMembers);
   rpc QuitChat(RequestQuitChat) returns (google.protobuf.Empty);
-
 }
 
 enum ChatErrorCode {

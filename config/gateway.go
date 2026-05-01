@@ -12,6 +12,7 @@ type GatewayConfig struct {
 	Profile   GatewayProfileConfig   `yaml:"profile"`
 	Chat      GatewayChatConfig      `yaml:"chat"`
 	Complaint GatewayComplaintConfig `yaml:"complaint"`
+	Search    GatewaySearchConfig    `yaml:"search"`
 }
 
 type GatewayServerConfig struct {
@@ -34,6 +35,10 @@ type GatewayChatConfig struct {
 
 type GatewayComplaintConfig struct {
 	GRPCAddr string `yaml:"grpc_addr" env-default:"complaint:8006"`
+}
+
+type GatewaySearchConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" env-default:"search:8010"`
 }
 
 func LoadGatewayConfig(path string) (*GatewayConfig, error) {

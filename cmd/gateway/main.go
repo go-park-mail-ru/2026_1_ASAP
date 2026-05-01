@@ -14,12 +14,14 @@ import (
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	complaintv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/complaint/v1"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
+	searchv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/search/v1"
 	gwauth "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/auth"
 	gwchat "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/chat"
 	gwcomplaint "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/complaint"
 	gwcontacts "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/contacts"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	gwprofile "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/profile"
+	searchgw "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/search"
 	gwws "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/ws"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -45,6 +47,7 @@ func main() {
 		zap.String("chat_grpc", cfg.Chat.GRPCAddr),
 		zap.String("complaint_grpc", cfg.Complaint.GRPCAddr),
 		zap.String("chat_ws", cfg.Chat.WSAddr),
+		zap.String("search_grpc", cfg.Search.GRPCAddr),
 	)
 
 	authConn, err := grpc.NewClient(cfg.Auth.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -75,10 +78,18 @@ func main() {
 	logger.Info("connected to complaint grpc", zap.String("addr", cfg.Complaint.GRPCAddr))
 	defer func() { _ = complaintConn.Close() }()
 
+	searchConn, err := grpc.NewClient(cfg.Search.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Fatal("dial search grpc", zap.String("addr", cfg.Search.GRPCAddr), zap.Error(err))
+	}
+	logger.Info("connected to search grpc", zap.String("addr", cfg.Search.GRPCAddr))
+	defer func() { _ = searchConn.Close() }()
+
 	authClient := authv1.NewAuthClient(authConn)
 	profileClient := profilev1.NewProfileClient(profileConn)
 	chatClient := chatv1.NewChatClient(chatConn)
 	complaintClient := complaintv1.NewComplaintClient(complaintConn)
+	searchClient := searchv1.NewSearchClient(searchConn)
 
 	authHandler := gwauth.NewGatewayAuthHandler(authClient)
 	profileHandler := gwprofile.NewGatewayProfileHandler(authClient, profileClient)
@@ -86,6 +97,7 @@ func main() {
 	chatHandler := gwchat.NewGatewayChatHandler(chatClient)
 	complaintHandler := gwcomplaint.NewGatewayComplaintHandler(complaintClient)
 	analyticHandler := gwcomplaint.NewGatewayAnalyticHandler(complaintClient)
+	searchHandler := searchgw.NewGatewaySearchHandler(searchClient)
 	accessLogger, _ := zap.NewProduction()
 
 	authMiddleware := middleware.AuthMiddleware(authClient)
@@ -146,6 +158,12 @@ func main() {
 
 	router.Route("/api/v1/analytics", func(mux chi.Router) {
 		mux.With(authMiddleware, csrfMiddleware).Get("/complaint", analyticHandler.GetUserComplaintAnalytic)
+	})
+
+	router.Route("/api/v1/search", func(mux chi.Router) {
+		mux.With(authMiddleware, csrfMiddleware).Get("/messages", searchHandler.SearchMessages)
+		mux.With(authMiddleware, csrfMiddleware).Get("/users", searchHandler.SearchUsers)
+		mux.With(authMiddleware, csrfMiddleware).Get("/chats", searchHandler.SearchChats)
 	})
 
 	server := &http.Server{

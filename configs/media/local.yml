@@ -5,12 +5,12 @@ server:
 s3:
   host: minio
   port: "9000"
-  bucket: repository
+  bucket: media
   use_ssl: false
   public_use_ssl: true
   public_host: pulseapp.space
   public_port: ""
-  public_path: /media
+  public_path: /
 
 app:
   shutdown_seconds: 10
