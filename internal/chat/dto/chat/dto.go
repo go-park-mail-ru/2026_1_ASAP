@@ -26,6 +26,7 @@ type ChatInformationDTO struct {
 	ChatType    ChatType   `json:"chat_type" example:"dialog"`
 	LastMessage MessageDTO `json:"last_message"`
 	ID          int64      `json:"id"`
+	OwnerID     int64      `json:"owner_id"`
 }
 
 type ChatCreate struct {

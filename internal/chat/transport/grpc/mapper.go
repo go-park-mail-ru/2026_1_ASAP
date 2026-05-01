@@ -22,6 +22,7 @@ func mapChatInformationDTOToProto(dto *dto.ChatInformationDTO) *chatv1.ChatInfor
 		Type:        mapChatTypeToProto(&dto.ChatType),
 		Avatar:      dto.Avatar,
 		LastMessage: mapMessageDTOToProto(&dto.LastMessage),
+		OwnerId:     dto.OwnerID,
 	}
 }
 

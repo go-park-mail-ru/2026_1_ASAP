@@ -136,6 +136,7 @@ message ChatInformation {
   string title = 3;
   MessageInformation last_message = 4;
   optional string avatar = 5;
+  int64 owner_id = 6;
 }
 
 enum ChatType {

@@ -152,6 +152,7 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 			ChatType:    dto.ChatType(chat.Type),
 			LastMessage: messageDTO,
 			Avatar:      displayAvatar,
+			OwnerID:     chat.OwnerId,
 		})
 	}
 
@@ -232,6 +233,7 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 		Title:       sanitize.Text(displayTitle),
 		LastMessage: dto.MessageDTO{},
 		Avatar:      displayAvatar,
+		OwnerID:     created.OwnerId,
 	}, nil
 }
 
@@ -276,6 +278,7 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 		Title:       sanitize.Text(displayTitle),
 		LastMessage: messageDTO,
 		Avatar:      displayAvatar,
+		OwnerID:     chat.OwnerId,
 	}, nil
 }
 
@@ -363,6 +366,7 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 		Title:       sanitize.Text(result.Title),
 		LastMessage: messageDTO,
 		Avatar:      result.AvatarUrl,
+		OwnerID:     result.OwnerId,
 	}, nil
 }
 
@@ -411,6 +415,7 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 		Title:       sanitize.Text(result.Title),
 		LastMessage: messageDTO,
 		Avatar:      result.AvatarUrl,
+		OwnerID:     result.OwnerId,
 	}, nil
 }
 
