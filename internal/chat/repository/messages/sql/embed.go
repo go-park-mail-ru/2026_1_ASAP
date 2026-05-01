@@ -11,6 +11,9 @@ var InsertMessage string
 //go:embed update_message.sql
 var UpdateMessage string
 
+//go:embed delete_message.sql
+var DeleteMessage string
+
 //go:embed update_chat_last_message.sql
 var UpdateChatLastMessage string
 

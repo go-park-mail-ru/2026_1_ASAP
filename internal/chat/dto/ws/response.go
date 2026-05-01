@@ -7,6 +7,7 @@ const (
 	MessageNew    WsResponseStatus = "message.New"
 	MessageGet    WsResponseStatus = "message.Get"
 	MessageUpdate WsResponseStatus = "message.Update"
+	MessageClear  WsResponseStatus = "message.Clear"
 	ChatNew       WsResponseStatus = "chat.New"
 	ChatUpdated   WsResponseStatus = "chat.Updated"
 	ChatDeleted   WsResponseStatus = "chat.Deleted"

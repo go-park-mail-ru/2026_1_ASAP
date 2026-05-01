@@ -10,6 +10,12 @@ type ResponseSendMessage struct {
 	SenderID  int64     `json:"sender_id"`
 }
 
+type ResponseDeleteMessage struct {
+	ID        int64     `json:"id"`
+	ChatID    int64     `json:"chat_id"`
+	SenderID  int64     `json:"sender_id"`
+}
+
 type ResponseGetMessages struct {
 	NextBeforeID *int64       `json:"next_before_id"`
 	Messages     []MessageDTO `json:"messages"`

@@ -27,6 +27,10 @@ func EncodeMessageEdit(m *dto.ResponseSendMessage) ([]byte, error) {
 	return Encode(MessageUpdate, m)
 }
 
+func EncodeMessageDelete(m *dto.ResponseDeleteMessage) ([]byte, error) {
+	return Encode(MessageClear, m)
+}
+
 func EncodeChatNew(c *chatdto.ChatInformationDTO) ([]byte, error) {
 	return Encode(ChatNew, c)
 }

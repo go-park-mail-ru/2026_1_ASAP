@@ -18,6 +18,7 @@ type MessageRepositoryInterface interface {
 	CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
 	GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error)
 	UpdateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
+	DeleteMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
 }
 
 type ChatRepositoryInterface interface {
@@ -179,6 +180,41 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 		SenderID:  editedMessage.SenderId,
 		Text:      sanitize.Text(editedMessage.Content),
 		CreatedAt: editedMessage.CreatedAt,
+	}, nil
+}
+
+func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseDeleteMessage, error) {
+	if req == nil {
+		return nil, errors.New("delete message nil request")
+	}
+
+	isUserMember, err := m.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("chatrepo check is member: %w", err)
+	}
+
+	if !isUserMember {
+		return nil, domain.ErrMessageNotMember
+	}	
+
+	message := &domain.Message{
+		Id:       req.MessageID,
+		ChatId:   chatID,
+		SenderId: userID,
+	}
+
+	deletedMessage, err := m.messageRepo.DeleteMessage(ctx, message)
+	if err != nil {
+		if errors.Is(err, domain.ErrNoMessage) {
+			return nil, domain.ErrNoMessage
+		}
+		return nil, fmt.Errorf("messageRepo delete message: %w", err)
+	}
+
+	return &dto.ResponseDeleteMessage{
+		ID: deletedMessage.Id,
+		ChatID: deletedMessage.ChatId,
+		SenderID: deletedMessage.SenderId,
 	}, nil
 }
 
