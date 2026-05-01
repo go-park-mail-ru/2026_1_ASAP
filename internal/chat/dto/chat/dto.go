@@ -48,6 +48,11 @@ type RequestAddMember struct {
 	MembersId []int64 `json:"members_id"`
 }
 
+type RequestJoinChannel struct {
+	UserId int64 `json:"user_id"`
+	ChatId int64 `json:"chat_id"`
+}
+
 type RequestDeleteMember struct {
 	MemberId int64 `json:"member_id"`
 }
