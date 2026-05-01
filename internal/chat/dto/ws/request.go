@@ -9,6 +9,7 @@ type WsErrorMessage string
 const (
 	MessageSend WsRequestType = "message.Send"
 	MessageRecv WsRequestType = "message.Receive"
+	MessageEdit WsRequestType = "message.Edit"
 )
 
 const (

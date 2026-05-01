@@ -8,6 +8,9 @@ const CreateMessageTxDescription = "tx: INSERT messages; UPDATE chats last_messa
 //go:embed insert_message.sql
 var InsertMessage string
 
+//go:embed update_message.sql
+var UpdateMessage string
+
 //go:embed update_chat_last_message.sql
 var UpdateChatLastMessage string
 
