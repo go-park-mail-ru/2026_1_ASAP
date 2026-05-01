@@ -527,6 +527,31 @@ func (s *ChatService) QuitChat(ctx context.Context, userID, chatID int64) error 
 	return s.chatRepo.DeleteMember(ctx, chatID, userID)
 }
 
+func (s *ChatService) JoinChannel(ctx context.Context, userID, chatID int64) error {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("check membership: %w", err)
+	}
+	if isMember {
+		return nil
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return err
+	}
+	if chat.Type != domain.ChatTypeChannel {
+		return domain.ErrCanJoinOnlyChannel
+	}
+
+	err = s.chatRepo.AddMember(ctx, chatID, userID, "member")
+	if err != nil {
+		return fmt.Errorf("failed to join chat: %w", err)
+	}
+
+	return nil
+}
+
 func (s *ChatService) GetChatMemberIDs(ctx context.Context, chatID int64) ([]int64, error) {
 	return s.chatRepo.GetChatMembers(ctx, chatID)
 }

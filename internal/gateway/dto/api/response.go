@@ -49,6 +49,7 @@ const (
 	VKIDFailed               = "VKID_FAILED"
 	NotImplemented           = "NOT_IMPLEMENTED"
 	EmptyLogin               = "EMPTY_LOGIN"
+	OnlyChannelCanBeJoined   = "ONLY_CHANNEL_CAN_BE_JOINED"
 )
 
 const (
@@ -97,6 +98,7 @@ const (
 	VKIDFailedMsg               = "VKID failed to login"
 	NotImplementedMsg           = "This endpoint is not available yet"
 	EmptyLoginMsg               = "Login query parameter is required"
+	OnlyChannelCanBeJoinedMsg   = "you can join only channel"
 )
 
 type ApiError struct {

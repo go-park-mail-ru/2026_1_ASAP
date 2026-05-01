@@ -29,6 +29,7 @@ type ChatUsecaseInterface interface {
 	DeleteMemberFromChat(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMember) error
 	GetAllChatMembers(ctx context.Context, userID, chatID int64) (*dto.ResponseGetChatMembers, error)
 	QuitChat(ctx context.Context, userID, chatID int64) error
+	JoinChannel(ctx context.Context, userID, chatID int64) error
 }
 
 type MessageUsecaseInterface interface {
@@ -90,6 +91,13 @@ func mapDomainErr(err error) error {
 		return grpcerr.New(
 			codes.FailedPrecondition,
 			int32(chatv1.ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_TITLE),
+			err.Error(),
+		)
+
+	case errors.Is(err, domain.ErrCanJoinOnlyChannel):
+		return grpcerr.New(
+			codes.FailedPrecondition,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED),
 			err.Error(),
 		)
 
@@ -196,6 +204,15 @@ func (s *ChatServer) AddMembersToChat(ctx context.Context, chat *chatv1.RequestA
 	}
 	return &emptypb.Empty{}, nil
 }
+
+func (s *ChatServer) JoinChannel(ctx context.Context, chat *chatv1.RequestJoinChannel) (*emptypb.Empty, error) {
+	err := s.chatUsecase.JoinChannel(ctx, chat.GetUserId(), chat.GetChatId())
+	if err != nil {
+		return nil, mapDomainErr(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (s *ChatServer) DeleteMemberFromChat(ctx context.Context, chat *chatv1.RequestDeleteMemberFromChat) (*emptypb.Empty, error) {
 	err := s.chatUsecase.DeleteMemberFromChat(ctx, chat.GetUserId(), chat.GetChatId(), &dto.RequestDeleteMember{
 		MemberId: chat.GetMemberId(),

@@ -30,6 +30,7 @@ const (
 	Chat_DeleteMemberFromChat_FullMethodName = "/chat.v1.Chat/DeleteMemberFromChat"
 	Chat_GetChatMembers_FullMethodName       = "/chat.v1.Chat/GetChatMembers"
 	Chat_QuitChat_FullMethodName             = "/chat.v1.Chat/QuitChat"
+	Chat_JoinChannel_FullMethodName          = "/chat.v1.Chat/JoinChannel"
 )
 
 // ChatClient is the client API for Chat service.
@@ -46,6 +47,7 @@ type ChatClient interface {
 	DeleteMemberFromChat(ctx context.Context, in *RequestDeleteMemberFromChat, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetChatMembers(ctx context.Context, in *RequestChatMembers, opts ...grpc.CallOption) (*ResponseGetChatMembers, error)
 	QuitChat(ctx context.Context, in *RequestQuitChat, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	JoinChannel(ctx context.Context, in *RequestJoinChannel, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type chatClient struct {
@@ -156,6 +158,16 @@ func (c *chatClient) QuitChat(ctx context.Context, in *RequestQuitChat, opts ...
 	return out, nil
 }
 
+func (c *chatClient) JoinChannel(ctx context.Context, in *RequestJoinChannel, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Chat_JoinChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServer is the server API for Chat service.
 // All implementations must embed UnimplementedChatServer
 // for forward compatibility.
@@ -170,6 +182,7 @@ type ChatServer interface {
 	DeleteMemberFromChat(context.Context, *RequestDeleteMemberFromChat) (*emptypb.Empty, error)
 	GetChatMembers(context.Context, *RequestChatMembers) (*ResponseGetChatMembers, error)
 	QuitChat(context.Context, *RequestQuitChat) (*emptypb.Empty, error)
+	JoinChannel(context.Context, *RequestJoinChannel) (*emptypb.Empty, error)
 	mustEmbedUnimplementedChatServer()
 }
 
@@ -209,6 +222,9 @@ func (UnimplementedChatServer) GetChatMembers(context.Context, *RequestChatMembe
 }
 func (UnimplementedChatServer) QuitChat(context.Context, *RequestQuitChat) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method QuitChat not implemented")
+}
+func (UnimplementedChatServer) JoinChannel(context.Context, *RequestJoinChannel) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method JoinChannel not implemented")
 }
 func (UnimplementedChatServer) mustEmbedUnimplementedChatServer() {}
 func (UnimplementedChatServer) testEmbeddedByValue()              {}
@@ -411,6 +427,24 @@ func _Chat_QuitChat_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Chat_JoinChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestJoinChannel)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).JoinChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Chat_JoinChannel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).JoinChannel(ctx, req.(*RequestJoinChannel))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Chat_ServiceDesc is the grpc.ServiceDesc for Chat service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -457,6 +491,10 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QuitChat",
 			Handler:    _Chat_QuitChat_Handler,
+		},
+		{
+			MethodName: "JoinChannel",
+			Handler:    _Chat_JoinChannel_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

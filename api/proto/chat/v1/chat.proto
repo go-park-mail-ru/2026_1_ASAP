@@ -19,6 +19,7 @@ service Chat {
   rpc DeleteMemberFromChat(RequestDeleteMemberFromChat) returns (google.protobuf.Empty);
   rpc GetChatMembers(RequestChatMembers) returns (ResponseGetChatMembers);
   rpc QuitChat(RequestQuitChat) returns (google.protobuf.Empty);
+  rpc JoinChannel(RequestJoinChannel) returns (google.protobuf.Empty);
 }
 
 enum ChatErrorCode {
@@ -58,6 +59,7 @@ enum ChatErrorCode {
   CHAT_ERROR_CANT_DELETE_OWNER_OF_CHAT = 25;
   CHAT_ERROR_CANT_QUIT_DIALOG = 26;
   CHAT_ERROR_OWNER_CANT_QUIT_GROUP = 27;
+  CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED = 28;
 }
 
 message RequestQuitChat {
@@ -84,6 +86,11 @@ message RequestAddMembersToChat {
   int64 user_id = 1;
   int64 chat_id = 2;
   repeated int64 members_id = 3;
+}
+
+message RequestJoinChannel {
+  int64 user_id = 1;
+  int64 chat_id = 2;
 }
 
 message RequestUpdateTitle {

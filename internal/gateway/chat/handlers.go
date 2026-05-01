@@ -58,6 +58,11 @@ type AddMembersRequest struct {
 	MembersID []int64 `json:"members_id"`
 }
 
+type JoinChannelRequest struct {
+	UserId int64 `json:"user_id"`
+	ChatId int64 `json:"chat_id"`
+}
+
 type ChatMembersResponse struct {
 	MembersID []int64 `json:"members_id"`
 }
@@ -171,6 +176,11 @@ func sendChatError(w http.ResponseWriter, err error) {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
+		})
+	case chatv1.ChatErrorCode_CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED:
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.OnlyChannelCanBeJoined, Message: dtoApi.OnlyChannelCanBeJoinedMsg}},
 		})
 	default:
 		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
@@ -492,6 +502,34 @@ func (h *GatewayChatHandler) AddMembers(w http.ResponseWriter, r *http.Request) 
 		UserId:    uid,
 		ChatId:    chatID,
 		MembersId: req.MembersID,
+	}); err != nil {
+		sendChatError(w, err)
+		return
+	}
+
+	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[struct{}]{
+		Status: dtoApi.Success,
+		Body:   struct{}{},
+	})
+}
+
+func (h *GatewayChatHandler) JoinChannel(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	uid, ok := userID(r)
+	if !ok {
+		sendUnauthorized(w)
+		return
+	}
+
+	chatID, err := chatIDParam(r)
+	if err != nil {
+		sendInvalidID(w)
+		return
+	}
+
+	if _, err := h.ChatService.JoinChannel(ctx, &chatv1.RequestJoinChannel{
+		UserId: uid,
+		ChatId: chatID,
 	}); err != nil {
 		sendChatError(w, err)
 		return

@@ -32,4 +32,6 @@ var (
 	ErrOnlyOwnerCanChangeAvatar     = errors.New("Only owner can change avatar")
 	ErrOnlyOwnerCanChangeTitle      = errors.New("Only owner can change title")
 	ErrCantEditMessage              = errors.New("You cant edit this message")
+	ErrCanJoinOnlyChannel           = errors.New("you can join only channel")
+	ErrAlreadyInChat                = errors.New("you already in chat you try to join")
 )
