@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
@@ -107,7 +108,44 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestIDMiddleware())
 	router.Use(middleware.AccessMiddleware(accessLogger))
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{
+			"http://pulseapp.space",
+			"http://pulseapp.space:8080",
+			"http://212.233.96.180",
+			"http://localhost",
+			"http://localhost:3000",
+			"http://localhost:8080",
+			"http://127.0.0.1",
+			"http://127.0.0.1:3000",
+			"http://127.0.0.1:8080",
+			"http://0.0.0.0:80",
+			"http://0.0.0.0",
 
+			"https://pulseapp.space",
+			"https://pulseapp.space:8080",
+			"https://212.233.96.180",
+			"https://localhost",
+			"https://localhost:3000",
+			"https://localhost:8080",
+			"https://127.0.0.1",
+			"https://127.0.0.1:3000",
+			"https://127.0.0.1:8080",
+			"https://0.0.0.0:80",
+			"https://0.0.0.0",
+		},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{
+			"Accept",
+			"Authorization",
+			"Content-Type",
+			"X-CSRF-TOKEN",
+			"X-NEW-CSRF-TOKEN",
+		},
+		ExposedHeaders:   []string{"Link", "X-CSRF-TOKEN", "X-NEW-CSRF-TOKEN"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 	router.Route("/api/v1/auth", func(mux chi.Router) {
 		mux.Post("/login", authHandler.Login)
 		mux.Post("/vk", authHandler.VkIDLogin)
