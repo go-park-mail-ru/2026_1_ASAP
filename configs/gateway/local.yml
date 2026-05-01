@@ -14,3 +14,6 @@ chat:
 
 complaint:
   grpc_addr: complaint:8006
+
+search:
+  grpc_addr: search:8010

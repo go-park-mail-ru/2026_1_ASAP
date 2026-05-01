@@ -8,12 +8,13 @@ services:
     environment:
       APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
     ports:
-      - "8088:8088"
+      - "8080:8080"
     depends_on:
       - auth
       - profile
       - chat
       - complaint
+      - search
     restart: always
 
   chat:
@@ -87,6 +88,21 @@ services:
       - db
       - migrate
       - minio
+    restart: always
+
+  search:
+    build:
+      context: .
+      dockerfile: ./docker/search.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+    ports:
+      - "8010:8010"
+    depends_on:
+      - db
+      - migrate
     restart: always
 
   complaint:

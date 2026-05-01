@@ -3,9 +3,11 @@ package chat
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -188,14 +190,16 @@ func mapChatType(t chatv1.ChatType) string {
 	}
 }
 
-func parseChatType(s string) chatv1.ChatType {
-	switch s {
+func parseChatType(s string) (chatv1.ChatType, error) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "group":
-		return chatv1.ChatType_GROUP
+		return chatv1.ChatType_GROUP, nil
 	case "channel":
-		return chatv1.ChatType_CHANNEL
+		return chatv1.ChatType_CHANNEL, nil
+	case "dialog":
+		return chatv1.ChatType_DIALOG, nil
 	default:
-		return chatv1.ChatType_DIALOG
+		return chatv1.ChatType_DIALOG, fmt.Errorf("invalid chat type: use dialog, group or channel")
 	}
 }
 
@@ -263,9 +267,25 @@ func (h *GatewayChatHandler) CreateChat(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	chatType, err := parseChatType(req.Type)
+	if err != nil {
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.ErrorMessage(err.Error())}},
+		})
+		return
+	}
+	if (chatType == chatv1.ChatType_GROUP || chatType == chatv1.ChatType_CHANNEL) && strings.TrimSpace(req.Title) == "" {
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.ErrorMessage("title is required for group/channel")}},
+		})
+		return
+	}
+
 	resp, err := h.ChatService.Create(ctx, &chatv1.RequestChatCreate{
 		UserId:    uid,
-		Type:      parseChatType(req.Type),
+		Type:      chatType,
 		Title:     req.Title,
 		MembersId: req.MembersID,
 	})
