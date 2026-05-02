@@ -44,11 +44,16 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 		limit = 100
 	}
 
+	chat, err := m.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
 	isUserMember, err := m.chatRepo.IsMember(ctx, chatID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("chatrepo check is member: %w", err)
 	}
-	if !isUserMember {
+	if !isUserMember && chat.Type != domain.ChatTypeChannel{
 		return nil, domain.ErrMessageNotMember
 	}
 
