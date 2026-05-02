@@ -26,35 +26,37 @@ const (
 type ChatErrorCode int32
 
 const (
-	ChatErrorCode_CHAT_ERROR_UNSPECIFIED                      ChatErrorCode = 0
-	ChatErrorCode_CHAT_ERROR_INVALID_INPUT                    ChatErrorCode = 1
-	ChatErrorCode_CHAT_ERROR_NOT_FOUND                        ChatErrorCode = 2
-	ChatErrorCode_CHAT_ERROR_INTERNAL                         ChatErrorCode = 3
-	ChatErrorCode_CHAT_ERROR_DIALOG_EXISTS                    ChatErrorCode = 4
-	ChatErrorCode_CHAT_ERROR_CHAT_ALREADY_EXISTS              ChatErrorCode = 5
-	ChatErrorCode_CHAT_ERROR_CHAT_NOT_FOUND                   ChatErrorCode = 6
-	ChatErrorCode_CHAT_ERROR_USER_NOT_FOUND                   ChatErrorCode = 7
-	ChatErrorCode_CHAT_ERROR_USER_NOT_MEMBER                  ChatErrorCode = 8
-	ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_DELETE_CHAT       ChatErrorCode = 9
-	ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_ADD_PEOPLE        ChatErrorCode = 10
-	ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_DELETE_PEOPLE     ChatErrorCode = 11
-	ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_TITLE    ChatErrorCode = 12
-	ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_AVATAR   ChatErrorCode = 13
-	ChatErrorCode_CHAT_ERROR_CANT_CREATE_DIALOG_WITH_YOURSELF ChatErrorCode = 14
-	ChatErrorCode_CHAT_ERROR_DIALOG_MUST_HAVE_2_USERS         ChatErrorCode = 15
-	ChatErrorCode_CHAT_ERROR_NO_MESSAGE                       ChatErrorCode = 16
-	ChatErrorCode_CHAT_ERROR_MESSAGE_EMPTY                    ChatErrorCode = 17
-	ChatErrorCode_CHAT_ERROR_MESSAGE_TOO_LONG                 ChatErrorCode = 18
-	ChatErrorCode_CHAT_ERROR_MESSAGE_NOT_MEMBER               ChatErrorCode = 19
-	ChatErrorCode_CHAT_ERROR_MEMBER_ALREADY_IN_CHAT           ChatErrorCode = 20
-	ChatErrorCode_CHAT_ERROR_MEMBER_NOT_FOUND                 ChatErrorCode = 21
-	ChatErrorCode_CHAT_ERROR_NOT_MEMBER                       ChatErrorCode = 22
-	ChatErrorCode_CHAT_ERROR_CANT_ADD_MEMBER_TO_DIALOG        ChatErrorCode = 23
-	ChatErrorCode_CHAT_ERROR_CANT_DELETE_MEMBER_FROM_DIALOG   ChatErrorCode = 24
-	ChatErrorCode_CHAT_ERROR_CANT_DELETE_OWNER_OF_CHAT        ChatErrorCode = 25
-	ChatErrorCode_CHAT_ERROR_CANT_QUIT_DIALOG                 ChatErrorCode = 26
-	ChatErrorCode_CHAT_ERROR_OWNER_CANT_QUIT_GROUP            ChatErrorCode = 27
-	ChatErrorCode_CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED       ChatErrorCode = 28
+	ChatErrorCode_CHAT_ERROR_UNSPECIFIED                         ChatErrorCode = 0
+	ChatErrorCode_CHAT_ERROR_INVALID_INPUT                       ChatErrorCode = 1
+	ChatErrorCode_CHAT_ERROR_NOT_FOUND                           ChatErrorCode = 2
+	ChatErrorCode_CHAT_ERROR_INTERNAL                            ChatErrorCode = 3
+	ChatErrorCode_CHAT_ERROR_DIALOG_EXISTS                       ChatErrorCode = 4
+	ChatErrorCode_CHAT_ERROR_CHAT_ALREADY_EXISTS                 ChatErrorCode = 5
+	ChatErrorCode_CHAT_ERROR_CHAT_NOT_FOUND                      ChatErrorCode = 6
+	ChatErrorCode_CHAT_ERROR_USER_NOT_FOUND                      ChatErrorCode = 7
+	ChatErrorCode_CHAT_ERROR_USER_NOT_MEMBER                     ChatErrorCode = 8
+	ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_DELETE_CHAT          ChatErrorCode = 9
+	ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_ADD_PEOPLE           ChatErrorCode = 10
+	ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_DELETE_PEOPLE        ChatErrorCode = 11
+	ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_TITLE       ChatErrorCode = 12
+	ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_AVATAR      ChatErrorCode = 13
+	ChatErrorCode_CHAT_ERROR_CANT_CREATE_DIALOG_WITH_YOURSELF    ChatErrorCode = 14
+	ChatErrorCode_CHAT_ERROR_DIALOG_MUST_HAVE_2_USERS            ChatErrorCode = 15
+	ChatErrorCode_CHAT_ERROR_NO_MESSAGE                          ChatErrorCode = 16
+	ChatErrorCode_CHAT_ERROR_MESSAGE_EMPTY                       ChatErrorCode = 17
+	ChatErrorCode_CHAT_ERROR_MESSAGE_TOO_LONG                    ChatErrorCode = 18
+	ChatErrorCode_CHAT_ERROR_MESSAGE_NOT_MEMBER                  ChatErrorCode = 19
+	ChatErrorCode_CHAT_ERROR_MEMBER_ALREADY_IN_CHAT              ChatErrorCode = 20
+	ChatErrorCode_CHAT_ERROR_MEMBER_NOT_FOUND                    ChatErrorCode = 21
+	ChatErrorCode_CHAT_ERROR_NOT_MEMBER                          ChatErrorCode = 22
+	ChatErrorCode_CHAT_ERROR_CANT_ADD_MEMBER_TO_DIALOG           ChatErrorCode = 23
+	ChatErrorCode_CHAT_ERROR_CANT_DELETE_MEMBER_FROM_DIALOG      ChatErrorCode = 24
+	ChatErrorCode_CHAT_ERROR_CANT_DELETE_OWNER_OF_CHAT           ChatErrorCode = 25
+	ChatErrorCode_CHAT_ERROR_CANT_QUIT_DIALOG                    ChatErrorCode = 26
+	ChatErrorCode_CHAT_ERROR_OWNER_CANT_QUIT_GROUP               ChatErrorCode = 27
+	ChatErrorCode_CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED          ChatErrorCode = 28
+	ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION ChatErrorCode = 29
+	ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION   ChatErrorCode = 30
 )
 
 // Enum value maps for ChatErrorCode.
@@ -89,37 +91,41 @@ var (
 		26: "CHAT_ERROR_CANT_QUIT_DIALOG",
 		27: "CHAT_ERROR_OWNER_CANT_QUIT_GROUP",
 		28: "CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED",
+		29: "CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION",
+		30: "CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION",
 	}
 	ChatErrorCode_value = map[string]int32{
-		"CHAT_ERROR_UNSPECIFIED":                      0,
-		"CHAT_ERROR_INVALID_INPUT":                    1,
-		"CHAT_ERROR_NOT_FOUND":                        2,
-		"CHAT_ERROR_INTERNAL":                         3,
-		"CHAT_ERROR_DIALOG_EXISTS":                    4,
-		"CHAT_ERROR_CHAT_ALREADY_EXISTS":              5,
-		"CHAT_ERROR_CHAT_NOT_FOUND":                   6,
-		"CHAT_ERROR_USER_NOT_FOUND":                   7,
-		"CHAT_ERROR_USER_NOT_MEMBER":                  8,
-		"CHAT_ERROR_ONLY_OWNER_CAN_DELETE_CHAT":       9,
-		"CHAT_ERROR_ONLY_OWNER_CAN_ADD_PEOPLE":        10,
-		"CHAT_ERROR_ONLY_OWNER_CAN_DELETE_PEOPLE":     11,
-		"CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_TITLE":    12,
-		"CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_AVATAR":   13,
-		"CHAT_ERROR_CANT_CREATE_DIALOG_WITH_YOURSELF": 14,
-		"CHAT_ERROR_DIALOG_MUST_HAVE_2_USERS":         15,
-		"CHAT_ERROR_NO_MESSAGE":                       16,
-		"CHAT_ERROR_MESSAGE_EMPTY":                    17,
-		"CHAT_ERROR_MESSAGE_TOO_LONG":                 18,
-		"CHAT_ERROR_MESSAGE_NOT_MEMBER":               19,
-		"CHAT_ERROR_MEMBER_ALREADY_IN_CHAT":           20,
-		"CHAT_ERROR_MEMBER_NOT_FOUND":                 21,
-		"CHAT_ERROR_NOT_MEMBER":                       22,
-		"CHAT_ERROR_CANT_ADD_MEMBER_TO_DIALOG":        23,
-		"CHAT_ERROR_CANT_DELETE_MEMBER_FROM_DIALOG":   24,
-		"CHAT_ERROR_CANT_DELETE_OWNER_OF_CHAT":        25,
-		"CHAT_ERROR_CANT_QUIT_DIALOG":                 26,
-		"CHAT_ERROR_OWNER_CANT_QUIT_GROUP":            27,
-		"CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED":       28,
+		"CHAT_ERROR_UNSPECIFIED":                         0,
+		"CHAT_ERROR_INVALID_INPUT":                       1,
+		"CHAT_ERROR_NOT_FOUND":                           2,
+		"CHAT_ERROR_INTERNAL":                            3,
+		"CHAT_ERROR_DIALOG_EXISTS":                       4,
+		"CHAT_ERROR_CHAT_ALREADY_EXISTS":                 5,
+		"CHAT_ERROR_CHAT_NOT_FOUND":                      6,
+		"CHAT_ERROR_USER_NOT_FOUND":                      7,
+		"CHAT_ERROR_USER_NOT_MEMBER":                     8,
+		"CHAT_ERROR_ONLY_OWNER_CAN_DELETE_CHAT":          9,
+		"CHAT_ERROR_ONLY_OWNER_CAN_ADD_PEOPLE":           10,
+		"CHAT_ERROR_ONLY_OWNER_CAN_DELETE_PEOPLE":        11,
+		"CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_TITLE":       12,
+		"CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_AVATAR":      13,
+		"CHAT_ERROR_CANT_CREATE_DIALOG_WITH_YOURSELF":    14,
+		"CHAT_ERROR_DIALOG_MUST_HAVE_2_USERS":            15,
+		"CHAT_ERROR_NO_MESSAGE":                          16,
+		"CHAT_ERROR_MESSAGE_EMPTY":                       17,
+		"CHAT_ERROR_MESSAGE_TOO_LONG":                    18,
+		"CHAT_ERROR_MESSAGE_NOT_MEMBER":                  19,
+		"CHAT_ERROR_MEMBER_ALREADY_IN_CHAT":              20,
+		"CHAT_ERROR_MEMBER_NOT_FOUND":                    21,
+		"CHAT_ERROR_NOT_MEMBER":                          22,
+		"CHAT_ERROR_CANT_ADD_MEMBER_TO_DIALOG":           23,
+		"CHAT_ERROR_CANT_DELETE_MEMBER_FROM_DIALOG":      24,
+		"CHAT_ERROR_CANT_DELETE_OWNER_OF_CHAT":           25,
+		"CHAT_ERROR_CANT_QUIT_DIALOG":                    26,
+		"CHAT_ERROR_OWNER_CANT_QUIT_GROUP":               27,
+		"CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED":          28,
+		"CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION": 29,
+		"CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION":   30,
 	}
 )
 
@@ -579,6 +585,66 @@ func (x *RequestUpdateTitle) GetTitle() string {
 	return ""
 }
 
+type RequestUpdateDescription struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ChatId        int64                  `protobuf:"varint,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestUpdateDescription) Reset() {
+	*x = RequestUpdateDescription{}
+	mi := &file_chat_v1_chat_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestUpdateDescription) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestUpdateDescription) ProtoMessage() {}
+
+func (x *RequestUpdateDescription) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_v1_chat_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestUpdateDescription.ProtoReflect.Descriptor instead.
+func (*RequestUpdateDescription) Descriptor() ([]byte, []int) {
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *RequestUpdateDescription) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *RequestUpdateDescription) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
+	}
+	return 0
+}
+
+func (x *RequestUpdateDescription) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
 type RequestUpdateAvatar struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -591,7 +657,7 @@ type RequestUpdateAvatar struct {
 
 func (x *RequestUpdateAvatar) Reset() {
 	*x = RequestUpdateAvatar{}
-	mi := &file_chat_v1_chat_proto_msgTypes[7]
+	mi := &file_chat_v1_chat_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -603,7 +669,7 @@ func (x *RequestUpdateAvatar) String() string {
 func (*RequestUpdateAvatar) ProtoMessage() {}
 
 func (x *RequestUpdateAvatar) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_v1_chat_proto_msgTypes[7]
+	mi := &file_chat_v1_chat_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -616,7 +682,7 @@ func (x *RequestUpdateAvatar) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestUpdateAvatar.ProtoReflect.Descriptor instead.
 func (*RequestUpdateAvatar) Descriptor() ([]byte, []int) {
-	return file_chat_v1_chat_proto_rawDescGZIP(), []int{7}
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RequestUpdateAvatar) GetUserId() int64 {
@@ -657,7 +723,7 @@ type RequestDeleteChat struct {
 
 func (x *RequestDeleteChat) Reset() {
 	*x = RequestDeleteChat{}
-	mi := &file_chat_v1_chat_proto_msgTypes[8]
+	mi := &file_chat_v1_chat_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -669,7 +735,7 @@ func (x *RequestDeleteChat) String() string {
 func (*RequestDeleteChat) ProtoMessage() {}
 
 func (x *RequestDeleteChat) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_v1_chat_proto_msgTypes[8]
+	mi := &file_chat_v1_chat_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -682,7 +748,7 @@ func (x *RequestDeleteChat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestDeleteChat.ProtoReflect.Descriptor instead.
 func (*RequestDeleteChat) Descriptor() ([]byte, []int) {
-	return file_chat_v1_chat_proto_rawDescGZIP(), []int{8}
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RequestDeleteChat) GetUserId() int64 {
@@ -709,7 +775,7 @@ type RequestGetChatByID struct {
 
 func (x *RequestGetChatByID) Reset() {
 	*x = RequestGetChatByID{}
-	mi := &file_chat_v1_chat_proto_msgTypes[9]
+	mi := &file_chat_v1_chat_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -721,7 +787,7 @@ func (x *RequestGetChatByID) String() string {
 func (*RequestGetChatByID) ProtoMessage() {}
 
 func (x *RequestGetChatByID) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_v1_chat_proto_msgTypes[9]
+	mi := &file_chat_v1_chat_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -734,7 +800,7 @@ func (x *RequestGetChatByID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestGetChatByID.ProtoReflect.Descriptor instead.
 func (*RequestGetChatByID) Descriptor() ([]byte, []int) {
-	return file_chat_v1_chat_proto_rawDescGZIP(), []int{9}
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RequestGetChatByID) GetUserId() int64 {
@@ -763,7 +829,7 @@ type RequestChatCreate struct {
 
 func (x *RequestChatCreate) Reset() {
 	*x = RequestChatCreate{}
-	mi := &file_chat_v1_chat_proto_msgTypes[10]
+	mi := &file_chat_v1_chat_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -775,7 +841,7 @@ func (x *RequestChatCreate) String() string {
 func (*RequestChatCreate) ProtoMessage() {}
 
 func (x *RequestChatCreate) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_v1_chat_proto_msgTypes[10]
+	mi := &file_chat_v1_chat_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -788,7 +854,7 @@ func (x *RequestChatCreate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestChatCreate.ProtoReflect.Descriptor instead.
 func (*RequestChatCreate) Descriptor() ([]byte, []int) {
-	return file_chat_v1_chat_proto_rawDescGZIP(), []int{10}
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RequestChatCreate) GetUserId() int64 {
@@ -828,7 +894,7 @@ type RequestGetUserChats struct {
 
 func (x *RequestGetUserChats) Reset() {
 	*x = RequestGetUserChats{}
-	mi := &file_chat_v1_chat_proto_msgTypes[11]
+	mi := &file_chat_v1_chat_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -840,7 +906,7 @@ func (x *RequestGetUserChats) String() string {
 func (*RequestGetUserChats) ProtoMessage() {}
 
 func (x *RequestGetUserChats) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_v1_chat_proto_msgTypes[11]
+	mi := &file_chat_v1_chat_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -853,7 +919,7 @@ func (x *RequestGetUserChats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestGetUserChats.ProtoReflect.Descriptor instead.
 func (*RequestGetUserChats) Descriptor() ([]byte, []int) {
-	return file_chat_v1_chat_proto_rawDescGZIP(), []int{11}
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RequestGetUserChats) GetUserId() int64 {
@@ -872,7 +938,7 @@ type ResponseGetUserChats struct {
 
 func (x *ResponseGetUserChats) Reset() {
 	*x = ResponseGetUserChats{}
-	mi := &file_chat_v1_chat_proto_msgTypes[12]
+	mi := &file_chat_v1_chat_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -884,7 +950,7 @@ func (x *ResponseGetUserChats) String() string {
 func (*ResponseGetUserChats) ProtoMessage() {}
 
 func (x *ResponseGetUserChats) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_v1_chat_proto_msgTypes[12]
+	mi := &file_chat_v1_chat_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -897,7 +963,7 @@ func (x *ResponseGetUserChats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResponseGetUserChats.ProtoReflect.Descriptor instead.
 func (*ResponseGetUserChats) Descriptor() ([]byte, []int) {
-	return file_chat_v1_chat_proto_rawDescGZIP(), []int{12}
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ResponseGetUserChats) GetChats() []*ChatInformation {
@@ -918,7 +984,7 @@ type MessageInformation struct {
 
 func (x *MessageInformation) Reset() {
 	*x = MessageInformation{}
-	mi := &file_chat_v1_chat_proto_msgTypes[13]
+	mi := &file_chat_v1_chat_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -930,7 +996,7 @@ func (x *MessageInformation) String() string {
 func (*MessageInformation) ProtoMessage() {}
 
 func (x *MessageInformation) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_v1_chat_proto_msgTypes[13]
+	mi := &file_chat_v1_chat_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -943,7 +1009,7 @@ func (x *MessageInformation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageInformation.ProtoReflect.Descriptor instead.
 func (*MessageInformation) Descriptor() ([]byte, []int) {
-	return file_chat_v1_chat_proto_rawDescGZIP(), []int{13}
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MessageInformation) GetSenderId() int64 {
@@ -975,13 +1041,14 @@ type ChatInformation struct {
 	LastMessage   *MessageInformation    `protobuf:"bytes,4,opt,name=last_message,json=lastMessage,proto3" json:"last_message,omitempty"`
 	Avatar        *string                `protobuf:"bytes,5,opt,name=avatar,proto3,oneof" json:"avatar,omitempty"`
 	OwnerId       int64                  `protobuf:"varint,6,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	Description   *string                `protobuf:"bytes,7,opt,name=description,proto3,oneof" json:"description,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ChatInformation) Reset() {
 	*x = ChatInformation{}
-	mi := &file_chat_v1_chat_proto_msgTypes[14]
+	mi := &file_chat_v1_chat_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -993,7 +1060,7 @@ func (x *ChatInformation) String() string {
 func (*ChatInformation) ProtoMessage() {}
 
 func (x *ChatInformation) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_v1_chat_proto_msgTypes[14]
+	mi := &file_chat_v1_chat_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1006,7 +1073,7 @@ func (x *ChatInformation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatInformation.ProtoReflect.Descriptor instead.
 func (*ChatInformation) Descriptor() ([]byte, []int) {
-	return file_chat_v1_chat_proto_rawDescGZIP(), []int{14}
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ChatInformation) GetId() int64 {
@@ -1051,6 +1118,13 @@ func (x *ChatInformation) GetOwnerId() int64 {
 	return 0
 }
 
+func (x *ChatInformation) GetDescription() string {
+	if x != nil && x.Description != nil {
+		return *x.Description
+	}
+	return ""
+}
+
 var File_chat_v1_chat_proto protoreflect.FileDescriptor
 
 const file_chat_v1_chat_proto_rawDesc = "" +
@@ -1080,7 +1154,11 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\x12RequestUpdateTitle\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x17\n" +
 	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\"u\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\"n\n" +
+	"\x18RequestUpdateDescription\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x17\n" +
+	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\"u\n" +
 	"\x13RequestUpdateAvatar\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\fR\acontent\x12\x12\n" +
@@ -1106,15 +1184,17 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\tsender_id\x18\x01 \x01(\x03R\bsenderId\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x129\n" +
 	"\n" +
-	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xe1\x01\n" +
+	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x98\x02\n" +
 	"\x0fChatInformation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12%\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x11.chat.v1.ChatTypeR\x04type\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12>\n" +
 	"\flast_message\x18\x04 \x01(\v2\x1b.chat.v1.MessageInformationR\vlastMessage\x12\x1b\n" +
 	"\x06avatar\x18\x05 \x01(\tH\x00R\x06avatar\x88\x01\x01\x12\x19\n" +
-	"\bowner_id\x18\x06 \x01(\x03R\aownerIdB\t\n" +
-	"\a_avatar*\xaa\b\n" +
+	"\bowner_id\x18\x06 \x01(\x03R\aownerId\x12%\n" +
+	"\vdescription\x18\a \x01(\tH\x01R\vdescription\x88\x01\x01B\t\n" +
+	"\a_avatarB\x0e\n" +
+	"\f_description*\x90\t\n" +
 	"\rChatErrorCode\x12\x1a\n" +
 	"\x16CHAT_ERROR_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18CHAT_ERROR_INVALID_INPUT\x10\x01\x12\x18\n" +
@@ -1145,12 +1225,14 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"$CHAT_ERROR_CANT_DELETE_OWNER_OF_CHAT\x10\x19\x12\x1f\n" +
 	"\x1bCHAT_ERROR_CANT_QUIT_DIALOG\x10\x1a\x12$\n" +
 	" CHAT_ERROR_OWNER_CANT_QUIT_GROUP\x10\x1b\x12)\n" +
-	"%CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED\x10\x1c*.\n" +
+	"%CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED\x10\x1c\x122\n" +
+	".CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION\x10\x1d\x120\n" +
+	",CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION\x10\x1e*.\n" +
 	"\bChatType\x12\n" +
 	"\n" +
 	"\x06DIALOG\x10\x00\x12\t\n" +
 	"\x05GROUP\x10\x01\x12\v\n" +
-	"\aCHANNEL\x10\x022\xa3\x06\n" +
+	"\aCHANNEL\x10\x022\xf9\x06\n" +
 	"\x04Chat\x12G\n" +
 	"\bGetChats\x12\x1c.chat.v1.RequestGetUserChats\x1a\x1d.chat.v1.ResponseGetUserChats\x12>\n" +
 	"\x06Create\x12\x1a.chat.v1.RequestChatCreate\x1a\x18.chat.v1.ChatInformation\x12D\n" +
@@ -1163,7 +1245,8 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\x14DeleteMemberFromChat\x12$.chat.v1.RequestDeleteMemberFromChat\x1a\x16.google.protobuf.Empty\x12N\n" +
 	"\x0eGetChatMembers\x12\x1b.chat.v1.RequestChatMembers\x1a\x1f.chat.v1.ResponseGetChatMembers\x12<\n" +
 	"\bQuitChat\x12\x18.chat.v1.RequestQuitChat\x1a\x16.google.protobuf.Empty\x12B\n" +
-	"\vJoinChannel\x12\x1b.chat.v1.RequestJoinChannel\x1a\x16.google.protobuf.EmptyB>Z<github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1;chatv1b\x06proto3"
+	"\vJoinChannel\x12\x1b.chat.v1.RequestJoinChannel\x1a\x16.google.protobuf.Empty\x12T\n" +
+	"\x15UpdateChatDescription\x12!.chat.v1.RequestUpdateDescription\x1a\x18.chat.v1.ChatInformationB>Z<github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1;chatv1b\x06proto3"
 
 var (
 	file_chat_v1_chat_proto_rawDescOnce sync.Once
@@ -1178,7 +1261,7 @@ func file_chat_v1_chat_proto_rawDescGZIP() []byte {
 }
 
 var file_chat_v1_chat_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_chat_v1_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_chat_v1_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_chat_v1_chat_proto_goTypes = []any{
 	(ChatErrorCode)(0),                  // 0: chat.v1.ChatErrorCode
 	(ChatType)(0),                       // 1: chat.v1.ChatType
@@ -1189,47 +1272,50 @@ var file_chat_v1_chat_proto_goTypes = []any{
 	(*RequestAddMembersToChat)(nil),     // 6: chat.v1.RequestAddMembersToChat
 	(*RequestJoinChannel)(nil),          // 7: chat.v1.RequestJoinChannel
 	(*RequestUpdateTitle)(nil),          // 8: chat.v1.RequestUpdateTitle
-	(*RequestUpdateAvatar)(nil),         // 9: chat.v1.RequestUpdateAvatar
-	(*RequestDeleteChat)(nil),           // 10: chat.v1.RequestDeleteChat
-	(*RequestGetChatByID)(nil),          // 11: chat.v1.RequestGetChatByID
-	(*RequestChatCreate)(nil),           // 12: chat.v1.RequestChatCreate
-	(*RequestGetUserChats)(nil),         // 13: chat.v1.RequestGetUserChats
-	(*ResponseGetUserChats)(nil),        // 14: chat.v1.ResponseGetUserChats
-	(*MessageInformation)(nil),          // 15: chat.v1.MessageInformation
-	(*ChatInformation)(nil),             // 16: chat.v1.ChatInformation
-	(*timestamppb.Timestamp)(nil),       // 17: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),               // 18: google.protobuf.Empty
+	(*RequestUpdateDescription)(nil),    // 9: chat.v1.RequestUpdateDescription
+	(*RequestUpdateAvatar)(nil),         // 10: chat.v1.RequestUpdateAvatar
+	(*RequestDeleteChat)(nil),           // 11: chat.v1.RequestDeleteChat
+	(*RequestGetChatByID)(nil),          // 12: chat.v1.RequestGetChatByID
+	(*RequestChatCreate)(nil),           // 13: chat.v1.RequestChatCreate
+	(*RequestGetUserChats)(nil),         // 14: chat.v1.RequestGetUserChats
+	(*ResponseGetUserChats)(nil),        // 15: chat.v1.ResponseGetUserChats
+	(*MessageInformation)(nil),          // 16: chat.v1.MessageInformation
+	(*ChatInformation)(nil),             // 17: chat.v1.ChatInformation
+	(*timestamppb.Timestamp)(nil),       // 18: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),               // 19: google.protobuf.Empty
 }
 var file_chat_v1_chat_proto_depIdxs = []int32{
 	1,  // 0: chat.v1.RequestChatCreate.type:type_name -> chat.v1.ChatType
-	16, // 1: chat.v1.ResponseGetUserChats.chats:type_name -> chat.v1.ChatInformation
-	17, // 2: chat.v1.MessageInformation.created_at:type_name -> google.protobuf.Timestamp
+	17, // 1: chat.v1.ResponseGetUserChats.chats:type_name -> chat.v1.ChatInformation
+	18, // 2: chat.v1.MessageInformation.created_at:type_name -> google.protobuf.Timestamp
 	1,  // 3: chat.v1.ChatInformation.type:type_name -> chat.v1.ChatType
-	15, // 4: chat.v1.ChatInformation.last_message:type_name -> chat.v1.MessageInformation
-	13, // 5: chat.v1.Chat.GetChats:input_type -> chat.v1.RequestGetUserChats
-	12, // 6: chat.v1.Chat.Create:input_type -> chat.v1.RequestChatCreate
-	11, // 7: chat.v1.Chat.GetChatByID:input_type -> chat.v1.RequestGetChatByID
-	10, // 8: chat.v1.Chat.DeleteChat:input_type -> chat.v1.RequestDeleteChat
-	9,  // 9: chat.v1.Chat.UpdateChatAvatar:input_type -> chat.v1.RequestUpdateAvatar
+	16, // 4: chat.v1.ChatInformation.last_message:type_name -> chat.v1.MessageInformation
+	14, // 5: chat.v1.Chat.GetChats:input_type -> chat.v1.RequestGetUserChats
+	13, // 6: chat.v1.Chat.Create:input_type -> chat.v1.RequestChatCreate
+	12, // 7: chat.v1.Chat.GetChatByID:input_type -> chat.v1.RequestGetChatByID
+	11, // 8: chat.v1.Chat.DeleteChat:input_type -> chat.v1.RequestDeleteChat
+	10, // 9: chat.v1.Chat.UpdateChatAvatar:input_type -> chat.v1.RequestUpdateAvatar
 	8,  // 10: chat.v1.Chat.UpdateChatTitle:input_type -> chat.v1.RequestUpdateTitle
 	6,  // 11: chat.v1.Chat.AddMembersToChat:input_type -> chat.v1.RequestAddMembersToChat
 	5,  // 12: chat.v1.Chat.DeleteMemberFromChat:input_type -> chat.v1.RequestDeleteMemberFromChat
 	3,  // 13: chat.v1.Chat.GetChatMembers:input_type -> chat.v1.RequestChatMembers
 	2,  // 14: chat.v1.Chat.QuitChat:input_type -> chat.v1.RequestQuitChat
 	7,  // 15: chat.v1.Chat.JoinChannel:input_type -> chat.v1.RequestJoinChannel
-	14, // 16: chat.v1.Chat.GetChats:output_type -> chat.v1.ResponseGetUserChats
-	16, // 17: chat.v1.Chat.Create:output_type -> chat.v1.ChatInformation
-	16, // 18: chat.v1.Chat.GetChatByID:output_type -> chat.v1.ChatInformation
-	18, // 19: chat.v1.Chat.DeleteChat:output_type -> google.protobuf.Empty
-	16, // 20: chat.v1.Chat.UpdateChatAvatar:output_type -> chat.v1.ChatInformation
-	16, // 21: chat.v1.Chat.UpdateChatTitle:output_type -> chat.v1.ChatInformation
-	18, // 22: chat.v1.Chat.AddMembersToChat:output_type -> google.protobuf.Empty
-	18, // 23: chat.v1.Chat.DeleteMemberFromChat:output_type -> google.protobuf.Empty
-	4,  // 24: chat.v1.Chat.GetChatMembers:output_type -> chat.v1.ResponseGetChatMembers
-	18, // 25: chat.v1.Chat.QuitChat:output_type -> google.protobuf.Empty
-	18, // 26: chat.v1.Chat.JoinChannel:output_type -> google.protobuf.Empty
-	16, // [16:27] is the sub-list for method output_type
-	5,  // [5:16] is the sub-list for method input_type
+	9,  // 16: chat.v1.Chat.UpdateChatDescription:input_type -> chat.v1.RequestUpdateDescription
+	15, // 17: chat.v1.Chat.GetChats:output_type -> chat.v1.ResponseGetUserChats
+	17, // 18: chat.v1.Chat.Create:output_type -> chat.v1.ChatInformation
+	17, // 19: chat.v1.Chat.GetChatByID:output_type -> chat.v1.ChatInformation
+	19, // 20: chat.v1.Chat.DeleteChat:output_type -> google.protobuf.Empty
+	17, // 21: chat.v1.Chat.UpdateChatAvatar:output_type -> chat.v1.ChatInformation
+	17, // 22: chat.v1.Chat.UpdateChatTitle:output_type -> chat.v1.ChatInformation
+	19, // 23: chat.v1.Chat.AddMembersToChat:output_type -> google.protobuf.Empty
+	19, // 24: chat.v1.Chat.DeleteMemberFromChat:output_type -> google.protobuf.Empty
+	4,  // 25: chat.v1.Chat.GetChatMembers:output_type -> chat.v1.ResponseGetChatMembers
+	19, // 26: chat.v1.Chat.QuitChat:output_type -> google.protobuf.Empty
+	19, // 27: chat.v1.Chat.JoinChannel:output_type -> google.protobuf.Empty
+	17, // 28: chat.v1.Chat.UpdateChatDescription:output_type -> chat.v1.ChatInformation
+	17, // [17:29] is the sub-list for method output_type
+	5,  // [5:17] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -1240,14 +1326,14 @@ func file_chat_v1_chat_proto_init() {
 	if File_chat_v1_chat_proto != nil {
 		return
 	}
-	file_chat_v1_chat_proto_msgTypes[14].OneofWrappers = []any{}
+	file_chat_v1_chat_proto_msgTypes[15].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chat_v1_chat_proto_rawDesc), len(file_chat_v1_chat_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

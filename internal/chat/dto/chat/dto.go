@@ -22,6 +22,7 @@ type MessageDTO struct {
 
 type ChatInformationDTO struct {
 	Avatar      *string    `json:"avatar"`
+	Description *string    `json:"description"`
 	Title       string     `json:"title" example:"Chat Title"`
 	ChatType    ChatType   `json:"chat_type" example:"dialog"`
 	LastMessage MessageDTO `json:"last_message"`
@@ -42,6 +43,10 @@ type RequestUpdateAvatar struct {
 
 type RequestUpdateTitle struct {
 	Title string `json:"title"`
+}
+
+type RequestUpdateDescription struct {
+	Description string `json:"description"`
 }
 
 type RequestAddMember struct {

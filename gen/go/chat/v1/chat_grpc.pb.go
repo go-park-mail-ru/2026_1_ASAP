@@ -20,17 +20,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Chat_GetChats_FullMethodName             = "/chat.v1.Chat/GetChats"
-	Chat_Create_FullMethodName               = "/chat.v1.Chat/Create"
-	Chat_GetChatByID_FullMethodName          = "/chat.v1.Chat/GetChatByID"
-	Chat_DeleteChat_FullMethodName           = "/chat.v1.Chat/DeleteChat"
-	Chat_UpdateChatAvatar_FullMethodName     = "/chat.v1.Chat/UpdateChatAvatar"
-	Chat_UpdateChatTitle_FullMethodName      = "/chat.v1.Chat/UpdateChatTitle"
-	Chat_AddMembersToChat_FullMethodName     = "/chat.v1.Chat/AddMembersToChat"
-	Chat_DeleteMemberFromChat_FullMethodName = "/chat.v1.Chat/DeleteMemberFromChat"
-	Chat_GetChatMembers_FullMethodName       = "/chat.v1.Chat/GetChatMembers"
-	Chat_QuitChat_FullMethodName             = "/chat.v1.Chat/QuitChat"
-	Chat_JoinChannel_FullMethodName          = "/chat.v1.Chat/JoinChannel"
+	Chat_GetChats_FullMethodName              = "/chat.v1.Chat/GetChats"
+	Chat_Create_FullMethodName                = "/chat.v1.Chat/Create"
+	Chat_GetChatByID_FullMethodName           = "/chat.v1.Chat/GetChatByID"
+	Chat_DeleteChat_FullMethodName            = "/chat.v1.Chat/DeleteChat"
+	Chat_UpdateChatAvatar_FullMethodName      = "/chat.v1.Chat/UpdateChatAvatar"
+	Chat_UpdateChatTitle_FullMethodName       = "/chat.v1.Chat/UpdateChatTitle"
+	Chat_AddMembersToChat_FullMethodName      = "/chat.v1.Chat/AddMembersToChat"
+	Chat_DeleteMemberFromChat_FullMethodName  = "/chat.v1.Chat/DeleteMemberFromChat"
+	Chat_GetChatMembers_FullMethodName        = "/chat.v1.Chat/GetChatMembers"
+	Chat_QuitChat_FullMethodName              = "/chat.v1.Chat/QuitChat"
+	Chat_JoinChannel_FullMethodName           = "/chat.v1.Chat/JoinChannel"
+	Chat_UpdateChatDescription_FullMethodName = "/chat.v1.Chat/UpdateChatDescription"
 )
 
 // ChatClient is the client API for Chat service.
@@ -48,6 +49,7 @@ type ChatClient interface {
 	GetChatMembers(ctx context.Context, in *RequestChatMembers, opts ...grpc.CallOption) (*ResponseGetChatMembers, error)
 	QuitChat(ctx context.Context, in *RequestQuitChat, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	JoinChannel(ctx context.Context, in *RequestJoinChannel, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateChatDescription(ctx context.Context, in *RequestUpdateDescription, opts ...grpc.CallOption) (*ChatInformation, error)
 }
 
 type chatClient struct {
@@ -168,6 +170,16 @@ func (c *chatClient) JoinChannel(ctx context.Context, in *RequestJoinChannel, op
 	return out, nil
 }
 
+func (c *chatClient) UpdateChatDescription(ctx context.Context, in *RequestUpdateDescription, opts ...grpc.CallOption) (*ChatInformation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChatInformation)
+	err := c.cc.Invoke(ctx, Chat_UpdateChatDescription_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServer is the server API for Chat service.
 // All implementations must embed UnimplementedChatServer
 // for forward compatibility.
@@ -183,6 +195,7 @@ type ChatServer interface {
 	GetChatMembers(context.Context, *RequestChatMembers) (*ResponseGetChatMembers, error)
 	QuitChat(context.Context, *RequestQuitChat) (*emptypb.Empty, error)
 	JoinChannel(context.Context, *RequestJoinChannel) (*emptypb.Empty, error)
+	UpdateChatDescription(context.Context, *RequestUpdateDescription) (*ChatInformation, error)
 	mustEmbedUnimplementedChatServer()
 }
 
@@ -225,6 +238,9 @@ func (UnimplementedChatServer) QuitChat(context.Context, *RequestQuitChat) (*emp
 }
 func (UnimplementedChatServer) JoinChannel(context.Context, *RequestJoinChannel) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method JoinChannel not implemented")
+}
+func (UnimplementedChatServer) UpdateChatDescription(context.Context, *RequestUpdateDescription) (*ChatInformation, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateChatDescription not implemented")
 }
 func (UnimplementedChatServer) mustEmbedUnimplementedChatServer() {}
 func (UnimplementedChatServer) testEmbeddedByValue()              {}
@@ -445,6 +461,24 @@ func _Chat_JoinChannel_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Chat_UpdateChatDescription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestUpdateDescription)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).UpdateChatDescription(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Chat_UpdateChatDescription_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).UpdateChatDescription(ctx, req.(*RequestUpdateDescription))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Chat_ServiceDesc is the grpc.ServiceDesc for Chat service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -495,6 +529,10 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "JoinChannel",
 			Handler:    _Chat_JoinChannel_Handler,
+		},
+		{
+			MethodName: "UpdateChatDescription",
+			Handler:    _Chat_UpdateChatDescription_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

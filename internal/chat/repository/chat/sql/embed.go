@@ -47,5 +47,8 @@ var UpdateChatAvatarURL string
 //go:embed update_chat_title.sql
 var UpdateChatTitle string
 
+//go:embed update_chat_description.sql
+var UpdateChatDescription string
+
 //go:embed delete_chat_member.sql
 var DeleteChatMember string

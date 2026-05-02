@@ -30,6 +30,7 @@ type ChatUsecaseInterface interface {
 	GetAllChatMembers(ctx context.Context, userID, chatID int64) (*dto.ResponseGetChatMembers, error)
 	QuitChat(ctx context.Context, userID, chatID int64) error
 	JoinChannel(ctx context.Context, userID, chatID int64) error
+	UpdateChatDescription(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateDescription) (*dto.ChatInformationDTO, error)
 }
 
 type MessageUsecaseInterface interface {
@@ -101,6 +102,20 @@ func mapDomainErr(err error) error {
 			err.Error(),
 		)
 
+	case errors.Is(err, domain.ErrOnlyOwnerCanChangeDescription):
+		return grpcerr.New(
+			codes.PermissionDenied,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION),
+			err.Error(),
+		)
+
+	case errors.Is(err, domain.ErrDialogCannotHaveCustomDescription):
+		return grpcerr.New(
+			codes.FailedPrecondition,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION),
+			err.Error(),
+		)
+		
 	default:
 		return grpcerr.New(
 			codes.Internal,
@@ -188,6 +203,16 @@ func (s *ChatServer) UpdateChatAvatar(ctx context.Context, avatar *chatv1.Reques
 func (s *ChatServer) UpdateChatTitle(ctx context.Context, title *chatv1.RequestUpdateTitle) (*chatv1.ChatInformation, error) {
 	responseUpdate, err := s.chatUsecase.UpdateChatTitle(ctx, title.GetUserId(), title.GetChatId(), &dto.RequestUpdateTitle{
 		Title: title.GetTitle(),
+	})
+	if err != nil {
+		return nil, mapDomainErr(err)
+	}
+	return mapChatInformationDTOToProto(responseUpdate), nil
+}
+
+func (s *ChatServer) UpdateChatDescription(ctx context.Context, description *chatv1.RequestUpdateDescription) (*chatv1.ChatInformation, error) {
+	responseUpdate, err := s.chatUsecase.UpdateChatDescription(ctx, description.GetUserId(), description.GetChatId(), &dto.RequestUpdateDescription{
+		Description: description.GetDescription(),
 	})
 	if err != nil {
 		return nil, mapDomainErr(err)

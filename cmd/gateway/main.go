@@ -184,6 +184,7 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}/members", chatHandler.GetChatMembers)
 		mux.With(authMiddleware, csrfMiddleware).Delete("/{id}/quit", chatHandler.QuitChat)
 		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/join", chatHandler.JoinChannel)
+		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/description", chatHandler.UpdateChatDescription)
 	})
 
 	router.Route("/api/v1/complaints", func(mux chi.Router) {
