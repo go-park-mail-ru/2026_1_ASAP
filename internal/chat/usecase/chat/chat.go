@@ -238,17 +238,17 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 }
 
 func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*dto.ChatInformationDTO, error) {
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+	
 	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("check membership: %w", err)
 	}
-	if !isMember {
+	if !isMember && chat.Type != domain.ChatTypeChannel{
 		return nil, domain.ErrNotMember
-	}
-
-	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
-	if err != nil {
-		return nil, err
 	}
 
 	lastMsg, err := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
