@@ -380,6 +380,32 @@ func (r *ChatRepository) UpdateTitle(ctx context.Context, chatID int64, title st
 	return toDomainChat(chatModel), nil
 }
 
+func (r *ChatRepository) UpdateDescription(ctx context.Context, chatID int64, description string) (*domain.Chat, error) {
+	q := chatssql.UpdateChatDescription
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, chatID, description)
+
+	chatModel := &ChatModel{}
+	err := row.Scan(
+		&chatModel.Id,
+		&chatModel.Type,
+		&chatModel.Title,
+		&chatModel.Description,
+		&chatModel.OwnerId,
+		&chatModel.AvatarUrl,
+		&chatModel.CreatedAt,
+		&chatModel.UpdatedAt,
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "UpdateDescription", q, start, err, []any{chatID, description})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrChatNotFound
+		}
+		return nil, fmt.Errorf("chatRepo failed update description: %w", err)
+	}
+	return toDomainChat(chatModel), nil
+}
+
 func (r *ChatRepository) DeleteMember(ctx context.Context, chatID, userID int64) error {
 	q := chatssql.DeleteChatMember
 	start := time.Now()

@@ -30,6 +30,7 @@ type ChatRepositoryInterface interface {
 	UploadAvatarUrl(ctx context.Context, chatID int64, avatarURL string) (*domain.Chat, error)
 	UpdateTitle(ctx context.Context, chatID int64, title string) (*domain.Chat, error)
 	DeleteMember(ctx context.Context, chatID, userID int64) error
+	UpdateDescription(ctx context.Context, chatID int64, description string) (*domain.Chat, error)
 }
 
 type ProfileServiceInterface interface {
@@ -416,6 +417,59 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 		LastMessage: messageDTO,
 		Avatar:      result.AvatarUrl,
 		OwnerID:     result.OwnerId,
+	}, nil
+}
+
+func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateDescription) (*dto.ChatInformationDTO, error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember {
+		return nil, domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	if chat.Type == domain.ChatTypeChannel {
+		if chat.OwnerId != userID {
+			return nil, domain.ErrOnlyOwnerCanChangeDescription
+		}
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		return nil, domain.ErrDialogCannotHaveCustomDescription
+	}
+
+	result, err := s.chatRepo.UpdateDescription(ctx, chatID, request.Description)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return nil, domain.ErrChatNotFound
+		}
+		return nil, fmt.Errorf("failed to update description: %w", err)
+	}
+
+	lastMsg, _ := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
+	var messageDTO dto.MessageDTO
+	if lastMsg != nil {
+		messageDTO = dto.MessageDTO{
+			SenderId:  lastMsg.SenderId,
+			Text:      sanitize.Text(lastMsg.Content),
+			CreatedAt: lastMsg.CreatedAt,
+		}
+	}
+
+	return &dto.ChatInformationDTO{
+		ID:          result.Id,
+		ChatType:    dto.ChatType(result.Type),
+		Title:       sanitize.Text(result.Title),
+		LastMessage: messageDTO,
+		Avatar:      result.AvatarUrl,
+		OwnerID:     result.OwnerId,
+		Description: result.Description,
 	}, nil
 }
 

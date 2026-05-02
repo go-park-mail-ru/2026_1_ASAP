@@ -37,6 +37,7 @@ type MessageInfoResponse struct {
 
 type ChatInfoResponse struct {
 	Avatar      *string             `json:"avatar"`
+	Description *string             `json:"description"`
 	Type        string              `json:"type"`
 	Title       string              `json:"title"`
 	LastMessage MessageInfoResponse `json:"last_message"`
@@ -52,6 +53,10 @@ type CreateChatRequest struct {
 
 type UpdateTitleRequest struct {
 	Title string `json:"title"`
+}
+
+type UpdateDescriptionRequest struct {
+	Description string `json:"description"`
 }
 
 type AddMembersRequest struct {
@@ -182,6 +187,16 @@ func sendChatError(w http.ResponseWriter, err error) {
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.OnlyChannelCanBeJoined, Message: dtoApi.OnlyChannelCanBeJoinedMsg}},
 		})
+	case chatv1.ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION:
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.CantHaveCustomDescription, Message: dtoApi.CantHaveCustomDescriptionMsg}},
+		})
+	case chatv1.ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION:
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.OnlyOwnerCanChangeDescription, Message: dtoApi.OnlyOwnerCanChangeDescriptionMsg}},
+		})
 	default:
 		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
@@ -216,14 +231,18 @@ func parseChatType(s string) (chatv1.ChatType, error) {
 
 func mapChatInfo(c *chatv1.ChatInformation) ChatInfoResponse {
 	out := ChatInfoResponse{
-		ID:    c.GetId(),
-		Type:  mapChatType(c.GetType()),
-		Title: c.GetTitle(),
+		ID:      c.GetId(),
+		Type:    mapChatType(c.GetType()),
+		Title:   c.GetTitle(),
 		OwnerID: c.GetOwnerId(),
 	}
 	if a := c.GetAvatar(); a != "" {
 		v := a
 		out.Avatar = &v
+	}
+	if d := c.GetDescription(); d != "" {
+		v := d
+		out.Description = &v
 	}
 	if lm := c.GetLastMessage(); lm != nil {
 		out.LastMessage = MessageInfoResponse{
@@ -462,6 +481,46 @@ func (h *GatewayChatHandler) UpdateChatTitle(w http.ResponseWriter, r *http.Requ
 		UserId: uid,
 		ChatId: chatID,
 		Title:  req.Title,
+	})
+	if err != nil {
+		sendChatError(w, err)
+		return
+	}
+
+	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[ChatInfoResponse]{
+		Status: dtoApi.Success,
+		Body:   mapChatInfo(resp),
+	})
+}
+
+func (h *GatewayChatHandler) UpdateChatDescription(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ctx := r.Context()
+	uid, ok := userID(r)
+	if !ok {
+		sendUnauthorized(w)
+		return
+	}
+
+	chatID, err := chatIDParam(r)
+	if err != nil {
+		sendInvalidID(w)
+		return
+	}
+
+	var req UpdateDescriptionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
+		})
+		return
+	}
+
+	resp, err := h.ChatService.UpdateChatDescription(ctx, &chatv1.RequestUpdateDescription{
+		UserId: uid,
+		ChatId: chatID,
+		Description:  req.Description,
 	})
 	if err != nil {
 		sendChatError(w, err)
