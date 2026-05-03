@@ -14,6 +14,15 @@ type chatSearchRow struct {
 	ID                 int64
 }
 
+type globalChannelSearchRow struct {
+	LastMessagePreview sql.NullString
+	LastMessageAt      sql.NullTime
+	AvatarURL          sql.NullString
+	Title              string
+	IsMember           bool
+	ID                 int64
+}
+
 type contactSearchRow struct {
 	LastSeen sql.NullTime
 	Login    sql.NullString

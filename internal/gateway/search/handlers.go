@@ -57,6 +57,7 @@ type searchChatItemJSON struct {
 	LastMessagePreview *string    `json:"last_message_preview,omitempty"`
 	LastMessageAt      *time.Time `json:"last_message_at,omitempty"`
 	UnreadCount        int64      `json:"unread_count"`
+	IsMember           *bool      `json:"is_member,omitempty"`
 }
 
 func (h *GatewaySearchHandler) SearchMessages(w http.ResponseWriter, r *http.Request) {
@@ -182,6 +183,49 @@ func (h *GatewaySearchHandler) SearchChats(w http.ResponseWriter, r *http.Reques
 	beforeID, _ := strconv.ParseInt(r.URL.Query().Get("before_id"), 10, 64)
 	limit, _ := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 32)
 
+	if isOnlyChannelKindFilter(kinds) {
+		gResp, err := h.Search.SearchGlobalChannels(ctx, &searchv1.SearchGlobalChannelsRequest{
+			UserId:   uid,
+			Query:    q,
+			Limit:    int32(limit),
+			BeforeId: beforeID,
+		})
+		if err != nil {
+			sendSearchError(w, err)
+			return
+		}
+		items := make([]searchChatItemJSON, 0, len(gResp.GetChannels()))
+		for _, c := range gResp.GetChannels() {
+			member := c.GetIsMember()
+			item := searchChatItemJSON{
+				ChatID:      c.GetChatId(),
+				Type:        "channel",
+				Title:       c.GetTitle(),
+				UnreadCount: 0,
+				IsMember:    &member,
+			}
+			if u := c.GetAvatarUrl(); u != "" {
+				item.AvatarURL = &u
+			}
+			if p := c.GetLastMessagePreview(); p != "" {
+				item.LastMessagePreview = &p
+			}
+			if ts := c.GetLastMessageAt(); ts != nil {
+				t := ts.AsTime()
+				item.LastMessageAt = &t
+			}
+			items = append(items, item)
+		}
+		response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[searchListResponse[searchChatItemJSON]]{
+			Status: dtoApi.Success,
+			Body: searchListResponse[searchChatItemJSON]{
+				Items:        items,
+				NextBeforeID: gResp.GetNextBeforeId(),
+			},
+		})
+		return
+	}
+
 	resp, err := h.Search.SearchChats(ctx, &searchv1.SearchChatsRequest{
 		UserId:   uid,
 		Query:    q,
@@ -273,6 +317,13 @@ func mapSearchChatType(t searchv1.ChatType) string {
 	default:
 		return "dialog"
 	}
+}
+
+func isOnlyChannelKindFilter(kinds []searchv1.SearchChatKind) bool {
+	if len(kinds) != 1 {
+		return false
+	}
+	return kinds[0] == searchv1.SearchChatKind_SEARCH_CHAT_KIND_CHANNEL
 }
 
 func parseChatKinds(raw string) ([]searchv1.SearchChatKind, error) {

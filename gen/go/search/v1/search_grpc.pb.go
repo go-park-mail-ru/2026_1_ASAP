@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	Search_SearchChats_FullMethodName          = "/search.v1.Search/SearchChats"
+	Search_SearchGlobalChannels_FullMethodName = "/search.v1.Search/SearchGlobalChannels"
 	Search_SearchContacts_FullMethodName       = "/search.v1.Search/SearchContacts"
 	Search_SearchMessagesInChat_FullMethodName = "/search.v1.Search/SearchMessagesInChat"
 )
@@ -29,6 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SearchClient interface {
 	SearchChats(ctx context.Context, in *SearchChatsRequest, opts ...grpc.CallOption) (*SearchChatsResponse, error)
+	SearchGlobalChannels(ctx context.Context, in *SearchGlobalChannelsRequest, opts ...grpc.CallOption) (*SearchGlobalChannelsResponse, error)
 	SearchContacts(ctx context.Context, in *SearchContactsRequest, opts ...grpc.CallOption) (*SearchContactsResponse, error)
 	SearchMessagesInChat(ctx context.Context, in *SearchMessagesInChatRequest, opts ...grpc.CallOption) (*SearchMessagesInChatResponse, error)
 }
@@ -45,6 +47,16 @@ func (c *searchClient) SearchChats(ctx context.Context, in *SearchChatsRequest, 
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SearchChatsResponse)
 	err := c.cc.Invoke(ctx, Search_SearchChats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *searchClient) SearchGlobalChannels(ctx context.Context, in *SearchGlobalChannelsRequest, opts ...grpc.CallOption) (*SearchGlobalChannelsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchGlobalChannelsResponse)
+	err := c.cc.Invoke(ctx, Search_SearchGlobalChannels_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +88,7 @@ func (c *searchClient) SearchMessagesInChat(ctx context.Context, in *SearchMessa
 // for forward compatibility.
 type SearchServer interface {
 	SearchChats(context.Context, *SearchChatsRequest) (*SearchChatsResponse, error)
+	SearchGlobalChannels(context.Context, *SearchGlobalChannelsRequest) (*SearchGlobalChannelsResponse, error)
 	SearchContacts(context.Context, *SearchContactsRequest) (*SearchContactsResponse, error)
 	SearchMessagesInChat(context.Context, *SearchMessagesInChatRequest) (*SearchMessagesInChatResponse, error)
 	mustEmbedUnimplementedSearchServer()
@@ -90,6 +103,9 @@ type UnimplementedSearchServer struct{}
 
 func (UnimplementedSearchServer) SearchChats(context.Context, *SearchChatsRequest) (*SearchChatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchChats not implemented")
+}
+func (UnimplementedSearchServer) SearchGlobalChannels(context.Context, *SearchGlobalChannelsRequest) (*SearchGlobalChannelsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SearchGlobalChannels not implemented")
 }
 func (UnimplementedSearchServer) SearchContacts(context.Context, *SearchContactsRequest) (*SearchContactsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchContacts not implemented")
@@ -132,6 +148,24 @@ func _Search_SearchChats_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SearchServer).SearchChats(ctx, req.(*SearchChatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Search_SearchGlobalChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchGlobalChannelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SearchServer).SearchGlobalChannels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Search_SearchGlobalChannels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SearchServer).SearchGlobalChannels(ctx, req.(*SearchGlobalChannelsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -182,6 +216,10 @@ var Search_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchChats",
 			Handler:    _Search_SearchChats_Handler,
+		},
+		{
+			MethodName: "SearchGlobalChannels",
+			Handler:    _Search_SearchGlobalChannels_Handler,
 		},
 		{
 			MethodName: "SearchContacts",

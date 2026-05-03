@@ -11,6 +11,7 @@ import (
 
 type SearchRepository interface {
 	SearchChats(ctx context.Context, params *searchdomain.SearchChatsParams) (*searchdomain.SearchChatsResult, error)
+	SearchGlobalChannels(ctx context.Context, params *searchdomain.SearchGlobalChannelsParams) (*searchdomain.SearchGlobalChannelsResult, error)
 	SearchContacts(ctx context.Context, params *searchdomain.SearchContactsParams) (*searchdomain.SearchContactsResult, error)
 	SearchUsers(ctx context.Context, params *searchdomain.SearchUsersParams) (*searchdomain.SearchUsersResult, error)
 	SearchMessagesInChat(ctx context.Context, params *searchdomain.SearchMessagesInChatParams) (*searchdomain.SearchMessagesInChatResult, error)
@@ -77,6 +78,35 @@ func (s *Service) SearchChats(ctx context.Context, req *searchdto.SearchChatsReq
 	}
 	return &searchdto.SearchChatsResponse{
 		Chats:        res.Chats,
+		NextBeforeID: res.NextBeforeID,
+	}, nil
+}
+
+func (s *Service) SearchGlobalChannels(ctx context.Context, req *searchdto.SearchGlobalChannelsRequest) (*searchdto.SearchGlobalChannelsResponse, error) {
+	if req == nil {
+		return nil, searchdomain.ErrInvalidInput
+	}
+	if req.UserID <= 0 {
+		return nil, searchdomain.ErrInvalidInput
+	}
+
+	q, err := normalizeQuery(req.Query)
+	if err != nil {
+		return nil, err
+	}
+
+	params := searchdomain.SearchGlobalChannelsParams{
+		UserID:   req.UserID,
+		Query:    q,
+		Limit:    clampLimit(req.Limit),
+		BeforeID: req.BeforeID,
+	}
+	res, err := s.repo.SearchGlobalChannels(ctx, &params)
+	if err != nil {
+		return nil, err
+	}
+	return &searchdto.SearchGlobalChannelsResponse{
+		Channels:     res.Channels,
 		NextBeforeID: res.NextBeforeID,
 	}, nil
 }

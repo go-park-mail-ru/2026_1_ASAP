@@ -24,6 +24,27 @@ func truncatePreview(s string) string {
 	return string(runes[:maxPreviewRunes]) + "…"
 }
 
+func rowToGlobalChannelHit(row *globalChannelSearchRow) searchdomain.GlobalChannelHit {
+	h := searchdomain.GlobalChannelHit{
+		ChatID:   row.ID,
+		Title:    row.Title,
+		IsMember: row.IsMember,
+	}
+	if row.AvatarURL.Valid {
+		v := row.AvatarURL.String
+		h.AvatarURL = &v
+	}
+	if row.LastMessagePreview.Valid {
+		prev := truncatePreview(row.LastMessagePreview.String)
+		h.LastMessagePreview = &prev
+	}
+	if row.LastMessageAt.Valid {
+		t := row.LastMessageAt.Time
+		h.LastMessageAt = &t
+	}
+	return h
+}
+
 func rowToChatHit(row *chatSearchRow) searchdomain.ChatHit {
 	h := searchdomain.ChatHit{
 		ChatID:      row.ID,

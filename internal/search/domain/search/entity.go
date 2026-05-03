@@ -62,6 +62,27 @@ type SearchChatsResult struct {
 	NextBeforeID int64
 }
 
+type GlobalChannelHit struct {
+	LastMessageAt      *time.Time
+	AvatarURL          *string
+	LastMessagePreview *string
+	Title              string
+	ChatID             int64
+	IsMember           bool
+}
+
+type SearchGlobalChannelsParams struct {
+	UserID   int64
+	Query    string
+	Limit    int32
+	BeforeID int64
+}
+
+type SearchGlobalChannelsResult struct {
+	Channels     []GlobalChannelHit
+	NextBeforeID int64
+}
+
 type SearchContactsParams struct {
 	Query    string
 	Scope    ContactScope

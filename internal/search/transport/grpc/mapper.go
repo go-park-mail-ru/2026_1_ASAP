@@ -76,6 +76,53 @@ func mapChatTypeDomainToProto(t searchdomain.ChatType) searchv1.ChatType {
 	}
 }
 
+func mapSearchGlobalChannelsRequestProtoToDTO(req *searchv1.SearchGlobalChannelsRequest) *searchdto.SearchGlobalChannelsRequest {
+	if req == nil {
+		return nil
+	}
+	return &searchdto.SearchGlobalChannelsRequest{
+		UserID:   req.GetUserId(),
+		Query:    req.GetQuery(),
+		Limit:    req.GetLimit(),
+		BeforeID: req.GetBeforeId(),
+	}
+}
+
+func mapSearchGlobalChannelsResponseDTOToProto(resp *searchdto.SearchGlobalChannelsResponse) *searchv1.SearchGlobalChannelsResponse {
+	if resp == nil {
+		return &searchv1.SearchGlobalChannelsResponse{}
+	}
+	out := &searchv1.SearchGlobalChannelsResponse{
+		NextBeforeId: resp.NextBeforeID,
+		Channels:     make([]*searchv1.SearchGlobalChannelItem, 0, len(resp.Channels)),
+	}
+	for i := range resp.Channels {
+		out.Channels = append(out.Channels, mapGlobalChannelHitDomainToProto(&resp.Channels[i]))
+	}
+	return out
+}
+
+func mapGlobalChannelHitDomainToProto(hit *searchdomain.GlobalChannelHit) *searchv1.SearchGlobalChannelItem {
+	if hit == nil {
+		return nil
+	}
+	item := &searchv1.SearchGlobalChannelItem{
+		ChatId:   hit.ChatID,
+		Title:    hit.Title,
+		IsMember: hit.IsMember,
+	}
+	if hit.AvatarURL != nil {
+		item.AvatarUrl = proto.String(*hit.AvatarURL)
+	}
+	if hit.LastMessagePreview != nil {
+		item.LastMessagePreview = proto.String(*hit.LastMessagePreview)
+	}
+	if hit.LastMessageAt != nil {
+		item.LastMessageAt = timestamppb.New(*hit.LastMessageAt)
+	}
+	return item
+}
+
 func mapSearchChatsRequestProtoToDTO(req *searchv1.SearchChatsRequest) *searchdto.SearchChatsRequest {
 	if req == nil {
 		return nil

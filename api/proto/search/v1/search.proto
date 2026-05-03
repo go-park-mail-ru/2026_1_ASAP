@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 service Search {
   rpc SearchChats (SearchChatsRequest) returns (SearchChatsResponse);
+  rpc SearchGlobalChannels (SearchGlobalChannelsRequest) returns (SearchGlobalChannelsResponse);
   rpc SearchContacts (SearchContactsRequest) returns (SearchContactsResponse);
   rpc SearchMessagesInChat (SearchMessagesInChatRequest) returns (SearchMessagesInChatResponse);
 }
@@ -61,6 +62,27 @@ message SearchChatItem {
 
 message SearchChatsResponse {
   repeated SearchChatItem chats = 1;
+  int64 next_before_id = 2;
+}
+
+message SearchGlobalChannelsRequest {
+  int64 user_id = 1;
+  string query = 2;
+  int32 limit = 3;
+  int64 before_id = 4;
+}
+
+message SearchGlobalChannelItem {
+  int64 chat_id = 1;
+  string title = 2;
+  optional string avatar_url = 3;
+  optional string last_message_preview = 4;
+  optional google.protobuf.Timestamp last_message_at = 5;
+  bool is_member = 6;
+}
+
+message SearchGlobalChannelsResponse {
+  repeated SearchGlobalChannelItem channels = 1;
   int64 next_before_id = 2;
 }
 

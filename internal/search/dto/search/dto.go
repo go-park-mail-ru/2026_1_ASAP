@@ -15,6 +15,18 @@ type SearchChatsResponse struct {
 	NextBeforeID int64
 }
 
+type SearchGlobalChannelsRequest struct {
+	Query    string
+	UserID   int64
+	Limit    int32
+	BeforeID int64
+}
+
+type SearchGlobalChannelsResponse struct {
+	Channels     []searchdomain.GlobalChannelHit
+	NextBeforeID int64
+}
+
 type SearchContactsRequest struct {
 	Query    string
 	Scope    searchdomain.ContactScope
