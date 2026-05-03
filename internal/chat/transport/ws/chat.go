@@ -518,6 +518,20 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 			}
 
 			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+
+			chatInfo, err := s.chatService.GetChatByID(ctx, req.ChatID, userID)
+			if err != nil {
+				log.Warn("ws get chat after edit message", zap.Int64("chat_id", req.ChatID), zap.Error(err))
+				continue
+			}
+
+			outChat, err := dtoWs.EncodeChatUpdated(chatInfo)
+			if err != nil {
+				log.Error("ws encode chat update", zap.Error(err))
+				continue
+			}
+
+			s.publishMessageNewToChatMembers(ctx, req.ChatID, outChat)
 		
 		case dtoWs.MessageDelete:
 			var req dto.RequestDeleteMessage
