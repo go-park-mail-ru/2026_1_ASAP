@@ -78,7 +78,7 @@ func (s *ChatService) getDialogName(ctx context.Context, chatID int64, userID in
 	}
 
 	if user.LastName != nil {
-		return user.FirstName + *user.LastName, nil
+		return user.FirstName + " " + *user.LastName, nil
 	}
 	return user.FirstName, nil
 }
@@ -245,12 +245,12 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 	if err != nil {
 		return nil, err
 	}
-	
+
 	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("check membership: %w", err)
 	}
-	if !isMember && chat.Type != domain.ChatTypeChannel{
+	if !isMember && chat.Type != domain.ChatTypeChannel {
 		return nil, domain.ErrNotMember
 	}
 
