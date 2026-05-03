@@ -8,12 +8,13 @@ type ResponseSendMessage struct {
 	ID        int64     `json:"id"`
 	ChatID    int64     `json:"chat_id"`
 	SenderID  int64     `json:"sender_id"`
+	Edited    bool      `json:"edited"`
 }
 
 type ResponseDeleteMessage struct {
-	ID        int64     `json:"id"`
-	ChatID    int64     `json:"chat_id"`
-	SenderID  int64     `json:"sender_id"`
+	ID       int64 `json:"id"`
+	ChatID   int64 `json:"chat_id"`
+	SenderID int64 `json:"sender_id"`
 }
 
 type ResponseGetMessages struct {
