@@ -11,6 +11,7 @@ import (
 
 type SearchUsecase interface {
 	SearchChats(ctx context.Context, request *searchdto.SearchChatsRequest) (*searchdto.SearchChatsResponse, error)
+	SearchGlobalChannels(ctx context.Context, request *searchdto.SearchGlobalChannelsRequest) (*searchdto.SearchGlobalChannelsResponse, error)
 	SearchContacts(ctx context.Context, request *searchdto.SearchContactsRequest) (*searchdto.SearchContactsResponse, error)
 	SearchMessagesInChat(ctx context.Context, request *searchdto.SearchMessagesInChatRequest) (*searchdto.SearchMessagesInChatResponse, error)
 }
@@ -42,6 +43,17 @@ func (s *SearchServer) SearchChats(ctx context.Context, req *searchv1.SearchChat
 		return nil, mapDomainErrToProtoErr(err)
 	}
 	return mapSearchChatsResponseDTOToProto(resp), nil
+}
+
+func (s *SearchServer) SearchGlobalChannels(ctx context.Context, req *searchv1.SearchGlobalChannelsRequest) (*searchv1.SearchGlobalChannelsResponse, error) {
+	_ = s.log(ctx)
+
+	dtoReq := mapSearchGlobalChannelsRequestProtoToDTO(req)
+	resp, err := s.searchUsecase.SearchGlobalChannels(ctx, dtoReq)
+	if err != nil {
+		return nil, mapDomainErrToProtoErr(err)
+	}
+	return mapSearchGlobalChannelsResponseDTOToProto(resp), nil
 }
 
 func (s *SearchServer) SearchContacts(ctx context.Context, req *searchv1.SearchContactsRequest) (*searchv1.SearchContactsResponse, error) {

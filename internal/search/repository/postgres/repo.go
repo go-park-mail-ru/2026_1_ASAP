@@ -108,6 +108,54 @@ func (r *Repository) SearchChats(ctx context.Context, params *searchdomain.Searc
 	}, nil
 }
 
+func (r *Repository) SearchGlobalChannels(ctx context.Context, params *searchdomain.SearchGlobalChannelsParams) (*searchdomain.SearchGlobalChannelsResult, error) {
+	if params == nil {
+		return nil, fmt.Errorf("search global channels: params is nil")
+	}
+
+	q := searchsql.SearchGlobalChannels
+	pattern := likePattern(params.Query)
+	want := int(params.Limit) + 1
+	start := time.Now()
+	rows, err := r.db.Query(ctx, q, params.UserID, pattern, params.BeforeID, want)
+	sqllog.LogQuery(ctx, r.log(ctx), "SearchGlobalChannels", q, start, err,
+		[]any{params.UserID, "[like]", params.BeforeID, want})
+	if err != nil {
+		return nil, fmt.Errorf("search global channels query: %w", err)
+	}
+	defer rows.Close()
+
+	var channels []searchdomain.GlobalChannelHit
+	for rows.Next() {
+		row := &globalChannelSearchRow{}
+		if scanErr := rows.Scan(
+			&row.ID,
+			&row.Title,
+			&row.AvatarURL,
+			&row.LastMessagePreview,
+			&row.LastMessageAt,
+			&row.IsMember,
+		); scanErr != nil {
+			return nil, fmt.Errorf("search global channels scan: %w", scanErr)
+		}
+		channels = append(channels, rowToGlobalChannelHit(row))
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("search global channels rows: %w", err)
+	}
+
+	var nextBeforeID int64
+	if len(channels) > int(params.Limit) {
+		nextBeforeID = channels[params.Limit-1].ChatID
+		channels = channels[:params.Limit]
+	}
+
+	return &searchdomain.SearchGlobalChannelsResult{
+		Channels:     channels,
+		NextBeforeID: nextBeforeID,
+	}, nil
+}
+
 func (r *Repository) SearchContacts(ctx context.Context, params *searchdomain.SearchContactsParams) (*searchdomain.SearchContactsResult, error) {
 	if params == nil {
 		return nil, fmt.Errorf("search contacts: params is nil")
