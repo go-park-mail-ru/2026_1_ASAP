@@ -53,7 +53,7 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 	if err != nil {
 		return nil, fmt.Errorf("chatrepo check is member: %w", err)
 	}
-	if !isUserMember && chat.Type != domain.ChatTypeChannel{
+	if !isUserMember && chat.Type != domain.ChatTypeChannel {
 		return nil, domain.ErrMessageNotMember
 	}
 
@@ -142,6 +142,7 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 		SenderID:  createdMessage.SenderId,
 		Text:      sanitize.Text(createdMessage.Content),
 		CreatedAt: createdMessage.CreatedAt,
+		Edited:    createdMessage.Edited,
 	}, nil
 }
 
@@ -185,6 +186,7 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 		SenderID:  editedMessage.SenderId,
 		Text:      sanitize.Text(editedMessage.Content),
 		CreatedAt: editedMessage.CreatedAt,
+		Edited:    editedMessage.Edited,
 	}, nil
 }
 
@@ -200,7 +202,7 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 
 	if !isUserMember {
 		return nil, domain.ErrMessageNotMember
-	}	
+	}
 
 	message := &domain.Message{
 		Id:       req.MessageID,
@@ -217,8 +219,8 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 	}
 
 	return &dto.ResponseDeleteMessage{
-		ID: deletedMessage.Id,
-		ChatID: deletedMessage.ChatId,
+		ID:       deletedMessage.Id,
+		ChatID:   deletedMessage.ChatId,
 		SenderID: deletedMessage.SenderId,
 	}, nil
 }

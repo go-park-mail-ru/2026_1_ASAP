@@ -15,6 +15,7 @@ import (
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	dtoWs "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/ws"
+	chatdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 )
 
@@ -52,6 +53,7 @@ type MessagesServiceInterface interface {
 
 type ChatServiceInterface interface {
 	GetChatMemberIDs(ctx context.Context, chatID int64) ([]int64, error)
+	GetChatByID(ctx context.Context, chatID, userID int64) (*chatdto.ChatInformationDTO, error)
 }
 
 type subscriber struct {
@@ -573,8 +575,22 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				})
 				continue
 			}
-
+			
 			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+
+			chatInfo, err := s.chatService.GetChatByID(ctx, req.ChatID, userID)
+			if err != nil {
+				log.Warn("ws get chat after delete message", zap.Int64("chat_id", req.ChatID), zap.Error(err))
+				continue
+			}
+
+			outChat, err := dtoWs.EncodeChatUpdated(chatInfo)
+			if err != nil {
+				log.Error("ws encode chat update", zap.Error(err))
+				continue
+			}
+
+			s.publishMessageNewToChatMembers(ctx, req.ChatID, outChat)
 		
 		default:
 			log.Debug("ws unknown message type", zap.String("type", string(env.Type)))
