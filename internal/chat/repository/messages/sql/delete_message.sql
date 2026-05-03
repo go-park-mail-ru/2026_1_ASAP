@@ -31,5 +31,10 @@ updated_chat AS (
       AND c.last_message_id = d.id
     RETURNING c.id
 )
-SELECT d.id, d.chat_id, d.sender_id, d.deleted_at, d.updated_at
+SELECT d.id,
+       d.chat_id,
+       d.sender_id,
+       d.deleted_at,
+       d.updated_at,
+       EXISTS (SELECT 1 FROM updated_chat) AS last_message_edited
 FROM deleted d;

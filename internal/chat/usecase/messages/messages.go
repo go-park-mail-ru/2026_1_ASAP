@@ -17,8 +17,8 @@ const maxMessageRunes = 2000
 type MessageRepositoryInterface interface {
 	CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
 	GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error)
-	UpdateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
-	DeleteMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
+	UpdateMessage(ctx context.Context, message *domain.Message) (*domain.Message, bool, error)
+	DeleteMessage(ctx context.Context, message *domain.Message) (*domain.Message, bool, error)
 }
 
 type ChatRepositoryInterface interface {
@@ -147,7 +147,7 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 	}, nil
 }
 
-func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseSendMessage, error) {
+func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error) {
 	if req == nil {
 		return nil, errors.New("edit message nil request")
 	}
@@ -176,22 +176,23 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 		Content:  req.Text,
 	}
 
-	editedMessage, err := m.messageRepo.UpdateMessage(ctx, message)
+	editedMessage, lastMessageEdited, err := m.messageRepo.UpdateMessage(ctx, message)
 	if err != nil {
 		return nil, fmt.Errorf("messageRepo updated message: %w", err)
 	}
 
-	return &dto.ResponseSendMessage{
-		ID:        editedMessage.Id,
-		ChatID:    editedMessage.ChatId,
-		SenderID:  editedMessage.SenderId,
-		Text:      sanitize.Text(editedMessage.Content),
-		CreatedAt: editedMessage.CreatedAt,
-		Edited:    editedMessage.Edited,
+	return &dto.ResponseEditMessage{
+		ID:                editedMessage.Id,
+		ChatID:            editedMessage.ChatId,
+		SenderID:          editedMessage.SenderId,
+		Text:              sanitize.Text(editedMessage.Content),
+		CreatedAt:         editedMessage.CreatedAt,
+		Edited:            editedMessage.Edited,
+		LastMessageEdited: lastMessageEdited,
 	}, nil
 }
 
-func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseDeleteMessage, error) {
+func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseClearMessage, error) {
 	if req == nil {
 		return nil, errors.New("delete message nil request")
 	}
@@ -211,7 +212,7 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 		SenderId: userID,
 	}
 
-	deletedMessage, err := m.messageRepo.DeleteMessage(ctx, message)
+	deletedMessage, lastMessageEdited, err := m.messageRepo.DeleteMessage(ctx, message)
 	if err != nil {
 		if errors.Is(err, domain.ErrNoMessage) {
 			return nil, domain.ErrNoMessage
@@ -219,10 +220,11 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 		return nil, fmt.Errorf("messageRepo delete message: %w", err)
 	}
 
-	return &dto.ResponseDeleteMessage{
-		ID:       deletedMessage.Id,
-		ChatID:   deletedMessage.ChatId,
-		SenderID: deletedMessage.SenderId,
+	return &dto.ResponseClearMessage{
+		ID:                deletedMessage.Id,
+		ChatID:            deletedMessage.ChatId,
+		SenderID:          deletedMessage.SenderId,
+		LastMessageEdited: lastMessageEdited,
 	}, nil
 }
 

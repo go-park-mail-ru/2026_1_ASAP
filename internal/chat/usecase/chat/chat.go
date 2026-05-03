@@ -41,18 +41,40 @@ type MediaRepositoryInterface interface {
 	UploadChatAvatar(ctx context.Context, chatID int64, input *media.FileInput) (string, error)
 }
 
+type ChatRealtimeNotifier interface {
+	NotifyChatNew(ctx context.Context, viewerUserID int64, chat *dto.ChatInformationDTO)
+	NotifyChatDeleted(ctx context.Context, formerMemberUserIDs []int64, chatID int64)
+	NotifyChatAvatarUpdated(ctx context.Context, memberUserIDs []int64, chatID int64, avatarURL string)
+	NotifyChatTitleUpdated(ctx context.Context, memberUserIDs []int64, chatID int64, title string)
+	NotifyChatDescriptionUpdated(ctx context.Context, memberUserIDs []int64, chatID int64, description *string)
+	NotifyChatMembersUpdated(ctx context.Context, memberUserIDs []int64, chatID int64, changeType string, updatedMemberIDs []int64, name string)
+}
+
 type ChatService struct {
 	chatRepo  ChatRepositoryInterface
 	userSvc   ProfileServiceInterface
 	mediaRepo MediaRepositoryInterface
+	notifier  ChatRealtimeNotifier
 }
 
-func NewChatService(chatRepo ChatRepositoryInterface, userSvc ProfileServiceInterface, mediaRepo MediaRepositoryInterface) *ChatService {
+func NewChatService(chatRepo ChatRepositoryInterface, userSvc ProfileServiceInterface, mediaRepo MediaRepositoryInterface, notifier ChatRealtimeNotifier) *ChatService {
 	return &ChatService{
 		chatRepo:  chatRepo,
 		userSvc:   userSvc,
 		mediaRepo: mediaRepo,
+		notifier:  notifier,
 	}
+}
+
+func (s *ChatService) profileDisplayName(ctx context.Context, userID int64) string {
+	u, err := s.userSvc.GetUserByID(ctx, userID)
+	if err != nil || u == nil {
+		return ""
+	}
+	if u.LastName != nil {
+		return u.FirstName + " " + *u.LastName
+	}
+	return u.FirstName
 }
 
 func (s *ChatService) getDialogName(ctx context.Context, chatID int64, userID int64) (string, error) {
@@ -229,7 +251,7 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 		}
 	}
 
-	return &dto.ChatInformationDTO{
+	out := &dto.ChatInformationDTO{
 		ID:          created.Id,
 		ChatType:    dto.ChatType(created.Type),
 		Title:       sanitize.Text(displayTitle),
@@ -237,7 +259,22 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 		Avatar:      displayAvatar,
 		OwnerID:     created.OwnerId,
 		Description: sanitize.TextPtr(created.Description),
-	}, nil
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, created.Id)
+		if err == nil {
+			for _, uid := range members {
+				info, err := s.GetChatByID(ctx, created.Id, uid)
+				if err != nil {
+					continue
+				}
+				s.notifier.NotifyChatNew(ctx, uid, info)
+			}
+		}
+	}
+
+	return out, nil
 }
 
 func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*dto.ChatInformationDTO, error) {
@@ -310,7 +347,24 @@ func (s *ChatService) DeleteChat(ctx context.Context, userID, chatID int64) erro
 		}
 	}
 
-	return s.chatRepo.DeleteChat(ctx, chatID)
+	var formerMembers []int64
+	if s.notifier != nil {
+		var err error
+		formerMembers, err = s.chatRepo.GetChatMembers(ctx, chatID)
+		if err != nil {
+			return fmt.Errorf("get chat members: %w", err)
+		}
+	}
+
+	if err := s.chatRepo.DeleteChat(ctx, chatID); err != nil {
+		return err
+	}
+
+	if s.notifier != nil && len(formerMembers) > 0 {
+		s.notifier.NotifyChatDeleted(ctx, formerMembers, chatID)
+	}
+
+	return nil
 }
 
 func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateAvatar) (*dto.ChatInformationDTO, error) {
@@ -364,7 +418,7 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 		}
 	}
 
-	return &dto.ChatInformationDTO{
+	out := &dto.ChatInformationDTO{
 		ID:          result.Id,
 		ChatType:    dto.ChatType(result.Type),
 		Title:       sanitize.Text(result.Title),
@@ -372,7 +426,20 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 		Avatar:      result.AvatarUrl,
 		OwnerID:     result.OwnerId,
 		Description: sanitize.TextPtr(result.Description),
-	}, nil
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil {
+			var url string
+			if result.AvatarUrl != nil {
+				url = *result.AvatarUrl
+			}
+			s.notifier.NotifyChatAvatarUpdated(ctx, members, chatID, url)
+		}
+	}
+
+	return out, nil
 }
 
 func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateTitle) (*dto.ChatInformationDTO, error) {
@@ -414,7 +481,7 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 		}
 	}
 
-	return &dto.ChatInformationDTO{
+	out := &dto.ChatInformationDTO{
 		ID:          result.Id,
 		ChatType:    dto.ChatType(result.Type),
 		Title:       sanitize.Text(result.Title),
@@ -422,7 +489,16 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 		Avatar:      result.AvatarUrl,
 		OwnerID:     result.OwnerId,
 		Description: sanitize.TextPtr(result.Description),
-	}, nil
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil {
+			s.notifier.NotifyChatTitleUpdated(ctx, members, chatID, out.Title)
+		}
+	}
+
+	return out, nil
 }
 
 func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateDescription) (*dto.ChatInformationDTO, error) {
@@ -467,7 +543,7 @@ func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID 
 		}
 	}
 
-	return &dto.ChatInformationDTO{
+	out := &dto.ChatInformationDTO{
 		ID:          result.Id,
 		ChatType:    dto.ChatType(result.Type),
 		Title:       sanitize.Text(result.Title),
@@ -475,7 +551,16 @@ func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID 
 		Avatar:      result.AvatarUrl,
 		OwnerID:     result.OwnerId,
 		Description: sanitize.TextPtr(result.Description),
-	}, nil
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil {
+			s.notifier.NotifyChatDescriptionUpdated(ctx, members, chatID, out.Description)
+		}
+	}
+
+	return out, nil
 }
 
 func (s *ChatService) AddMembersToChat(ctx context.Context, userID, chatID int64, request *dto.RequestAddMember) error {
@@ -510,6 +595,19 @@ func (s *ChatService) AddMembersToChat(ctx context.Context, userID, chatID int64
 			return fmt.Errorf("add member %d: %w", memberID, err)
 		}
 	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil && len(request.MembersId) > 0 {
+			name := ""
+			if len(request.MembersId) == 1 {
+				name = s.profileDisplayName(ctx, request.MembersId[0])
+			}
+			added := append([]int64(nil), request.MembersId...)
+			s.notifier.NotifyChatMembersUpdated(ctx, members, chatID, "added", added, name)
+		}
+	}
+
 	return nil
 }
 
@@ -544,7 +642,25 @@ func (s *ChatService) DeleteMemberFromChat(ctx context.Context, userID, chatID i
 		return domain.ErrUserNotMember
 	}
 
-	return s.chatRepo.DeleteMember(ctx, chatID, request.MemberId)
+	var formerMembers []int64
+	if s.notifier != nil {
+		var err error
+		formerMembers, err = s.chatRepo.GetChatMembers(ctx, chatID)
+		if err != nil {
+			return fmt.Errorf("get chat members: %w", err)
+		}
+	}
+
+	if err := s.chatRepo.DeleteMember(ctx, chatID, request.MemberId); err != nil {
+		return err
+	}
+
+	if s.notifier != nil && len(formerMembers) > 0 {
+		name := s.profileDisplayName(ctx, request.MemberId)
+		s.notifier.NotifyChatMembersUpdated(ctx, formerMembers, chatID, "deleted", []int64{request.MemberId}, name)
+	}
+
+	return nil
 }
 
 func (s *ChatService) GetAllChatMembers(ctx context.Context, userID, chatID int64) (*dto.ResponseGetChatMembers, error) {
@@ -583,7 +699,25 @@ func (s *ChatService) QuitChat(ctx context.Context, userID, chatID int64) error 
 		return domain.ErrOwnerCantQuitGroup
 	}
 
-	return s.chatRepo.DeleteMember(ctx, chatID, userID)
+	var formerMembers []int64
+	if s.notifier != nil {
+		var err error
+		formerMembers, err = s.chatRepo.GetChatMembers(ctx, chatID)
+		if err != nil {
+			return fmt.Errorf("get chat members: %w", err)
+		}
+	}
+
+	if err := s.chatRepo.DeleteMember(ctx, chatID, userID); err != nil {
+		return err
+	}
+
+	if s.notifier != nil && len(formerMembers) > 0 {
+		name := s.profileDisplayName(ctx, userID)
+		s.notifier.NotifyChatMembersUpdated(ctx, formerMembers, chatID, "deleted", []int64{userID}, name)
+	}
+
+	return nil
 }
 
 func (s *ChatService) JoinChannel(ctx context.Context, userID, chatID int64) error {
@@ -606,6 +740,14 @@ func (s *ChatService) JoinChannel(ctx context.Context, userID, chatID int64) err
 	err = s.chatRepo.AddMember(ctx, chatID, userID, "member")
 	if err != nil {
 		return fmt.Errorf("failed to join chat: %w", err)
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil {
+			name := s.profileDisplayName(ctx, userID)
+			s.notifier.NotifyChatMembersUpdated(ctx, members, chatID, "added", []int64{userID}, name)
+		}
 	}
 
 	return nil

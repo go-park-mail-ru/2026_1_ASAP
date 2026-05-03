@@ -67,7 +67,8 @@ func main() {
 	mediaClient := grpcMedia.New(mediav1.NewMediaClient(mediaConn))
 	profileClient := grpcProfile.New(profilev1.NewProfileClient(profileConn))
 
-	chatService := chatuc.NewChatService(chatRepo, profileClient, mediaClient)
+	realtime := chatws.NewRealtimeNotifier(logger.Named("chat.realtime"))
+	chatService := chatuc.NewChatService(chatRepo, profileClient, mediaClient, realtime)
 	messageService := messagesuc.NewMessageService(msgRepo, chatRepo)
 
 	// gRPC server
@@ -83,6 +84,7 @@ func main() {
 
 	// WS HTTP server
 	wsSrv := chatws.NewChatServer(logger.Named("chat.ws"), messageService, chatService)
+	realtime.BindHub(wsSrv)
 
 	mux := http.NewServeMux()
 	mux.Handle("/ws",

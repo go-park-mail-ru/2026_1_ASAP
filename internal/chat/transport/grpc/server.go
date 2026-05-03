@@ -36,7 +36,7 @@ type ChatUsecaseInterface interface {
 type MessageUsecaseInterface interface {
 	GetMessagesByChatId(ctx context.Context, userID, chatID int64, req *msgdto.RequestGetMessages) (*msgdto.ResponseGetMessages, error)
 	SendMessage(ctx context.Context, userID, chatID int64, req *msgdto.RequestSendMessage) (*msgdto.ResponseSendMessage, error)
-	EditMessage(ctx context.Context, userID, chatID int64, req *msgdto.RequestEditMessage) (*msgdto.ResponseSendMessage, error)
+	EditMessage(ctx context.Context, userID, chatID int64, req *msgdto.RequestEditMessage) (*msgdto.ResponseEditMessage, error)
 }
 
 func mapDomainErr(err error) error {
@@ -115,7 +115,7 @@ func mapDomainErr(err error) error {
 			int32(chatv1.ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION),
 			err.Error(),
 		)
-		
+
 	default:
 		return grpcerr.New(
 			codes.Internal,

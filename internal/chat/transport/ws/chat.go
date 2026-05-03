@@ -13,9 +13,9 @@ import (
 	"go.uber.org/zap"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
+	chatdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	dtoWs "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/ws"
-	chatdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 )
 
@@ -47,8 +47,8 @@ func requestIDFromContext(ctx context.Context) (string, bool) {
 type MessagesServiceInterface interface {
 	SendMessage(ctx context.Context, userID int64, chatID int64, req *dto.RequestSendMessage) (*dto.ResponseSendMessage, error)
 	GetMessagesByChatId(ctx context.Context, userID int64, chatID int64, req *dto.RequestGetMessages) (*dto.ResponseGetMessages, error)
-	EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseSendMessage, error)
-	DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseDeleteMessage, error)
+	EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error)
+	DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseClearMessage, error)
 }
 
 type ChatServiceInterface interface {
@@ -519,20 +519,6 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
 
-			chatInfo, err := s.chatService.GetChatByID(ctx, req.ChatID, userID)
-			if err != nil {
-				log.Warn("ws get chat after edit message", zap.Int64("chat_id", req.ChatID), zap.Error(err))
-				continue
-			}
-
-			outChat, err := dtoWs.EncodeChatUpdated(chatInfo)
-			if err != nil {
-				log.Error("ws encode chat update", zap.Error(err))
-				continue
-			}
-
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, outChat)
-		
 		case dtoWs.MessageDelete:
 			var req dto.RequestDeleteMessage
 			if len(env.Payload) == 0 {
@@ -589,23 +575,9 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				})
 				continue
 			}
-			
+
 			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
 
-			chatInfo, err := s.chatService.GetChatByID(ctx, req.ChatID, userID)
-			if err != nil {
-				log.Warn("ws get chat after delete message", zap.Int64("chat_id", req.ChatID), zap.Error(err))
-				continue
-			}
-
-			outChat, err := dtoWs.EncodeChatUpdated(chatInfo)
-			if err != nil {
-				log.Error("ws encode chat update", zap.Error(err))
-				continue
-			}
-
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, outChat)
-		
 		default:
 			log.Debug("ws unknown message type", zap.String("type", string(env.Type)))
 			s.sendErr(sub, dtoWs.WsErrorPayload{
