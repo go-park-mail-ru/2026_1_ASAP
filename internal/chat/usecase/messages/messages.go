@@ -76,6 +76,7 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 			SenderID:  msg.SenderId,
 			Text:      sanitize.Text(msg.Content),
 			CreatedAt: msg.CreatedAt,
+			Edited:    msg.Edited,
 		})
 	}
 
