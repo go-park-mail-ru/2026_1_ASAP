@@ -2,6 +2,12 @@ package message
 
 import "time"
 
+type LastMessageDTO struct {
+	CreatedAt time.Time `json:"created_at"`
+	Text      string    `json:"text"`
+	SenderId  int64     `json:"sender_id"`
+}
+
 type ResponseSendMessage struct {
 	CreatedAt time.Time `json:"created_at"`
 	Text      string    `json:"text"`
@@ -12,20 +18,22 @@ type ResponseSendMessage struct {
 }
 
 type ResponseEditMessage struct {
-	CreatedAt         time.Time `json:"created_at"`
-	Text              string    `json:"text"`
-	ID                int64     `json:"id"`
-	ChatID            int64     `json:"chat_id"`
-	SenderID          int64     `json:"sender_id"`
-	Edited            bool      `json:"edited"`
-	LastMessageEdited bool      `json:"last_message_edited"`
+	CreatedAt         time.Time       `json:"created_at"`
+	Text              string          `json:"text"`
+	ID                int64           `json:"id"`
+	ChatID            int64           `json:"chat_id"`
+	SenderID          int64           `json:"sender_id"`
+	Edited            bool            `json:"edited"`
+	LastMessageEdited bool            `json:"last_message_edited"`
+	LastMessage       *LastMessageDTO `json:"last_message,omitempty"`
 }
 
 type ResponseClearMessage struct {
-	ID                int64 `json:"id"`
-	ChatID            int64 `json:"chat_id"`
-	SenderID          int64 `json:"sender_id"`
-	LastMessageEdited bool  `json:"last_message_edited"`
+	ID                int64           `json:"id"`
+	ChatID            int64           `json:"chat_id"`
+	SenderID          int64           `json:"sender_id"`
+	LastMessageEdited bool            `json:"last_message_edited"`
+	LastMessage       *LastMessageDTO `json:"last_message,omitempty"`
 }
 
 type ResponseGetMessages struct {
