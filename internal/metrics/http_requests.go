@@ -42,7 +42,7 @@ func HTTPMetricsMiddleware() func(http.Handler) http.Handler {
 
 			duration := time.Since(start)
 
-			pathPattern := r.URL.Path
+			pathPattern := "unknown"
 			if routeCtx := chi.RouteContext(r.Context()); routeCtx != nil {
 				if routePattern := routeCtx.RoutePattern(); routePattern != "" {
 					pathPattern = routePattern
