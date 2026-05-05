@@ -24,6 +24,8 @@ import (
 	gwprofile "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/profile"
 	searchgw "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/search"
 	gwws "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/ws"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -107,6 +109,7 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Use(middleware.RequestIDMiddleware())
+	router.Use(metrics.HTTPMetricsMiddleware())
 	router.Use(middleware.AccessMiddleware(accessLogger))
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{
@@ -205,6 +208,8 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/users", searchHandler.SearchUsers)
 		mux.With(authMiddleware, csrfMiddleware).Get("/chats", searchHandler.SearchChats)
 	})
+
+	router.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{
 		Addr:         cfg.Server.Host + ":" + cfg.Server.Port,

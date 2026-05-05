@@ -21,6 +21,8 @@ import (
 	chatws "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/ws"
 	chatuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/chat"
 	messagesuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -78,8 +80,12 @@ func main() {
 		logger.Fatal("listen grpc", zap.Error(err))
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("chat")))
 	chatv1.RegisterChatServer(grpcServer, grpcSrv)
+	metricsServer := &http.Server{
+		Addr:    ":9104",
+		Handler: promhttp.Handler(),
+	}
 
 	// WS HTTP server
 	wsSrv := chatws.NewChatServer(logger.Named("chat.ws"), messageService, chatService)
@@ -111,6 +117,11 @@ func main() {
 			logger.Fatal("ws http server", zap.Error(err))
 		}
 	}()
+	go func() {
+		if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal("serve metrics http", zap.Error(err))
+		}
+	}()
 
 	go func() {
 		<-stop
@@ -120,6 +131,7 @@ func main() {
 		defer cancel()
 		_ = wsSrv.Shutdown(shutdownCtx)
 		_ = httpServer.Shutdown(shutdownCtx)
+		_ = metricsServer.Shutdown(shutdownCtx)
 	}()
 
 	logger.Info("chat grpc started", zap.String("addr", cfg.ServerConfig.ServerInfo()))

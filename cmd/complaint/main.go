@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,6 +18,8 @@ import (
 	grpcmedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/transport/grpc/clients/media"
 	analyticuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/usecase/analytic"
 	complaintuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/usecase/complaint"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -64,14 +67,24 @@ func main() {
 		logger.Fatal("listen", zap.Error(err))
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("complaint")))
 	complaintv1.RegisterComplaintServer(grpcServer, srv)
+	metricsServer := &http.Server{
+		Addr:    ":9106",
+		Handler: promhttp.Handler(),
+	}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
+		if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal("serve metrics http", zap.Error(err))
+		}
+	}()
+	go func() {
 		<-stop
 		grpcServer.GracefulStop()
+		_ = metricsServer.Shutdown(context.Background())
 	}()
 
 	logger.Info("complaint grpc started", zap.String("addr", cfg.ServerConfig.ServerInfo()))
