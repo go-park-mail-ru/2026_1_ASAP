@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
-	messagessql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/messages/sql"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/null"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
+	messagessql "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/messages/sql"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/null"
 )
 
 func ptr[T any](v T) *T {

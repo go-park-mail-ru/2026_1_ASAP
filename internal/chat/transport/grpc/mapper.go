@@ -56,5 +56,5 @@ func mapProtoToChatType(chatType chatv1.ChatType) dto.ChatType {
 	case chatv1.ChatType_GROUP:
 		return dto.ChatTypeGroup
 	}
-	return dto.ChatType(0)
+	return dto.ChatType("")
 }

@@ -105,6 +105,7 @@ func TestNegativeAuthService_Register(t *testing.T) {
 
 	tests := []struct {
 		args       args
+		wantID     int64
 		wantErr    error
 		prepare    func(*fields)
 		name       string
@@ -119,6 +120,7 @@ func TestNegativeAuthService_Register(t *testing.T) {
 					Return(nil, domain.ErrLoginAlreadyExists)
 			},
 			args:    args{ctx: context.Background(), request: req},
+			wantID:  0,
 			wantErr: domain.ErrLoginAlreadyExists,
 		},
 		{
@@ -129,6 +131,7 @@ func TestNegativeAuthService_Register(t *testing.T) {
 					Return(nil, domain.ErrEmailAlreadyExists)
 			},
 			args:    args{ctx: context.Background(), request: req},
+			wantID:  0,
 			wantErr: domain.ErrEmailAlreadyExists,
 		},
 		{
@@ -138,23 +141,21 @@ func TestNegativeAuthService_Register(t *testing.T) {
 					Create(context.Background(), gomock.AssignableToTypeOf(&domain.User{})).
 					Return(nil, errors.New("db down"))
 			},
+			wantID:     0,
 			args:       args{ctx: context.Background(), request: req},
 			wantAnyErr: true,
 			wantSubstr: "failed to create profile",
 		},
 		{
-			name: "CreateSession fails after profile created",
+			name: "Profile create fails after user created",
 			prepare: func(f *fields) {
 				f.userRepository.EXPECT().
 					Create(context.Background(), gomock.AssignableToTypeOf(&domain.User{})).
 					Return(&domain.User{ID: 10, Login: req.Login, Email: req.Email}, nil)
-				f.sessionService.EXPECT().
-					CreateSession(context.Background(), int64(10)).
-					Return(nil, errors.New("redis down"))
 			},
+			wantID: 10,
 			args:       args{ctx: context.Background(), request: req},
-			wantAnyErr: true,
-			wantSubstr: "failed to create session",
+			wantErr:    nil,
 		},
 	}
 
@@ -176,12 +177,16 @@ func TestNegativeAuthService_Register(t *testing.T) {
 				SessionService: f.sessionService,
 			}
 			result, err := s.Register(tt.args.ctx, tt.args.request)
-			require.Nil(t, result)
+			require.Equal(t, tt.wantID, result)
 			if tt.wantAnyErr {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.wantSubstr)
 			} else {
-				require.EqualError(t, err, tt.wantErr.Error())
+				if tt.wantErr == nil {
+					require.NoError(t, err)
+				} else {
+					require.EqualError(t, err, tt.wantErr.Error())
+				}
 			}
 		})
 	}

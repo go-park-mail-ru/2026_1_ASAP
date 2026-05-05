@@ -8,9 +8,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
-	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/message"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/messages/mock"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
+	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages/mock"
 )
 
 func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
@@ -36,6 +36,10 @@ func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
 			name: "img onerror",
 			prepare: func(f *fields) {
 				f.chatRepo.EXPECT().IsMember(context.Background(), int64(10), int64(55)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(10)).Return(&domain.Chat{
+					Id:   10,
+					Type: domain.ChatTypeGroup,
+				}, nil)
 				f.msgRepo.EXPECT().
 					CreateMessage(context.Background(), &domain.Message{
 						ChatId:   10,
@@ -65,6 +69,10 @@ func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
 			name: "ampersand",
 			prepare: func(f *fields) {
 				f.chatRepo.EXPECT().IsMember(context.Background(), int64(3), int64(2)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(3)).Return(&domain.Chat{
+					Id:   3,
+					Type: domain.ChatTypeGroup,
+				}, nil)
 				f.msgRepo.EXPECT().
 					CreateMessage(context.Background(), &domain.Message{
 						ChatId:   3,

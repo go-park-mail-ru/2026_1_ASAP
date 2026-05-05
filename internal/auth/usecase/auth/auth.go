@@ -25,7 +25,7 @@ type ProfileService interface {
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/auth_mock.go -package=mock
 type UserRepository interface {
 	Create(ctx context.Context, u *domain.User) (*domain.User, error)
-	CreateUserByVKID(ctx context.Context, vkID int64, user *domain.User) (*domain.User, error)
+	CreateUserByVKID(ctx context.Context, vkID int64, newUser *domain.User) (*domain.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*domain.User, error)
 	GetUserByID(ctx context.Context, id int64) (*domain.User, error)

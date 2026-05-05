@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
-	chatssql "github.com/go-park-mail-ru/2026_1_ASAP/internal/repository/chat/sql"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
+	chatssql "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/chat/sql"
 )
 
 func newPGMock(t *testing.T) pgxmock.PgxPoolIface {

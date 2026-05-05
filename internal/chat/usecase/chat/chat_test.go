@@ -5,18 +5,18 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/chat"
-	domainProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/profile"
-	domainUser "github.com/go-park-mail-ru/2026_1_ASAP/internal/domain/user"
-	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/media"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/services/chat/mock"
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
+	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/chat/mock"
 )
 
 func strPtr(s string) *string {
@@ -26,8 +26,9 @@ func strPtr(s string) *string {
 func TestPositiveChatService_GetChatByID(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
 		mediaRepo *mock.MockMediaRepositoryInterface
+		notifier  *mock.MockChatRealtimeNotifier
 	}
 
 	type args struct {
@@ -67,9 +68,11 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 			},
 			args: args{ctx: context.Background(), chatID: 1, userID: 100},
 			want: &dto.ChatInformationDTO{
-				ID:       1,
-				ChatType: dto.ChatTypeGroup,
-				Title:    "Group Chat",
+				ID:          1,
+				ChatType:    dto.ChatTypeGroup,
+				Title:       "Group Chat",
+				OwnerID:     100,
+				Description: nil,
 				LastMessage: dto.MessageDTO{
 					SenderId:  101,
 					Text:      "Hello!",
@@ -99,26 +102,26 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 					CreatedAt: now,
 				}, nil)
 				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(2)).Return([]int64{100, 101}, nil)
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&domainUser.User{
-					Id:        101,
-					Login:     "friend_user",
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&pdomain.Profile{
+					UserId:    101,
 					FirstName: "Friend",
 					LastName:  strPtr("User"),
 				}, nil)
 				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(2)).Return([]int64{100, 101}, nil)
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&domainUser.User{
-					Id:        101,
-					Login:     "friend_user",
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&pdomain.Profile{
+					UserId:    101,
 					FirstName: "Friend",
 					LastName:  strPtr("User"),
-					AvatarUrl: strPtr("friend_avatar.jpg"),
+					Avatar:    strPtr("friend_avatar.jpg"),
 				}, nil)
 			},
 			args: args{ctx: context.Background(), chatID: 2, userID: 100},
 			want: &dto.ChatInformationDTO{
-				ID:       2,
-				ChatType: dto.ChatTypeDialog,
-				Title:    "Friend User",
+				ID:          2,
+				ChatType:    dto.ChatTypeDialog,
+				Title:       "Friend User",
+				OwnerID:     100,
+				Description: nil,
 				LastMessage: dto.MessageDTO{
 					SenderId:  101,
 					Text:      "Hi!",
@@ -136,8 +139,9 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+				notifier:  nil,
 			}
 
 			if tt.prepare != nil {
@@ -146,8 +150,9 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
 				mediaRepo: f.mediaRepo,
+				notifier:  nil,
 			}
 
 			result, err := s.GetChatByID(tt.args.ctx, tt.args.chatID, tt.args.userID)
@@ -160,7 +165,8 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 func TestNegativeChatService_GetChatByID(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -171,6 +177,7 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 	}
 
 	tests := []struct {
+		want       *dto.ChatInformationDTO
 		wantErr    error
 		prepare    func(*fields)
 		name       string
@@ -180,6 +187,10 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 		{
 			name: "User is not member of chat",
 			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+					Id:   1,
+					Type: domain.ChatTypeGroup,
+				}, nil)
 				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(false, nil)
 			},
 			args:    args{ctx: context.Background(), chatID: 1, userID: 100},
@@ -188,7 +199,6 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 		{
 			name: "Chat not found",
 			prepare: func(f *fields) {
-				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
 				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(nil, domain.ErrChatNotFound)
 			},
 			args:    args{ctx: context.Background(), chatID: 1, userID: 100},
@@ -197,6 +207,10 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 		{
 			name: "IsMember error",
 			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+					Id:   1,
+					Type: domain.ChatTypeGroup,
+				}, nil)
 				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(false, errors.New("db error"))
 			},
 			args:       args{ctx: context.Background(), chatID: 1, userID: 100},
@@ -205,15 +219,23 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 		{
 			name: "GetLastMessage error (non-ErrNoMessage)",
 			prepare: func(f *fields) {
-				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
 				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
 					Id:   1,
 					Type: domain.ChatTypeGroup,
 				}, nil)
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
 				f.chatRepo.EXPECT().GetLastMessageOfChat(context.Background(), int64(1)).Return(nil, errors.New("db error"))
 			},
-			args:       args{ctx: context.Background(), chatID: 1, userID: 100},
-			wantAnyErr: true,
+			args: args{ctx: context.Background(), chatID: 1, userID: 100},
+			want: &dto.ChatInformationDTO{
+				ID:          1,
+				ChatType:    dto.ChatTypeGroup,
+				Title:       "",
+				LastMessage: dto.MessageDTO{},
+				Avatar:      nil,
+				OwnerID:     0,
+				Description: nil,
+			},
 		},
 	}
 
@@ -224,7 +246,8 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -234,16 +257,23 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
 			result, err := s.GetChatByID(tt.args.ctx, tt.args.chatID, tt.args.userID)
-			require.Nil(t, result)
 			if tt.wantAnyErr {
+				require.Nil(t, result)
 				require.Error(t, err)
 			} else {
-				require.EqualError(t, err, tt.wantErr.Error())
+				if tt.wantErr != nil {
+					require.Nil(t, result)
+					require.EqualError(t, err, tt.wantErr.Error())
+				} else {
+					require.NoError(t, err)
+					require.Equal(t, tt.want, result)
+				}
 			}
 		})
 	}
@@ -252,7 +282,8 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 func TestPositiveChatService_CreateChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -282,8 +313,8 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 					UpdatedAt: now,
 				}, nil)
 
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(100)).Return(&domainUser.User{Id: 100}, nil)
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&domainUser.User{Id: 101}, nil)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(100)).Return(&pdomain.Profile{UserId: 100, FirstName: "Owner"}, nil)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&pdomain.Profile{UserId: 101, FirstName: "Member"}, nil)
 
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(10), int64(100), "owner").Return(nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(10), int64(101), "member").Return(nil)
@@ -303,6 +334,8 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 				Title:       "New Group",
 				LastMessage: dto.MessageDTO{},
 				Avatar:      nil,
+				OwnerID:     100,
+				Description: nil,
 			},
 		},
 		{
@@ -318,17 +351,16 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 					UpdatedAt: now,
 				}, nil)
 
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(100)).Return(&domainUser.User{Id: 100}, nil)
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&domainUser.User{Id: 101}, nil)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(100)).Return(&pdomain.Profile{UserId: 100, FirstName: "User1"}, nil)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&pdomain.Profile{UserId: 101, FirstName: "User2"}, nil)
 
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(20), int64(100), "owner").Return(nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(20), int64(101), "member").Return(nil)
 
 				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(20)).Return([]int64{100, 101}, nil).Times(2)
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&domainUser.User{
-					Id:        101,
-					Login:     "friend",
-					AvatarUrl: strPtr("avatar.jpg"),
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&pdomain.Profile{
+					UserId:    101,
+					FirstName: "Friend",
 				}, nil).Times(2)
 			},
 			args: args{
@@ -343,9 +375,11 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 			want: &dto.ChatInformationDTO{
 				ID:          20,
 				ChatType:    dto.ChatTypeDialog,
-				Title:       "",
+				Title:       "Friend",
 				LastMessage: dto.MessageDTO{},
-				Avatar:      strPtr("avatar.jpg"),
+				Avatar:      nil,
+				OwnerID:     100,
+				Description: nil,
 			},
 		},
 	}
@@ -357,7 +391,8 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -367,7 +402,8 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -381,7 +417,8 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 func TestNegativeChatService_CreateChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -440,8 +477,7 @@ func TestNegativeChatService_CreateChat(t *testing.T) {
 		{
 			name: "User not found when adding member",
 			prepare: func(f *fields) {
-				f.chatRepo.EXPECT().CreateChat(gomock.Any(), gomock.Any()).Return(&domain.Chat{Id: 10}, nil)
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(101)).Return(nil, domainUser.ErrNotFound)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(101)).Return(nil, pdomain.ErrNotFound)
 			},
 			args: args{
 				ctx: context.Background(),
@@ -451,7 +487,7 @@ func TestNegativeChatService_CreateChat(t *testing.T) {
 				},
 				ownerID: 100,
 			},
-			wantErr: domainUser.ErrNotFound,
+			wantErr: fmt.Errorf("get user %d: %w", 101, pdomain.ErrNotFound),
 		},
 	}
 
@@ -462,7 +498,8 @@ func TestNegativeChatService_CreateChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -472,7 +509,8 @@ func TestNegativeChatService_CreateChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -490,7 +528,8 @@ func TestNegativeChatService_CreateChat(t *testing.T) {
 func TestPositiveChatService_DeleteChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -541,7 +580,8 @@ func TestPositiveChatService_DeleteChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -551,7 +591,8 @@ func TestPositiveChatService_DeleteChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -564,7 +605,8 @@ func TestPositiveChatService_DeleteChat(t *testing.T) {
 func TestNegativeChatService_DeleteChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -612,7 +654,8 @@ func TestNegativeChatService_DeleteChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -622,7 +665,8 @@ func TestNegativeChatService_DeleteChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -639,7 +683,8 @@ func TestNegativeChatService_DeleteChat(t *testing.T) {
 func TestPositiveChatService_UpdateChatAvatar(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -712,7 +757,8 @@ func TestPositiveChatService_UpdateChatAvatar(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -722,7 +768,8 @@ func TestPositiveChatService_UpdateChatAvatar(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -736,7 +783,8 @@ func TestPositiveChatService_UpdateChatAvatar(t *testing.T) {
 func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -762,7 +810,7 @@ func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 				chatID:  1,
 				request: nil,
 			},
-			wantErr: errors.New("update profile avatar nil request"),
+			wantErr: errors.New("nil request"),
 		},
 		{
 			name: "Empty file - nil file input",
@@ -772,7 +820,7 @@ func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 				chatID:  1,
 				request: &dto.RequestUpdateAvatar{File: nil},
 			},
-			wantErr: domainProfile.ErrEmptyAvatar,
+			wantErr: media.ErrEmptyFile,
 		},
 		{
 			name: "Empty file - nil body",
@@ -786,7 +834,7 @@ func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 					Size:        1024,
 				}},
 			},
-			wantErr: domainProfile.ErrEmptyAvatar,
+			wantErr: media.ErrEmptyFile,
 		},
 		{
 			name: "Empty file - zero size",
@@ -800,7 +848,7 @@ func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 					Size:        0,
 				}},
 			},
-			wantErr: domainProfile.ErrEmptyAvatar,
+			wantErr: media.ErrEmptyFile,
 		},
 		{
 			name: "Invalid file type",
@@ -814,7 +862,7 @@ func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 					Size:        1024,
 				}},
 			},
-			wantErr: domainProfile.ErrInvalidAvatarType,
+			wantErr: media.ErrInvalidFileType,
 		},
 		{
 			name: "File too large",
@@ -828,7 +876,7 @@ func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 					Size:        6 * 1024 * 1024,
 				}},
 			},
-			wantErr: domainProfile.ErrAvatarTooLarge,
+			wantErr: media.ErrFileTooLarge,
 		},
 		{
 			name: "Cannot update dialog avatar",
@@ -860,7 +908,8 @@ func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -870,7 +919,8 @@ func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -888,7 +938,8 @@ func TestNegativeChatService_UpdateChatAvatar(t *testing.T) {
 func TestPositiveChatService_QuitChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -925,7 +976,8 @@ func TestPositiveChatService_QuitChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -935,7 +987,8 @@ func TestPositiveChatService_QuitChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -948,7 +1001,8 @@ func TestPositiveChatService_QuitChat(t *testing.T) {
 func TestNegativeChatService_QuitChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1007,7 +1061,8 @@ func TestNegativeChatService_QuitChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1017,7 +1072,8 @@ func TestNegativeChatService_QuitChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -1034,7 +1090,8 @@ func TestNegativeChatService_QuitChat(t *testing.T) {
 func TestPositiveChatService_GetAllChats(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1054,7 +1111,6 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 		{
 			name: "Get all chats with group and dialog",
 			prepare: func(f *fields) {
-				// Мок для получения всех чатов пользователя
 				f.chatRepo.EXPECT().GetAllChatsByUserID(context.Background(), int64(100)).Return([]*domain.Chat{
 					{
 						Id:        1,
@@ -1076,7 +1132,6 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 					},
 				}, nil)
 
-				// Мок для получения последних сообщений
 				f.chatRepo.EXPECT().GetLastMessagesOfChats(context.Background(), int64(100)).Return([]*domain.Message{
 					{
 						Id:        10,
@@ -1094,14 +1149,11 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 					},
 				}, nil)
 
-				// Моки для GetDialogName и GetDialogAvatar (для диалога)
 				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(2)).Return([]int64{100, 102}, nil).Times(2)
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(102)).Return(&domainUser.User{
-					Id:        102,
-					Login:     "friend_user",
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(102)).Return(&pdomain.Profile{
+					UserId:    102,
 					FirstName: "Friend",
 					LastName:  strPtr("User"),
-					AvatarUrl: strPtr("friend_avatar.jpg"),
 				}, nil).Times(2)
 			},
 			args: args{ctx: context.Background(), userID: 100},
@@ -1126,7 +1178,7 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 						Text:      "Hi in dialog!",
 						CreatedAt: now,
 					},
-					Avatar: strPtr("friend_avatar.jpg"),
+					Avatar: nil,
 				},
 			},
 		},
@@ -1166,7 +1218,8 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1176,7 +1229,8 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -1196,7 +1250,8 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 func TestNegativeChatService_GetAllChats(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1228,7 +1283,8 @@ func TestNegativeChatService_GetAllChats(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1238,7 +1294,8 @@ func TestNegativeChatService_GetAllChats(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -1253,7 +1310,8 @@ func TestNegativeChatService_GetAllChats(t *testing.T) {
 func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1279,8 +1337,8 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 						require.Equal(t, rawTitle, c.Title)
 						return &domain.Chat{Id: 77, Type: domain.ChatTypeGroup, Title: rawTitle}, nil
 					})
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(100)).Return(&domainUser.User{Id: 100}, nil)
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&domainUser.User{Id: 101}, nil)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(100)).Return(&pdomain.Profile{UserId: 100, FirstName: "Owner"}, nil)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&pdomain.Profile{UserId: 101, FirstName: "Member"}, nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(77), int64(100), "owner").Return(nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(77), int64(101), "member").Return(nil)
 			},
@@ -1305,8 +1363,8 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 						require.Equal(t, rawTitle, c.Title)
 						return &domain.Chat{Id: 78, Type: domain.ChatTypeGroup, Title: rawTitle}, nil
 					})
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(10)).Return(&domainUser.User{Id: 10}, nil)
-				f.userRepo.EXPECT().GetUserByID(context.Background(), int64(11)).Return(&domainUser.User{Id: 11}, nil)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(10)).Return(&pdomain.Profile{UserId: 10, FirstName: "User1"}, nil)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(11)).Return(&pdomain.Profile{UserId: 11, FirstName: "User2"}, nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(78), int64(10), "owner").Return(nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(78), int64(11), "member").Return(nil)
 			},
@@ -1330,7 +1388,8 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1340,7 +1399,8 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 			resp, err := s.CreateChat(tt.args.ctx, tt.args.payload, tt.args.ownerID)
@@ -1353,7 +1413,8 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1419,7 +1480,8 @@ func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1429,7 +1491,8 @@ func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -1443,7 +1506,8 @@ func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1517,7 +1581,8 @@ func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1527,7 +1592,8 @@ func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 			resp, err := s.UpdateChatTitle(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.request)
@@ -1540,7 +1606,8 @@ func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 func TestNegativeChatService_UpdateChatTitle(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1611,7 +1678,8 @@ func TestNegativeChatService_UpdateChatTitle(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1621,7 +1689,8 @@ func TestNegativeChatService_UpdateChatTitle(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -1639,7 +1708,8 @@ func TestNegativeChatService_UpdateChatTitle(t *testing.T) {
 func TestPositiveChatService_AddMembersToChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1704,7 +1774,8 @@ func TestPositiveChatService_AddMembersToChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1714,7 +1785,8 @@ func TestPositiveChatService_AddMembersToChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -1727,7 +1799,8 @@ func TestPositiveChatService_AddMembersToChat(t *testing.T) {
 func TestNegativeChatService_AddMembersToChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1821,7 +1894,8 @@ func TestNegativeChatService_AddMembersToChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1831,7 +1905,8 @@ func TestNegativeChatService_AddMembersToChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -1848,7 +1923,8 @@ func TestNegativeChatService_AddMembersToChat(t *testing.T) {
 func TestPositiveChatService_DeleteMemberFromChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -1892,7 +1968,8 @@ func TestPositiveChatService_DeleteMemberFromChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -1902,7 +1979,8 @@ func TestPositiveChatService_DeleteMemberFromChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -1915,7 +1993,8 @@ func TestPositiveChatService_DeleteMemberFromChat(t *testing.T) {
 func TestNegativeChatService_DeleteMemberFromChat(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -2027,7 +2106,8 @@ func TestNegativeChatService_DeleteMemberFromChat(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -2037,7 +2117,8 @@ func TestNegativeChatService_DeleteMemberFromChat(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -2054,7 +2135,8 @@ func TestNegativeChatService_DeleteMemberFromChat(t *testing.T) {
 func TestPositiveChatService_GetAllChatMembers(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -2090,7 +2172,8 @@ func TestPositiveChatService_GetAllChatMembers(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -2100,7 +2183,8 @@ func TestPositiveChatService_GetAllChatMembers(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
@@ -2114,7 +2198,8 @@ func TestPositiveChatService_GetAllChatMembers(t *testing.T) {
 func TestNegativeChatService_GetAllChatMembers(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
-		userRepo  *mock.MockUserRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		notifier  *mock.MockChatRealtimeNotifier
 		mediaRepo *mock.MockMediaRepositoryInterface
 	}
 
@@ -2139,6 +2224,15 @@ func TestNegativeChatService_GetAllChatMembers(t *testing.T) {
 			args:    args{ctx: context.Background(), userID: 100, chatID: 1},
 			wantErr: domain.ErrNotMember,
 		},
+		{
+			name: "GetChatMembers error",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(1)).Return(nil, errors.New("db error"))
+			},
+			args:       args{ctx: context.Background(), userID: 100, chatID: 1},
+			wantAnyErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -2148,7 +2242,8 @@ func TestNegativeChatService_GetAllChatMembers(t *testing.T) {
 
 			f := fields{
 				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
-				userRepo:  mock.NewMockUserRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				notifier:  nil,
 				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
 			}
 
@@ -2158,7 +2253,8 @@ func TestNegativeChatService_GetAllChatMembers(t *testing.T) {
 
 			s := &ChatService{
 				chatRepo:  f.chatRepo,
-				userRepo:  f.userRepo,
+				userSvc:   f.userSvc,
+				notifier:  nil,
 				mediaRepo: f.mediaRepo,
 			}
 
