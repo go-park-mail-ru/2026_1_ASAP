@@ -225,9 +225,9 @@ services:
     container_name: grafana
     restart: unless-stopped
     environment:
-      GF_SERVER_ROOT_URL: "https://pulseapp.space/grafana/"
-      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
-      GF_SERVER_DOMAIN: "pulseapp.space"
+      GF_SERVER_ROOT_URL: "https://grafana.pulseapp.space/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+      GF_SERVER_DOMAIN: "grafana.pulseapp.space"
       GF_SERVER_PROTOCOL: "http"
     ports:
       - "3001:3000"
