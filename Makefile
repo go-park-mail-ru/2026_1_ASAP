@@ -29,7 +29,7 @@ lint: $(GOLANGCI_LINT)
 lint-fix: $(GOLANGCI_LINT)
 	PATH="$(shell go env GOPATH)/bin:$${PATH}" golangci-lint run ./... --fix
 
-COVER_PKGS := $(shell go list ./... | grep -v '/mock$$')
+COVER_PKGS := $(shell go list ./... | grep -Ev '/mock$$|/gen(/|$$)')
 
 install-mockgen:
 	go install github.com/golang/mock/mockgen@v1.6.0

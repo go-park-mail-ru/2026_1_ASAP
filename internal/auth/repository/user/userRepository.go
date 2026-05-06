@@ -31,9 +31,9 @@ type UserRepository struct {
 	logger *zap.Logger
 }
 
-func (r *UserRepository) CreateUserByVKID(ctx context.Context, vkID int64, user *domain.User) (*domain.User, error) {
+func (r *UserRepository) CreateUserByVKID(ctx context.Context, vkID int64, newUser *domain.User) (*domain.User, error) {
 	start := time.Now()
-	userModel := toModel(user)
+	userModel := toModel(newUser)
 	vkUserID := strconv.FormatInt(vkID, 10)
 
 	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{
