@@ -1,0 +1,12 @@
+redis:
+  port: "6379"
+
+postgres:
+  user: postgres
+  db: asap
+  port: "5432"
+
+minio:
+  port_api: "9000"
+  port_console: "9001"
+  root_user: minioadmin

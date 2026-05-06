@@ -5,10 +5,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
-	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
-	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
-	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
+	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 )
 
 type ValidationError struct {
@@ -170,78 +168,6 @@ func ValidationRequestLogin(request *dtoAuth.RequestLogin) []ValidationError {
 	return errs
 }
 
-func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
-	var errs []ValidationError
-
-	if req.Title == "" && req.Type != dtoChat.ChatTypeDialog {
-		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "Title is required",
-			Code:    "TITLE_REQUIRED",
-		})
-	} else if runeLen(req.Title) > 100 {
-		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "Len of chat title must be less than 100 characters",
-			Code:    "TITLE_TOO_LONG",
-		})
-	}
-
-	if req.Type == "" {
-		errs = append(errs, ValidationError{
-			Field:   "type",
-			Message: "Type is required",
-			Code:    "TYPE_REQUIRED",
-		})
-	} else {
-		validTypes := map[dtoChat.ChatType]bool{
-			dtoChat.ChatTypeDialog:  true,
-			dtoChat.ChatTypeGroup:   true,
-			dtoChat.ChatTypeChannel: true,
-		}
-
-		if !validTypes[req.Type] {
-			errs = append(errs, ValidationError{
-				Field:   "type",
-				Message: "Invalid type",
-				Code:    "INVALID_TYPE",
-			})
-		}
-	}
-
-	if len(req.MembersID) == 0 {
-		errs = append(errs, ValidationError{
-			Field:   "members_id",
-			Message: "At least one member is required",
-			Code:    "MEMBERS_REQUIRED",
-		})
-	}
-
-	if req.Type == dtoChat.ChatTypeDialog && len(req.MembersID) > 2 {
-		errs = append(errs, ValidationError{
-			Field:   "members_id",
-			Message: "Dialog must have only 2 members",
-			Code:    "MUST_HAVE_2_MEMBERS",
-		})
-	}
-
-	if len(req.MembersID) > 1 {
-		memb := make(map[int64]bool)
-		for _, id := range req.MembersID {
-			if memb[id] {
-				errs = append(errs, ValidationError{
-					Field:   "members_id",
-					Message: "Duplicate users",
-					Code:    "USER_DUPLICATE",
-				})
-				break
-			}
-			memb[id] = true
-		}
-	}
-	return errs
-}
-
 func ValidationContactCreate(req *dtoContact.AddContactRequest) []ValidationError {
 	var errs []ValidationError
 
@@ -275,65 +201,5 @@ func ValidationContactCreate(req *dtoContact.AddContactRequest) []ValidationErro
 		})
 	}
 
-	return errs
-}
-
-func ValidationRequestTitle(req *dto.RequestUpdateTitle) []ValidationError {
-	var errs []ValidationError
-
-	if req.Title == "" {
-		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "Title is required",
-			Code:    "TITLE_REQUIRED",
-		})
-	} else if runeLen(req.Title) > 100 {
-		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "Len of chat title must be less than 100 characters",
-			Code:    "TITLE_TOO_LONG",
-		})
-	}
-	return errs
-}
-
-func ValidationRequestAddMember(req *dto.RequestAddMember) []ValidationError {
-	var errs []ValidationError
-
-	if len(req.MembersId) > 1 {
-		memb := make(map[int64]bool)
-		for _, id := range req.MembersId {
-			if memb[id] {
-				errs = append(errs, ValidationError{
-					Field:   "members_id",
-					Message: "Duplicate users",
-					Code:    "USER_DUPLICATE",
-				})
-				break
-			}
-			memb[id] = true
-		}
-	}
-
-	if len(req.MembersId) == 0 {
-		errs = append(errs, ValidationError{
-			Field:   "members_id",
-			Message: "At least one member is required",
-			Code:    "MEMBERS_REQUIRED",
-		})
-	}
-	return errs
-}
-
-func ValidationRequestDeleteMember(req *dto.RequestDeleteMember) []ValidationError {
-	var errs []ValidationError
-
-	if req.MemberId == 0 || req.MemberId < 0 {
-		errs = append(errs, ValidationError{
-			Field:   "member_id",
-			Message: "Invalid id",
-			Code:    "INVALID_ID",
-		})
-	}
 	return errs
 }

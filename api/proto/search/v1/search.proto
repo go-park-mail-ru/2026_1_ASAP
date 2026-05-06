@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package search.v1;
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/search/v1;searchv1";
+
+import "google/protobuf/timestamp.proto";
+
+service Search {
+  rpc SearchChats (SearchChatsRequest) returns (SearchChatsResponse);
+  rpc SearchGlobalChannels (SearchGlobalChannelsRequest) returns (SearchGlobalChannelsResponse);
+  rpc SearchContacts (SearchContactsRequest) returns (SearchContactsResponse);
+  rpc SearchMessagesInChat (SearchMessagesInChatRequest) returns (SearchMessagesInChatResponse);
+}
+
+enum SearchErrorCode {
+  SEARCH_ERROR_UNSPECIFIED = 0;
+  SEARCH_ERROR_INVALID_INPUT = 1;
+  SEARCH_ERROR_NOT_FOUND = 2;
+  SEARCH_ERROR_INTERNAL = 3;
+  SEARCH_ERROR_PERMISSION_DENIED = 4;
+}
+
+
+enum ChatType {
+  CHAT_TYPE_UNSPECIFIED = 0;
+  CHAT_TYPE_DIALOG = 1;
+  CHAT_TYPE_GROUP = 2;
+  CHAT_TYPE_CHANNEL = 3;
+}
+
+enum SearchChatKind {
+  SEARCH_CHAT_KIND_UNSPECIFIED = 0;
+  SEARCH_CHAT_KIND_DIALOG = 1;
+  SEARCH_CHAT_KIND_GROUP = 2;
+  SEARCH_CHAT_KIND_CHANNEL = 3;
+}
+
+enum SearchContactScope {
+  SEARCH_CONTACT_SCOPE_UNSPECIFIED = 0;
+  SEARCH_CONTACT_SCOPE_CONTACTS = 1;
+  SEARCH_CONTACT_SCOPE_LOCAL = 2;
+}
+
+message SearchChatsRequest {
+  int64 user_id = 1;
+  string query = 2;
+  repeated SearchChatKind kinds = 3;
+  int32 limit = 4;
+  int64 before_id = 5;
+}
+
+message SearchChatItem {
+  int64 chat_id = 1;
+  ChatType type = 2;
+  string title = 3;
+  optional string avatar_url = 4;
+  optional string last_message_preview = 5;
+  optional google.protobuf.Timestamp last_message_at = 6;
+  int64 unread_count = 7;
+}
+
+message SearchChatsResponse {
+  repeated SearchChatItem chats = 1;
+  int64 next_before_id = 2;
+}
+
+message SearchGlobalChannelsRequest {
+  int64 user_id = 1;
+  string query = 2;
+  int32 limit = 3;
+  int64 before_id = 4;
+}
+
+message SearchGlobalChannelItem {
+  int64 chat_id = 1;
+  string title = 2;
+  optional string avatar_url = 3;
+  optional string last_message_preview = 4;
+  optional google.protobuf.Timestamp last_message_at = 5;
+  bool is_member = 6;
+}
+
+message SearchGlobalChannelsResponse {
+  repeated SearchGlobalChannelItem channels = 1;
+  int64 next_before_id = 2;
+}
+
+message SearchContactsRequest {
+  int64 user_id = 1;
+  string query = 2;
+  SearchContactScope scope = 3;
+  int32 limit = 4;
+  int64 before_id = 5;
+}
+
+message SearchContactItem {
+  int64 user_id = 1;
+  string display_name = 2;
+  optional string login = 3;
+  optional string avatar_url = 4;
+  bool is_online = 5;
+  optional google.protobuf.Timestamp last_seen_at = 6;
+}
+
+message SearchContactsResponse {
+  repeated SearchContactItem contacts = 1;
+  int64 next_before_id = 2;
+}
+
+message SearchMessagesInChatRequest {
+  int64 user_id = 1;
+  int64 chat_id = 2;
+  string query = 3;
+  int32 limit = 4;
+  int64 before_id = 5;
+}
+
+message SearchMessageHighlight {
+  string fragment = 1;
+}
+
+message SearchMessageItem {
+  int64 message_id = 1;
+  int64 chat_id = 2;
+  int64 sender_id = 3;
+  string text_preview = 4;
+  google.protobuf.Timestamp created_at = 5;
+  SearchMessageHighlight highlights = 6;
+}
+
+message SearchMessagesInChatResponse {
+  repeated SearchMessageItem messages = 1;
+  int64 next_before_id = 2;
+}

@@ -1,11 +1,9 @@
 package validation
 
 import (
-	"strings"
 	"testing"
 
-	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
-	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
 )
 
 func TestValidateEmail(t *testing.T) {
@@ -16,7 +14,7 @@ func TestValidateEmail(t *testing.T) {
 	}{
 		{"empty", "", false},
 		{"invalid", "invalid-email", false},
-		{"valid", "user@example.com", true},
+		{"valid", "profile@example.com", true},
 	}
 
 	for _, tt := range tests {
@@ -90,8 +88,8 @@ func TestValidationRequestRegistrate(t *testing.T) {
 		{
 			name: "valid",
 			req: &dtoAuth.RequestRegistrate{
-				Login:    "user",
-				Email:    "user@example.com",
+				Login:    "profile",
+				Email:    "profile@example.com",
 				Password: "Passw0rd&",
 			},
 		},
@@ -114,7 +112,7 @@ func TestValidationRequestLogin(t *testing.T) {
 		{
 			name: "valid",
 			req: &dtoAuth.RequestLogin{
-				Login:    "user",
+				Login:    "profile",
 				Password: "Passw0rd&",
 			},
 		},
@@ -123,47 +121,6 @@ func TestValidationRequestLogin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if errs := ValidationRequestLogin(tt.req); len(errs) != 0 {
-				t.Fatalf("expected no errors, got %v", errs)
-			}
-		})
-	}
-}
-
-func TestValidationChatCreate(t *testing.T) {
-	longUnicodeTitle := strings.Repeat("я", 101)
-
-	tests := []struct {
-		name    string
-		req     *dtoChat.ChatCreate
-		wantErr bool
-	}{
-		{
-			name: "valid dialog",
-			req: &dtoChat.ChatCreate{
-				Title:     "Test chat",
-				Type:      dtoChat.ChatTypeDialog,
-				MembersID: []int64{10, 15},
-			},
-			wantErr: false,
-		},
-		{
-			name: "title longer than 100 runes",
-			req: &dtoChat.ChatCreate{
-				Title:     longUnicodeTitle,
-				Type:      dtoChat.ChatTypeGroup,
-				MembersID: []int64{1},
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			errs := ValidationChatCreate(tt.req)
-			if tt.wantErr && len(errs) == 0 {
-				t.Fatalf("expected errors, got none")
-			}
-			if !tt.wantErr && len(errs) != 0 {
 				t.Fatalf("expected no errors, got %v", errs)
 			}
 		})

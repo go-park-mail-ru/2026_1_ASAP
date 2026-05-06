@@ -1,0 +1,40 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: gateway
+    static_configs:
+      - targets: ["gateway:8088"]
+
+  - job_name: auth
+    static_configs:
+      - targets: ["auth:9101"]
+
+  - job_name: profile
+    static_configs:
+      - targets: ["profile:9102"]
+
+  - job_name: media
+    static_configs:
+      - targets: ["media:9103"]
+
+  - job_name: chat
+    static_configs:
+      - targets: ["chat:9104"]
+
+  - job_name: complaint
+    static_configs:
+      - targets: ["complaint:9106"]
+
+  - job_name: search
+    static_configs:
+      - targets: ["search:9110"]
+
+  - job_name: node
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["host.docker.internal:9100"]
