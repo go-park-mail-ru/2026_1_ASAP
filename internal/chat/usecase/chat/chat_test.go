@@ -1,4 +1,3 @@
-// internal/services/chat/chat_test.go
 package chat
 
 import (
@@ -2264,6 +2263,670 @@ func TestNegativeChatService_GetAllChatMembers(t *testing.T) {
 			} else {
 				require.EqualError(t, err, tt.wantErr.Error())
 			}
+		})
+	}
+}
+
+func TestPositiveChatService_UpdateChatDescription(t *testing.T) {
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+		notifier  *mock.MockChatRealtimeNotifier
+	}
+
+	type args struct {
+		ctx         context.Context
+		userID      int64
+		chatID      int64
+		description string
+	}
+
+	now := time.Now()
+
+	tests := []struct {
+		prepare func(*fields)
+		want    *dto.ChatInformationDTO
+		name    string
+		args    args
+	}{
+		{
+			name: "Update group chat description successfully",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+					Id:      1,
+					Type:    domain.ChatTypeGroup,
+					OwnerId: 100,
+				}, nil)
+				f.chatRepo.EXPECT().UpdateDescription(context.Background(), int64(1), "New Description").Return(&domain.Chat{
+					Id:          1,
+					Type:        domain.ChatTypeGroup,
+					Title:       "Group",
+					Description: strPtr("New Description"),
+				}, nil)
+				f.chatRepo.EXPECT().GetLastMessageOfChat(context.Background(), int64(1)).Return(&domain.Message{
+					SenderId:  101,
+					Content:   "Hello",
+					CreatedAt: now,
+				}, nil)
+				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(1)).Return([]int64{100, 101}, nil)
+				f.notifier.EXPECT().NotifyChatDescriptionUpdated(gomock.Any(), []int64{100, 101}, int64(1), gomock.Any()).Times(1)
+			},
+			args: args{
+				ctx:         context.Background(),
+				userID:      100,
+				chatID:      1,
+				description: "New Description",
+			},
+			want: &dto.ChatInformationDTO{
+				ID:          1,
+				ChatType:    dto.ChatTypeGroup,
+				Title:       "Group",
+				Description: strPtr("New Description"),
+				LastMessage: dto.MessageDTO{
+					SenderId:  101,
+					Text:      "Hello",
+					CreatedAt: now,
+				},
+			},
+		},
+		{
+			name: "Update channel description as owner",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(2), int64(100)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(2)).Return(&domain.Chat{
+					Id:      2,
+					Type:    domain.ChatTypeChannel,
+					OwnerId: 100,
+				}, nil)
+				f.chatRepo.EXPECT().UpdateDescription(context.Background(), int64(2), "Channel Description").Return(&domain.Chat{
+					Id:          2,
+					Type:        domain.ChatTypeChannel,
+					Title:       "Channel",
+					Description: strPtr("Channel Description"),
+				}, nil)
+				f.chatRepo.EXPECT().GetLastMessageOfChat(context.Background(), int64(2)).Return(&domain.Message{}, domain.ErrNoMessage)
+				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(2)).Return([]int64{100, 101}, nil)
+				f.notifier.EXPECT().NotifyChatDescriptionUpdated(gomock.Any(), []int64{100, 101}, int64(2), gomock.Any()).Times(1)
+			},
+			args: args{
+				ctx:         context.Background(),
+				userID:      100,
+				chatID:      2,
+				description: "Channel Description",
+			},
+			want: &dto.ChatInformationDTO{
+				ID:          2,
+				ChatType:    dto.ChatTypeChannel,
+				Title:       "Channel",
+				Description: strPtr("Channel Description"),
+				LastMessage: dto.MessageDTO{},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+				notifier:  mock.NewMockChatRealtimeNotifier(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userSvc:   f.userSvc,
+				mediaRepo: f.mediaRepo,
+				notifier:  f.notifier,
+			}
+
+			req := &dto.RequestUpdateDescription{Description: tt.args.description}
+			result, err := s.UpdateChatDescription(tt.args.ctx, tt.args.userID, tt.args.chatID, req)
+			require.NoError(t, err)
+			require.Equal(t, tt.want.ID, result.ID)
+			require.Equal(t, tt.want.Description, result.Description)
+		})
+	}
+}
+
+func TestNegativeChatService_UpdateChatDescription(t *testing.T) {
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+		notifier  *mock.MockChatRealtimeNotifier
+	}
+
+	type args struct {
+		ctx         context.Context
+		userID      int64
+		chatID      int64
+		description string
+	}
+
+	tests := []struct {
+		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
+		wantAnyErr bool
+	}{
+		{
+			name: "User not member",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(false, nil)
+			},
+			args: args{
+				ctx:         context.Background(),
+				userID:      100,
+				chatID:      1,
+				description: "New Description",
+			},
+			wantErr: domain.ErrNotMember,
+		},
+		{
+			name: "Chat not found",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(nil, domain.ErrChatNotFound)
+			},
+			args: args{
+				ctx:         context.Background(),
+				userID:      100,
+				chatID:      1,
+				description: "New Description",
+			},
+			wantErr: domain.ErrChatNotFound,
+		},
+		{
+			name: "Dialog cannot have description",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+					Id:   1,
+					Type: domain.ChatTypeDialog,
+				}, nil)
+			},
+			args: args{
+				ctx:         context.Background(),
+				userID:      100,
+				chatID:      1,
+				description: "New Description",
+			},
+			wantErr: domain.ErrDialogCannotHaveCustomDescription,
+		},
+		{
+			name: "Channel - only owner can change description",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(2), int64(101)).Return(true, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(2)).Return(&domain.Chat{
+					Id:      2,
+					Type:    domain.ChatTypeChannel,
+					OwnerId: 100,
+				}, nil)
+			},
+			args: args{
+				ctx:         context.Background(),
+				userID:      101,
+				chatID:      2,
+				description: "New Description",
+			},
+			wantErr: domain.ErrOnlyOwnerCanChangeDescription,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+				notifier:  mock.NewMockChatRealtimeNotifier(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userSvc:   f.userSvc,
+				mediaRepo: f.mediaRepo,
+				notifier:  f.notifier,
+			}
+
+			req := &dto.RequestUpdateDescription{Description: tt.args.description}
+			result, err := s.UpdateChatDescription(tt.args.ctx, tt.args.userID, tt.args.chatID, req)
+			require.Nil(t, result)
+			if tt.wantAnyErr {
+				require.Error(t, err)
+			} else {
+				require.EqualError(t, err, tt.wantErr.Error())
+			}
+		})
+	}
+}
+
+func TestPositiveChatService_JoinChannel(t *testing.T) {
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+		notifier  *mock.MockChatRealtimeNotifier
+	}
+
+	type args struct {
+		ctx    context.Context
+		userID int64
+		chatID int64
+	}
+
+	tests := []struct {
+		prepare func(*fields)
+		name    string
+		args    args
+	}{
+		{
+			name: "Join channel successfully",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(false, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+					Id:   1,
+					Type: domain.ChatTypeChannel,
+				}, nil)
+				f.chatRepo.EXPECT().AddMember(context.Background(), int64(1), int64(100), "member").Return(nil)
+				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(1)).Return([]int64{100, 101}, nil)
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(100)).Return(&pdomain.Profile{UserId: 100, FirstName: "User"}, nil)
+				f.notifier.EXPECT().NotifyChatMembersUpdated(gomock.Any(), []int64{100, 101}, int64(1), "added", []int64{100}, "User").Times(1)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+			},
+		},
+		{
+			name: "Join channel when already member - should return nil without error",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+				notifier:  mock.NewMockChatRealtimeNotifier(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userSvc:   f.userSvc,
+				mediaRepo: f.mediaRepo,
+				notifier:  f.notifier,
+			}
+
+			err := s.JoinChannel(tt.args.ctx, tt.args.userID, tt.args.chatID)
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestNegativeChatService_JoinChannel(t *testing.T) {
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+		notifier  *mock.MockChatRealtimeNotifier
+	}
+
+	type args struct {
+		ctx    context.Context
+		userID int64
+		chatID int64
+	}
+
+	tests := []struct {
+		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
+		wantAnyErr bool
+	}{
+		{
+			name: "Cannot join non-channel chat",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(false, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+					Id:   1,
+					Type: domain.ChatTypeGroup,
+				}, nil)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+			},
+			wantErr: domain.ErrCanJoinOnlyChannel,
+		},
+		{
+			name: "Chat not found",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(false, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(nil, domain.ErrChatNotFound)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+			},
+			wantErr: domain.ErrChatNotFound,
+		},
+		{
+			name: "Add member fails",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(false, nil)
+				f.chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+					Id:   1,
+					Type: domain.ChatTypeChannel,
+				}, nil)
+				f.chatRepo.EXPECT().AddMember(context.Background(), int64(1), int64(100), "member").Return(errors.New("db error"))
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+				chatID: 1,
+			},
+			wantAnyErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+				notifier:  mock.NewMockChatRealtimeNotifier(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userSvc:   f.userSvc,
+				mediaRepo: f.mediaRepo,
+				notifier:  f.notifier,
+			}
+
+			err := s.JoinChannel(tt.args.ctx, tt.args.userID, tt.args.chatID)
+			if tt.wantAnyErr {
+				require.Error(t, err)
+			} else {
+				require.EqualError(t, err, tt.wantErr.Error())
+			}
+		})
+	}
+}
+
+func TestPositiveChatService_GetChatMemberIDs(t *testing.T) {
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+		notifier  *mock.MockChatRealtimeNotifier
+	}
+
+	type args struct {
+		ctx    context.Context
+		chatID int64
+	}
+
+	tests := []struct {
+		prepare func(*fields)
+		want    []int64
+		name    string
+		args    args
+	}{
+		{
+			name: "Get chat member IDs successfully",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(1)).Return([]int64{100, 101, 102}, nil)
+			},
+			args: args{
+				ctx:    context.Background(),
+				chatID: 1,
+			},
+			want: []int64{100, 101, 102},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+				notifier:  mock.NewMockChatRealtimeNotifier(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userSvc:   f.userSvc,
+				mediaRepo: f.mediaRepo,
+				notifier:  f.notifier,
+			}
+
+			result, err := s.GetChatMemberIDs(tt.args.ctx, tt.args.chatID)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestNegativeChatService_GetChatMemberIDs(t *testing.T) {
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+		notifier  *mock.MockChatRealtimeNotifier
+	}
+
+	type args struct {
+		ctx    context.Context
+		chatID int64
+	}
+
+	tests := []struct {
+		wantErr    error
+		prepare    func(*fields)
+		name       string
+		args       args
+		wantAnyErr bool
+	}{
+		{
+			name: "Get chat members error",
+			prepare: func(f *fields) {
+				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(1)).Return(nil, errors.New("db error"))
+			},
+			args: args{
+				ctx:    context.Background(),
+				chatID: 1,
+			},
+			wantAnyErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+				notifier:  mock.NewMockChatRealtimeNotifier(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userSvc:   f.userSvc,
+				mediaRepo: f.mediaRepo,
+				notifier:  f.notifier,
+			}
+
+			_, err := s.GetChatMemberIDs(tt.args.ctx, tt.args.chatID)
+			if tt.wantAnyErr {
+				require.Error(t, err)
+			} else {
+				require.EqualError(t, err, tt.wantErr.Error())
+			}
+		})
+	}
+}
+
+func TestChatService_profileDisplayName(t *testing.T) {
+	type fields struct {
+		chatRepo  *mock.MockChatRepositoryInterface
+		userSvc   *mock.MockProfileServiceInterface
+		mediaRepo *mock.MockMediaRepositoryInterface
+		notifier  *mock.MockChatRealtimeNotifier
+	}
+
+	type args struct {
+		ctx    context.Context
+		userID int64
+	}
+
+	tests := []struct {
+		prepare func(*fields)
+		want    string
+		name    string
+		args    args
+	}{
+		{
+			name: "Get user with last name",
+			prepare: func(f *fields) {
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(100)).Return(&pdomain.Profile{
+					UserId:    100,
+					FirstName: "John",
+					LastName:  strPtr("Doe"),
+				}, nil)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 100,
+			},
+			want: "John Doe",
+		},
+		{
+			name: "Get user without last name",
+			prepare: func(f *fields) {
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&pdomain.Profile{
+					UserId:    101,
+					FirstName: "Jane",
+					LastName:  nil,
+				}, nil)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 101,
+			},
+			want: "Jane",
+		},
+		{
+			name: "Get user returns error",
+			prepare: func(f *fields) {
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(102)).Return(nil, errors.New("user not found"))
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 102,
+			},
+			want: "",
+		},
+		{
+			name: "Get user returns nil profile",
+			prepare: func(f *fields) {
+				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(103)).Return(nil, nil)
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: 103,
+			},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			f := fields{
+				chatRepo:  mock.NewMockChatRepositoryInterface(ctrl),
+				userSvc:   mock.NewMockProfileServiceInterface(ctrl),
+				mediaRepo: mock.NewMockMediaRepositoryInterface(ctrl),
+				notifier:  mock.NewMockChatRealtimeNotifier(ctrl),
+			}
+
+			if tt.prepare != nil {
+				tt.prepare(&f)
+			}
+
+			s := &ChatService{
+				chatRepo:  f.chatRepo,
+				userSvc:   f.userSvc,
+				mediaRepo: f.mediaRepo,
+				notifier:  f.notifier,
+			}
+
+			result := s.profileDisplayName(tt.args.ctx, tt.args.userID)
+			require.Equal(t, tt.want, result)
 		})
 	}
 }
