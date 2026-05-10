@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/subscription/v1;subscriptionv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service Subscription {
+  rpc ActivateSubscription(RequestActivateSubscription) returns (ResponseActivateSubscription);
+  rpc GetSubscription(RequestGetSubscription) returns (ResponseGetSubscription);
+  rpc CancelSubscription(RequestCancelSubscription) returns (google.protobuf.Empty);
+}
+
+message RequestActivateSubscription {
+  int64 user_id = 1;
+  int64 days = 2;
+}
+
+message ResponseActivateSubscription {
+  google.protobuf.Timestamp end_at = 1;
+}
+
+message RequestGetSubscription {
+  int64 user_id = 1;
+}
+
+message ResponseGetSubscription {
+  int64 user_id = 1;
+  bool active = 2;
+
+  google.protobuf.Timestamp start_at = 3;
+  google.protobuf.Timestamp end_at = 4;
+}
+
+message RequestCancelSubscription {
+    int64 user_id = 1;
+}
