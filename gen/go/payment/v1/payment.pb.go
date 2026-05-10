@@ -93,8 +93,7 @@ type ResponseCreatePayment struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	UserId           string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Amount           int32                  `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
-	Currency         string                 `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
-	SubscriptionDays int32                  `protobuf:"varint,4,opt,name=subscription_days,json=subscriptionDays,proto3" json:"subscription_days,omitempty"`
+	SubscriptionDays int32                  `protobuf:"varint,3,opt,name=subscription_days,json=subscriptionDays,proto3" json:"subscription_days,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -143,13 +142,6 @@ func (x *ResponseCreatePayment) GetAmount() int32 {
 	return 0
 }
 
-func (x *ResponseCreatePayment) GetCurrency() string {
-	if x != nil {
-		return x.Currency
-	}
-	return ""
-}
-
 func (x *ResponseCreatePayment) GetSubscriptionDays() int32 {
 	if x != nil {
 		return x.SubscriptionDays
@@ -168,12 +160,11 @@ const file_payment_v1_payment_proto_rawDesc = "" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1f\n" +
 	"\vpayment_url\x18\x03 \x01(\tR\n" +
 	"paymentUrl\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\"\x91\x01\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\"u\n" +
 	"\x15ResponseCreatePayment\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\x05R\x06amount\x12\x1a\n" +
-	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12+\n" +
-	"\x11subscription_days\x18\x04 \x01(\x05R\x10subscriptionDays2I\n" +
+	"\x06amount\x18\x02 \x01(\x05R\x06amount\x12+\n" +
+	"\x11subscription_days\x18\x03 \x01(\x05R\x10subscriptionDays2I\n" +
 	"\apayment\x12>\n" +
 	"\rCreatePayment\x12\x15.RequestCreatePayment\x1a\x16.ResponseCreatePaymentBDZBgithub.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1;paymentv1b\x06proto3"
 

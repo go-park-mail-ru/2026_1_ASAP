@@ -77,7 +77,8 @@ func (x *RequestActivateSubscription) GetDays() int64 {
 
 type ResponseActivateSubscription struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EndAt         *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=end_at,json=endAt,proto3" json:"end_at,omitempty"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	EndAt         *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=end_at,json=endAt,proto3" json:"end_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -110,6 +111,13 @@ func (x *ResponseActivateSubscription) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ResponseActivateSubscription.ProtoReflect.Descriptor instead.
 func (*ResponseActivateSubscription) Descriptor() ([]byte, []int) {
 	return file_subscription_v1_subscription_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ResponseActivateSubscription) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
 }
 
 func (x *ResponseActivateSubscription) GetEndAt() *timestamppb.Timestamp {
@@ -282,9 +290,10 @@ const file_subscription_v1_subscription_proto_rawDesc = "" +
 	"\"subscription/v1/subscription.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"J\n" +
 	"\x1bRequestActivateSubscription\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x12\n" +
-	"\x04days\x18\x02 \x01(\x03R\x04days\"Q\n" +
-	"\x1cResponseActivateSubscription\x121\n" +
-	"\x06end_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x05endAt\"1\n" +
+	"\x04days\x18\x02 \x01(\x03R\x04days\"j\n" +
+	"\x1cResponseActivateSubscription\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x121\n" +
+	"\x06end_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05endAt\"1\n" +
 	"\x16RequestGetSubscription\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\"\xb4\x01\n" +
 	"\x17ResponseGetSubscription\x12\x17\n" +
