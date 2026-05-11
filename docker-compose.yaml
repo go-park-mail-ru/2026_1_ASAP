@@ -15,6 +15,7 @@ services:
       - chat
       - complaint
       - search
+      - subscription
     restart: always
 
   chat:
@@ -110,6 +111,22 @@ services:
       - migrate
     restart: always
 
+  subscription:
+    build:
+      context: .
+      dockerfile: ./docker/subscription.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+    ports:
+      - "8011:8011"
+      - "9111:9111"
+    depends_on:
+      - db
+      - migrate
+    restart: always
+
   complaint:
     build:
       context: .
@@ -148,6 +165,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: asap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     restart: always
@@ -159,6 +177,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: asap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - ./db/migrations:/migrations
     entrypoint:

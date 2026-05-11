@@ -94,7 +94,7 @@ func (s SubscriptionUseCase) GetSubscription(ctx context.Context, request *dto.R
 		subscription.Active = false
 		updated, err := s.subscriptionRepository.SubscriptionSet(ctx, subscription)
 		if err != nil {
-			return nil, fmt.Errorf("subscription get expire sync: %w", err)
+			return nil, domain.ErrSubscriptionExpired
 		}
 		subscription = updated
 	}

@@ -23,6 +23,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type SubscriptionErrorCode int32
+
+const (
+	SubscriptionErrorCode_SUBSCRIPTION_ERROR_NOT_FOUND SubscriptionErrorCode = 0
+	SubscriptionErrorCode_SUBSCRIPTION_ERROR_EXPIRED   SubscriptionErrorCode = 1
+)
+
+// Enum value maps for SubscriptionErrorCode.
+var (
+	SubscriptionErrorCode_name = map[int32]string{
+		0: "SUBSCRIPTION_ERROR_NOT_FOUND",
+		1: "SUBSCRIPTION_ERROR_EXPIRED",
+	}
+	SubscriptionErrorCode_value = map[string]int32{
+		"SUBSCRIPTION_ERROR_NOT_FOUND": 0,
+		"SUBSCRIPTION_ERROR_EXPIRED":   1,
+	}
+)
+
+func (x SubscriptionErrorCode) Enum() *SubscriptionErrorCode {
+	p := new(SubscriptionErrorCode)
+	*p = x
+	return p
+}
+
+func (x SubscriptionErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SubscriptionErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_subscription_v1_subscription_proto_enumTypes[0].Descriptor()
+}
+
+func (SubscriptionErrorCode) Type() protoreflect.EnumType {
+	return &file_subscription_v1_subscription_proto_enumTypes[0]
+}
+
+func (x SubscriptionErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SubscriptionErrorCode.Descriptor instead.
+func (SubscriptionErrorCode) EnumDescriptor() ([]byte, []int) {
+	return file_subscription_v1_subscription_proto_rawDescGZIP(), []int{0}
+}
+
 type RequestActivateSubscription struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -302,7 +348,10 @@ const file_subscription_v1_subscription_proto_rawDesc = "" +
 	"\bstart_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\astartAt\x121\n" +
 	"\x06end_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x05endAt\"4\n" +
 	"\x19RequestCancelSubscription\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x03R\x06userId2\xf3\x01\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId*Y\n" +
+	"\x15SubscriptionErrorCode\x12 \n" +
+	"\x1cSUBSCRIPTION_ERROR_NOT_FOUND\x10\x00\x12\x1e\n" +
+	"\x1aSUBSCRIPTION_ERROR_EXPIRED\x10\x012\xf3\x01\n" +
 	"\fSubscription\x12S\n" +
 	"\x14ActivateSubscription\x12\x1c.RequestActivateSubscription\x1a\x1d.ResponseActivateSubscription\x12D\n" +
 	"\x0fGetSubscription\x12\x17.RequestGetSubscription\x1a\x18.ResponseGetSubscription\x12H\n" +
@@ -320,26 +369,28 @@ func file_subscription_v1_subscription_proto_rawDescGZIP() []byte {
 	return file_subscription_v1_subscription_proto_rawDescData
 }
 
+var file_subscription_v1_subscription_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_subscription_v1_subscription_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_subscription_v1_subscription_proto_goTypes = []any{
-	(*RequestActivateSubscription)(nil),  // 0: RequestActivateSubscription
-	(*ResponseActivateSubscription)(nil), // 1: ResponseActivateSubscription
-	(*RequestGetSubscription)(nil),       // 2: RequestGetSubscription
-	(*ResponseGetSubscription)(nil),      // 3: ResponseGetSubscription
-	(*RequestCancelSubscription)(nil),    // 4: RequestCancelSubscription
-	(*timestamppb.Timestamp)(nil),        // 5: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),                // 6: google.protobuf.Empty
+	(SubscriptionErrorCode)(0),           // 0: SubscriptionErrorCode
+	(*RequestActivateSubscription)(nil),  // 1: RequestActivateSubscription
+	(*ResponseActivateSubscription)(nil), // 2: ResponseActivateSubscription
+	(*RequestGetSubscription)(nil),       // 3: RequestGetSubscription
+	(*ResponseGetSubscription)(nil),      // 4: ResponseGetSubscription
+	(*RequestCancelSubscription)(nil),    // 5: RequestCancelSubscription
+	(*timestamppb.Timestamp)(nil),        // 6: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                // 7: google.protobuf.Empty
 }
 var file_subscription_v1_subscription_proto_depIdxs = []int32{
-	5, // 0: ResponseActivateSubscription.end_at:type_name -> google.protobuf.Timestamp
-	5, // 1: ResponseGetSubscription.start_at:type_name -> google.protobuf.Timestamp
-	5, // 2: ResponseGetSubscription.end_at:type_name -> google.protobuf.Timestamp
-	0, // 3: Subscription.ActivateSubscription:input_type -> RequestActivateSubscription
-	2, // 4: Subscription.GetSubscription:input_type -> RequestGetSubscription
-	4, // 5: Subscription.CancelSubscription:input_type -> RequestCancelSubscription
-	1, // 6: Subscription.ActivateSubscription:output_type -> ResponseActivateSubscription
-	3, // 7: Subscription.GetSubscription:output_type -> ResponseGetSubscription
-	6, // 8: Subscription.CancelSubscription:output_type -> google.protobuf.Empty
+	6, // 0: ResponseActivateSubscription.end_at:type_name -> google.protobuf.Timestamp
+	6, // 1: ResponseGetSubscription.start_at:type_name -> google.protobuf.Timestamp
+	6, // 2: ResponseGetSubscription.end_at:type_name -> google.protobuf.Timestamp
+	1, // 3: Subscription.ActivateSubscription:input_type -> RequestActivateSubscription
+	3, // 4: Subscription.GetSubscription:input_type -> RequestGetSubscription
+	5, // 5: Subscription.CancelSubscription:input_type -> RequestCancelSubscription
+	2, // 6: Subscription.ActivateSubscription:output_type -> ResponseActivateSubscription
+	4, // 7: Subscription.GetSubscription:output_type -> ResponseGetSubscription
+	7, // 8: Subscription.CancelSubscription:output_type -> google.protobuf.Empty
 	6, // [6:9] is the sub-list for method output_type
 	3, // [3:6] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -357,13 +408,14 @@ func file_subscription_v1_subscription_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_subscription_v1_subscription_proto_rawDesc), len(file_subscription_v1_subscription_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_subscription_v1_subscription_proto_goTypes,
 		DependencyIndexes: file_subscription_v1_subscription_proto_depIdxs,
+		EnumInfos:         file_subscription_v1_subscription_proto_enumTypes,
 		MessageInfos:      file_subscription_v1_subscription_proto_msgTypes,
 	}.Build()
 	File_subscription_v1_subscription_proto = out.File

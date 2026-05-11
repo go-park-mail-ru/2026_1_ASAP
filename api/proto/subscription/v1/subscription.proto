@@ -11,6 +11,11 @@ service Subscription {
   rpc CancelSubscription(RequestCancelSubscription) returns (google.protobuf.Empty);
 }
 
+enum SubscriptionErrorCode {
+  SUBSCRIPTION_ERROR_NOT_FOUND = 0;
+  SUBSCRIPTION_ERROR_EXPIRED = 1;
+}
+
 message RequestActivateSubscription {
   int64 user_id = 1;
   int64 days = 2;
