@@ -14,6 +14,7 @@ type GatewayConfig struct {
 	Complaint    GatewayComplaintConfig    `yaml:"complaint"`
 	Search       GatewaySearchConfig       `yaml:"search"`
 	Subscription GatewaySubscriptionConfig `yaml:"subscription"`
+	Payment      GatewayPaymentConfig      `yaml:"payment"`
 }
 
 type GatewayServerConfig struct {
@@ -44,6 +45,10 @@ type GatewaySearchConfig struct {
 
 type GatewaySubscriptionConfig struct {
 	GRPCAddr string `yaml:"grpc_addr" env-default:"subscription:8011"`
+}
+
+type GatewayPaymentConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" env-default:"payment:8012"`
 }
 
 func LoadGatewayConfig(path string) (*GatewayConfig, error) {

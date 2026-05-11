@@ -14,6 +14,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.99
 	github.com/pashagolub/pgxmock/v4 v4.9.0
 	github.com/prometheus/client_golang v1.20.5
+	github.com/rvinnie/yookassa-sdk-go v0.2.1
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/swag v1.16.6
 	go.uber.org/zap v1.27.1

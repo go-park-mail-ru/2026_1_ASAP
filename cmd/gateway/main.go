@@ -14,6 +14,7 @@ import (
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	complaintv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/complaint/v1"
+	paymentv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	searchv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/search/v1"
 	subscriptionv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/subscription/v1"
@@ -22,6 +23,7 @@ import (
 	gwcomplaint "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/complaint"
 	gwcontacts "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/contacts"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
+	gwpayment "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/payment"
 	gwprofile "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/profile"
 	searchgw "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/search"
 	gwsubscription "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/subscription"
@@ -54,6 +56,7 @@ func main() {
 		zap.String("chat_ws", cfg.Chat.WSAddr),
 		zap.String("search_grpc", cfg.Search.GRPCAddr),
 		zap.String("subscription_grpc", cfg.Subscription.GRPCAddr),
+		zap.String("payment_grpc", cfg.Payment.GRPCAddr),
 	)
 
 	authConn, err := grpc.NewClient(cfg.Auth.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -98,12 +101,20 @@ func main() {
 	logger.Info("connected to subscription grpc", zap.String("addr", cfg.Subscription.GRPCAddr))
 	defer func() { _ = subscriptionConn.Close() }()
 
+	paymentConn, err := grpc.NewClient(cfg.Payment.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Fatal("dial payment grpc", zap.String("addr", cfg.Payment.GRPCAddr), zap.Error(err))
+	}
+	logger.Info("connected to payment grpc", zap.String("addr", cfg.Payment.GRPCAddr))
+	defer func() { _ = paymentConn.Close() }()
+
 	authClient := authv1.NewAuthClient(authConn)
 	profileClient := profilev1.NewProfileClient(profileConn)
 	chatClient := chatv1.NewChatClient(chatConn)
 	complaintClient := complaintv1.NewComplaintClient(complaintConn)
 	searchClient := searchv1.NewSearchClient(searchConn)
 	subscriptionClient := subscriptionv1.NewSubscriptionClient(subscriptionConn)
+	paymentClient := paymentv1.NewPaymentClient(paymentConn)
 
 	authHandler := gwauth.NewGatewayAuthHandler(authClient)
 	profileHandler := gwprofile.NewGatewayProfileHandler(authClient, profileClient)
@@ -113,6 +124,7 @@ func main() {
 	analyticHandler := gwcomplaint.NewGatewayAnalyticHandler(complaintClient)
 	searchHandler := searchgw.NewGatewaySearchHandler(searchClient)
 	subscriptionHandler := gwsubscription.NewSubscriptionHandler(subscriptionClient)
+	paymentHandler := gwpayment.NewGatewayPaymentHandler(paymentClient)
 	accessLogger, _ := zap.NewProduction()
 
 	authMiddleware := middleware.AuthMiddleware(authClient)
@@ -224,6 +236,10 @@ func main() {
 	router.Route("/api/v1/subscription", func(mux chi.Router) {
 		mux.With(authMiddleware, csrfMiddleware).Get("/", subscriptionHandler.GetSubscription)
 		mux.With(authMiddleware, csrfMiddleware).Delete("/", subscriptionHandler.CancelSubscription)
+	})
+
+	router.Route("/api/v1/payment", func(mux chi.Router) {
+		mux.With(authMiddleware, csrfMiddleware).Post("/", paymentHandler.CreatePayment)
 	})
 
 	router.Handle("/metrics", promhttp.Handler())

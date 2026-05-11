@@ -127,6 +127,23 @@ services:
       - migrate
     restart: always
 
+  payment:
+    build:
+      context: .
+      dockerfile: ./docker/payment.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+    ports:
+      - "8012:8012"
+      - "9112:9112"
+    depends_on:
+      - db
+      - migrate
+      - subscription
+    restart: always
+
   complaint:
     build:
       context: .
