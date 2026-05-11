@@ -11,12 +11,15 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type PaymentUseCase interface {
 	CreatePayment(ctx context.Context, request *dto.RequestCreatePayment) (*dto.ResponsePayment, error)
 	GetPayment(ctx context.Context, request *dto.RequestGetPayment) (*dto.ResponsePayment, error)
+	SyncOpenPayment(ctx context.Context, request *dto.RequestSyncOpenPayment) (*dto.ResponsePayment, error)
+	HandleYooKassaWebhook(ctx context.Context, rawBody []byte) error
 }
 
 type PaymentServer struct {
@@ -109,6 +112,48 @@ func (s *PaymentServer) GetPayment(ctx context.Context, req *paymentv1.RequestGe
 	return &paymentv1.ResponseGetPayment{
 		Payment: paymentDetailsToProto(resp),
 	}, nil
+}
+
+func (s *PaymentServer) SyncOpenPayment(ctx context.Context, req *paymentv1.RequestSyncOpenPayment) (*paymentv1.ResponseGetPayment, error) {
+	if req == nil || req.GetUserId() <= 0 {
+		s.Log(ctx).Warn("SyncOpenPayment: invalid request")
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	s.Log(ctx).Info("SyncOpenPayment: request", zap.Int64("user_id", req.GetUserId()))
+
+	resp, err := s.PaymentUseCase.SyncOpenPayment(ctx, &dto.RequestSyncOpenPayment{
+		UserID: req.GetUserId(),
+	})
+	if err != nil {
+		s.Log(ctx).Error("SyncOpenPayment: failed", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+		return nil, mapPaymentErr(err)
+	}
+
+	if resp != nil {
+		s.Log(ctx).Info("SyncOpenPayment: success",
+			zap.Int64("payment_pk", resp.ID),
+			zap.String("payment_id", resp.PaymentID),
+			zap.String("status", resp.Status),
+		)
+	}
+
+	return &paymentv1.ResponseGetPayment{
+		Payment: paymentDetailsToProto(resp),
+	}, nil
+}
+
+func (s *PaymentServer) ProcessYooKassaWebhook(ctx context.Context, req *paymentv1.ProcessYooKassaWebhookRequest) (*emptypb.Empty, error) {
+	if req == nil || len(req.GetRawBody()) == 0 {
+		return &emptypb.Empty{}, nil
+	}
+
+	if err := s.PaymentUseCase.HandleYooKassaWebhook(ctx, req.GetRawBody()); err != nil {
+		s.Log(ctx).Error("ProcessYooKassaWebhook: failed", zap.Error(err))
+		return nil, status.Error(codes.Internal, "webhook processing failed")
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 func paymentDetailsToProto(d *dto.ResponsePayment) *paymentv1.PaymentDetails {

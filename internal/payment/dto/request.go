@@ -11,3 +11,7 @@ type RequestCreatePayment struct {
 type RequestGetPayment struct {
 	ID int64
 }
+
+type RequestSyncOpenPayment struct {
+	UserID int64
+}

@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,8 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Payment_CreatePayment_FullMethodName = "/payment.v1.Payment/CreatePayment"
-	Payment_GetPayment_FullMethodName    = "/payment.v1.Payment/GetPayment"
+	Payment_CreatePayment_FullMethodName          = "/payment.v1.Payment/CreatePayment"
+	Payment_GetPayment_FullMethodName             = "/payment.v1.Payment/GetPayment"
+	Payment_SyncOpenPayment_FullMethodName        = "/payment.v1.Payment/SyncOpenPayment"
+	Payment_ProcessYooKassaWebhook_FullMethodName = "/payment.v1.Payment/ProcessYooKassaWebhook"
 )
 
 // PaymentClient is the client API for Payment service.
@@ -29,6 +32,11 @@ const (
 type PaymentClient interface {
 	CreatePayment(ctx context.Context, in *RequestCreatePayment, opts ...grpc.CallOption) (*ResponseCreatePayment, error)
 	GetPayment(ctx context.Context, in *RequestGetPayment, opts ...grpc.CallOption) (*ResponseGetPayment, error)
+	// Pulls latest status from YooKassa for the user's open (pending) payment, updates DB,
+	// and extends subscription when the payment becomes succeeded.
+	SyncOpenPayment(ctx context.Context, in *RequestSyncOpenPayment, opts ...grpc.CallOption) (*ResponseGetPayment, error)
+	// HTTP notification from YooKassa (configure URL in merchant profile). raw_body is the POST JSON body.
+	ProcessYooKassaWebhook(ctx context.Context, in *ProcessYooKassaWebhookRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type paymentClient struct {
@@ -59,12 +67,37 @@ func (c *paymentClient) GetPayment(ctx context.Context, in *RequestGetPayment, o
 	return out, nil
 }
 
+func (c *paymentClient) SyncOpenPayment(ctx context.Context, in *RequestSyncOpenPayment, opts ...grpc.CallOption) (*ResponseGetPayment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseGetPayment)
+	err := c.cc.Invoke(ctx, Payment_SyncOpenPayment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentClient) ProcessYooKassaWebhook(ctx context.Context, in *ProcessYooKassaWebhookRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Payment_ProcessYooKassaWebhook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PaymentServer is the server API for Payment service.
 // All implementations must embed UnimplementedPaymentServer
 // for forward compatibility.
 type PaymentServer interface {
 	CreatePayment(context.Context, *RequestCreatePayment) (*ResponseCreatePayment, error)
 	GetPayment(context.Context, *RequestGetPayment) (*ResponseGetPayment, error)
+	// Pulls latest status from YooKassa for the user's open (pending) payment, updates DB,
+	// and extends subscription when the payment becomes succeeded.
+	SyncOpenPayment(context.Context, *RequestSyncOpenPayment) (*ResponseGetPayment, error)
+	// HTTP notification from YooKassa (configure URL in merchant profile). raw_body is the POST JSON body.
+	ProcessYooKassaWebhook(context.Context, *ProcessYooKassaWebhookRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedPaymentServer()
 }
 
@@ -80,6 +113,12 @@ func (UnimplementedPaymentServer) CreatePayment(context.Context, *RequestCreateP
 }
 func (UnimplementedPaymentServer) GetPayment(context.Context, *RequestGetPayment) (*ResponseGetPayment, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPayment not implemented")
+}
+func (UnimplementedPaymentServer) SyncOpenPayment(context.Context, *RequestSyncOpenPayment) (*ResponseGetPayment, error) {
+	return nil, status.Error(codes.Unimplemented, "method SyncOpenPayment not implemented")
+}
+func (UnimplementedPaymentServer) ProcessYooKassaWebhook(context.Context, *ProcessYooKassaWebhookRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ProcessYooKassaWebhook not implemented")
 }
 func (UnimplementedPaymentServer) mustEmbedUnimplementedPaymentServer() {}
 func (UnimplementedPaymentServer) testEmbeddedByValue()                 {}
@@ -138,6 +177,42 @@ func _Payment_GetPayment_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Payment_SyncOpenPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestSyncOpenPayment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServer).SyncOpenPayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Payment_SyncOpenPayment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServer).SyncOpenPayment(ctx, req.(*RequestSyncOpenPayment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Payment_ProcessYooKassaWebhook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessYooKassaWebhookRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServer).ProcessYooKassaWebhook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Payment_ProcessYooKassaWebhook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServer).ProcessYooKassaWebhook(ctx, req.(*ProcessYooKassaWebhookRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Payment_ServiceDesc is the grpc.ServiceDesc for Payment service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +227,14 @@ var Payment_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPayment",
 			Handler:    _Payment_GetPayment_Handler,
+		},
+		{
+			MethodName: "SyncOpenPayment",
+			Handler:    _Payment_SyncOpenPayment_Handler,
+		},
+		{
+			MethodName: "ProcessYooKassaWebhook",
+			Handler:    _Payment_ProcessYooKassaWebhook_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

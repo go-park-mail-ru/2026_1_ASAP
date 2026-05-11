@@ -238,8 +238,11 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Delete("/", subscriptionHandler.CancelSubscription)
 	})
 
+	router.Post("/api/v1/payment/webhooks/yookassa", paymentHandler.YooKassaWebhook)
+
 	router.Route("/api/v1/payment", func(mux chi.Router) {
 		mux.With(authMiddleware, csrfMiddleware).Post("/", paymentHandler.CreatePayment)
+		mux.With(authMiddleware, csrfMiddleware).Post("/sync", paymentHandler.SyncOpenPayment)
 	})
 
 	router.Handle("/metrics", promhttp.Handler())

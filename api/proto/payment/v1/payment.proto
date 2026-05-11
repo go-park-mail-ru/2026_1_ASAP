@@ -4,11 +4,15 @@ package payment.v1;
 
 option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1;paymentv1";
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 service Payment {
   rpc CreatePayment(RequestCreatePayment) returns (ResponseCreatePayment);
   rpc GetPayment(RequestGetPayment) returns (ResponseGetPayment);
+ 
+  rpc SyncOpenPayment(RequestSyncOpenPayment) returns (ResponseGetPayment);
+  rpc ProcessYooKassaWebhook(ProcessYooKassaWebhookRequest) returns (google.protobuf.Empty);
 }
 
 message PaymentDetails {
@@ -40,6 +44,14 @@ message RequestGetPayment {
   int64 id = 1;
 }
 
+message RequestSyncOpenPayment {
+  int64 user_id = 1;
+}
+
 message ResponseGetPayment {
   PaymentDetails payment = 1;
+}
+
+message ProcessYooKassaWebhookRequest {
+  bytes raw_body = 1;
 }

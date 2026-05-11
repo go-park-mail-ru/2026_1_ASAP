@@ -9,6 +9,7 @@ package paymentv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -302,6 +303,50 @@ func (x *RequestGetPayment) GetId() int64 {
 	return 0
 }
 
+type RequestSyncOpenPayment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestSyncOpenPayment) Reset() {
+	*x = RequestSyncOpenPayment{}
+	mi := &file_payment_v1_payment_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestSyncOpenPayment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestSyncOpenPayment) ProtoMessage() {}
+
+func (x *RequestSyncOpenPayment) ProtoReflect() protoreflect.Message {
+	mi := &file_payment_v1_payment_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestSyncOpenPayment.ProtoReflect.Descriptor instead.
+func (*RequestSyncOpenPayment) Descriptor() ([]byte, []int) {
+	return file_payment_v1_payment_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *RequestSyncOpenPayment) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
 type ResponseGetPayment struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Payment       *PaymentDetails        `protobuf:"bytes,1,opt,name=payment,proto3" json:"payment,omitempty"`
@@ -311,7 +356,7 @@ type ResponseGetPayment struct {
 
 func (x *ResponseGetPayment) Reset() {
 	*x = ResponseGetPayment{}
-	mi := &file_payment_v1_payment_proto_msgTypes[4]
+	mi := &file_payment_v1_payment_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -323,7 +368,7 @@ func (x *ResponseGetPayment) String() string {
 func (*ResponseGetPayment) ProtoMessage() {}
 
 func (x *ResponseGetPayment) ProtoReflect() protoreflect.Message {
-	mi := &file_payment_v1_payment_proto_msgTypes[4]
+	mi := &file_payment_v1_payment_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -336,7 +381,7 @@ func (x *ResponseGetPayment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResponseGetPayment.ProtoReflect.Descriptor instead.
 func (*ResponseGetPayment) Descriptor() ([]byte, []int) {
-	return file_payment_v1_payment_proto_rawDescGZIP(), []int{4}
+	return file_payment_v1_payment_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ResponseGetPayment) GetPayment() *PaymentDetails {
@@ -346,12 +391,56 @@ func (x *ResponseGetPayment) GetPayment() *PaymentDetails {
 	return nil
 }
 
+type ProcessYooKassaWebhookRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RawBody       []byte                 `protobuf:"bytes,1,opt,name=raw_body,json=rawBody,proto3" json:"raw_body,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProcessYooKassaWebhookRequest) Reset() {
+	*x = ProcessYooKassaWebhookRequest{}
+	mi := &file_payment_v1_payment_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessYooKassaWebhookRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessYooKassaWebhookRequest) ProtoMessage() {}
+
+func (x *ProcessYooKassaWebhookRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_payment_v1_payment_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessYooKassaWebhookRequest.ProtoReflect.Descriptor instead.
+func (*ProcessYooKassaWebhookRequest) Descriptor() ([]byte, []int) {
+	return file_payment_v1_payment_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ProcessYooKassaWebhookRequest) GetRawBody() []byte {
+	if x != nil {
+		return x.RawBody
+	}
+	return nil
+}
+
 var File_payment_v1_payment_proto protoreflect.FileDescriptor
 
 const file_payment_v1_payment_proto_rawDesc = "" +
 	"\n" +
 	"\x18payment/v1/payment.proto\x12\n" +
-	"payment.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8c\x03\n" +
+	"payment.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8c\x03\n" +
 	"\x0ePaymentDetails\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
@@ -381,13 +470,19 @@ const file_payment_v1_payment_proto_rawDesc = "" +
 	"\x15ResponseCreatePayment\x124\n" +
 	"\apayment\x18\x01 \x01(\v2\x1a.payment.v1.PaymentDetailsR\apayment\"#\n" +
 	"\x11RequestGetPayment\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\"J\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"1\n" +
+	"\x16RequestSyncOpenPayment\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\"J\n" +
 	"\x12ResponseGetPayment\x124\n" +
-	"\apayment\x18\x01 \x01(\v2\x1a.payment.v1.PaymentDetailsR\apayment2\xac\x01\n" +
+	"\apayment\x18\x01 \x01(\v2\x1a.payment.v1.PaymentDetailsR\apayment\":\n" +
+	"\x1dProcessYooKassaWebhookRequest\x12\x19\n" +
+	"\braw_body\x18\x01 \x01(\fR\arawBody2\xe0\x02\n" +
 	"\aPayment\x12T\n" +
 	"\rCreatePayment\x12 .payment.v1.RequestCreatePayment\x1a!.payment.v1.ResponseCreatePayment\x12K\n" +
 	"\n" +
-	"GetPayment\x12\x1d.payment.v1.RequestGetPayment\x1a\x1e.payment.v1.ResponseGetPaymentBDZBgithub.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1;paymentv1b\x06proto3"
+	"GetPayment\x12\x1d.payment.v1.RequestGetPayment\x1a\x1e.payment.v1.ResponseGetPayment\x12U\n" +
+	"\x0fSyncOpenPayment\x12\".payment.v1.RequestSyncOpenPayment\x1a\x1e.payment.v1.ResponseGetPayment\x12[\n" +
+	"\x16ProcessYooKassaWebhook\x12).payment.v1.ProcessYooKassaWebhookRequest\x1a\x16.google.protobuf.EmptyBDZBgithub.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_payment_v1_payment_proto_rawDescOnce sync.Once
@@ -401,26 +496,33 @@ func file_payment_v1_payment_proto_rawDescGZIP() []byte {
 	return file_payment_v1_payment_proto_rawDescData
 }
 
-var file_payment_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_payment_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_payment_v1_payment_proto_goTypes = []any{
-	(*PaymentDetails)(nil),        // 0: payment.v1.PaymentDetails
-	(*RequestCreatePayment)(nil),  // 1: payment.v1.RequestCreatePayment
-	(*ResponseCreatePayment)(nil), // 2: payment.v1.ResponseCreatePayment
-	(*RequestGetPayment)(nil),     // 3: payment.v1.RequestGetPayment
-	(*ResponseGetPayment)(nil),    // 4: payment.v1.ResponseGetPayment
-	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
+	(*PaymentDetails)(nil),                // 0: payment.v1.PaymentDetails
+	(*RequestCreatePayment)(nil),          // 1: payment.v1.RequestCreatePayment
+	(*ResponseCreatePayment)(nil),         // 2: payment.v1.ResponseCreatePayment
+	(*RequestGetPayment)(nil),             // 3: payment.v1.RequestGetPayment
+	(*RequestSyncOpenPayment)(nil),        // 4: payment.v1.RequestSyncOpenPayment
+	(*ResponseGetPayment)(nil),            // 5: payment.v1.ResponseGetPayment
+	(*ProcessYooKassaWebhookRequest)(nil), // 6: payment.v1.ProcessYooKassaWebhookRequest
+	(*timestamppb.Timestamp)(nil),         // 7: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                 // 8: google.protobuf.Empty
 }
 var file_payment_v1_payment_proto_depIdxs = []int32{
-	5, // 0: payment.v1.PaymentDetails.created_at:type_name -> google.protobuf.Timestamp
-	5, // 1: payment.v1.PaymentDetails.updated_at:type_name -> google.protobuf.Timestamp
+	7, // 0: payment.v1.PaymentDetails.created_at:type_name -> google.protobuf.Timestamp
+	7, // 1: payment.v1.PaymentDetails.updated_at:type_name -> google.protobuf.Timestamp
 	0, // 2: payment.v1.ResponseCreatePayment.payment:type_name -> payment.v1.PaymentDetails
 	0, // 3: payment.v1.ResponseGetPayment.payment:type_name -> payment.v1.PaymentDetails
 	1, // 4: payment.v1.Payment.CreatePayment:input_type -> payment.v1.RequestCreatePayment
 	3, // 5: payment.v1.Payment.GetPayment:input_type -> payment.v1.RequestGetPayment
-	2, // 6: payment.v1.Payment.CreatePayment:output_type -> payment.v1.ResponseCreatePayment
-	4, // 7: payment.v1.Payment.GetPayment:output_type -> payment.v1.ResponseGetPayment
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
+	4, // 6: payment.v1.Payment.SyncOpenPayment:input_type -> payment.v1.RequestSyncOpenPayment
+	6, // 7: payment.v1.Payment.ProcessYooKassaWebhook:input_type -> payment.v1.ProcessYooKassaWebhookRequest
+	2, // 8: payment.v1.Payment.CreatePayment:output_type -> payment.v1.ResponseCreatePayment
+	5, // 9: payment.v1.Payment.GetPayment:output_type -> payment.v1.ResponseGetPayment
+	5, // 10: payment.v1.Payment.SyncOpenPayment:output_type -> payment.v1.ResponseGetPayment
+	8, // 11: payment.v1.Payment.ProcessYooKassaWebhook:output_type -> google.protobuf.Empty
+	8, // [8:12] is the sub-list for method output_type
+	4, // [4:8] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
 	4, // [4:4] is the sub-list for extension extendee
 	0, // [0:4] is the sub-list for field type_name
@@ -438,7 +540,7 @@ func file_payment_v1_payment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_payment_v1_payment_proto_rawDesc), len(file_payment_v1_payment_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -15,7 +15,9 @@ import (
 type PaymentRepository interface {
 	PaymentCreate(ctx context.Context, p *domain.Payment) (*domain.Payment, error)
 	PaymentGetByID(ctx context.Context, id int64) (*domain.Payment, error)
+	PaymentGetByPaymentID(ctx context.Context, paymentID string) (*domain.Payment, error)
 	PaymentGetOpenPendingByUser(ctx context.Context, userID int64) (*domain.Payment, error)
+	PaymentUpdate(ctx context.Context, p *domain.Payment) (*domain.Payment, error)
 }
 
 type SubscriptionService interface {
@@ -24,6 +26,7 @@ type SubscriptionService interface {
 
 type YooKassaClient interface {
 	CreatePayment(ctx context.Context, payment *yoopayment.Payment) (*yoopayment.Payment, error)
+	FindPayment(ctx context.Context, id string) (*yoopayment.Payment, error)
 }
 
 type PaymentUseCase struct {
@@ -91,11 +94,29 @@ func (u *PaymentUseCase) CreatePayment(ctx context.Context, req *dto.RequestCrea
 		return nil, fmt.Errorf("payment create: %w", err)
 	}
 
-	if err := u.subscription.Activate(ctx, req.UserID, int64(req.SubscriptionDays)); err != nil {
-		return nil, fmt.Errorf("subscription activate: %w", err)
+	return responseFromDomain(created), nil
+}
+
+func (u *PaymentUseCase) SyncOpenPayment(ctx context.Context, req *dto.RequestSyncOpenPayment) (*dto.ResponsePayment, error) {
+	if req == nil || req.UserID <= 0 {
+		return nil, domain.ErrInvalidPaymentRequest
 	}
 
-	return responseFromDomain(created), nil
+	p, err := u.repo.PaymentGetOpenPendingByUser(ctx, req.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	remote, err := u.yookassa.FindPayment(ctx, p.PaymentID)
+	if err != nil {
+		return nil, fmt.Errorf("yookassa find payment: %w", err)
+	}
+
+	out, err := u.persistRemoteAndMaybeActivate(ctx, p, remote)
+	if err != nil {
+		return nil, fmt.Errorf("payment sync: %w", err)
+	}
+	return out, nil
 }
 
 func (u *PaymentUseCase) GetPayment(ctx context.Context, req *dto.RequestGetPayment) (*dto.ResponsePayment, error) {
