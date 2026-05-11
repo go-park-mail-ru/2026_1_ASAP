@@ -161,6 +161,36 @@ func (r *PaymentRepository) PaymentGetByPaymentID(ctx context.Context, paymentID
 	return m.toDomain(), nil
 }
 
+// PaymentGetOpenPendingByUser returns the latest payment for the user that is still awaiting completion in YooKassa.
+func (r *PaymentRepository) PaymentGetOpenPendingByUser(ctx context.Context, userID int64) (*domain.Payment, error) {
+	q := paymentsql.GetOpenPendingByUser
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, userID)
+
+	var m paymentModel
+	err := row.Scan(
+		&m.ID,
+		&m.PaymentID,
+		&m.UserID,
+		&m.Status,
+		&m.Amount,
+		&m.SubscriptionDays,
+		&m.PaymentURL,
+		&m.Message,
+		&m.CreatedAt,
+		&m.UpdatedAt,
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "PaymentGetOpenPendingByUser", q, start, err, []any{userID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrPaymentNotFound
+		}
+		return nil, fmt.Errorf("payment get open pending by user: %w", err)
+	}
+
+	return m.toDomain(), nil
+}
+
 func (r *PaymentRepository) PaymentCreate(ctx context.Context, p *domain.Payment) (*domain.Payment, error) {
 	if p == nil {
 		return nil, errors.New("payment is nil")

@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -62,6 +64,13 @@ func LoadPaymentConfig() (*PaymentConfig, error) {
 		return nil, fmt.Errorf("payment config log level %q: %w", raw.App.LogLevel, err)
 	}
 
+	returnURL := strings.TrimSpace(raw.Payment.ReturnURL)
+	if returnURL != "" {
+		if err := validatePaymentReturnURL(returnURL); err != nil {
+			return nil, err
+		}
+	}
+
 	return &PaymentConfig{
 		ServerConfig: ServerConfig{Host: raw.Server.Host, Port: raw.Server.Port},
 		PostgresConfig: PostgresConfig{
@@ -80,6 +89,20 @@ func LoadPaymentConfig() (*PaymentConfig, error) {
 		},
 		SecretKey: raw.Payment.SecretKey,
 		ShopID:    raw.Payment.ShopID,
-		ReturnURL: raw.Payment.ReturnURL,
+		ReturnURL: returnURL,
 	}, nil
+}
+
+func validatePaymentReturnURL(s string) error {
+	u, err := url.Parse(s)
+	if err != nil {
+		return fmt.Errorf("payment.return_url: parse %q: %w", s, err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("payment.return_url must be an absolute URL with http or https scheme (e.g. https://pulseapp.space/payment/done), got %q", s)
+	}
+	if u.Host == "" {
+		return fmt.Errorf("payment.return_url must include host (e.g. https://pulseapp.space/...), got %q", s)
+	}
+	return nil
 }

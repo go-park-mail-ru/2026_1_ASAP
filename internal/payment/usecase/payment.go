@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	yoocommon "github.com/rvinnie/yookassa-sdk-go/yookassa/common"
@@ -14,6 +15,7 @@ import (
 type PaymentRepository interface {
 	PaymentCreate(ctx context.Context, p *domain.Payment) (*domain.Payment, error)
 	PaymentGetByID(ctx context.Context, id int64) (*domain.Payment, error)
+	PaymentGetOpenPendingByUser(ctx context.Context, userID int64) (*domain.Payment, error)
 }
 
 type SubscriptionService interface {
@@ -46,6 +48,12 @@ func (u *PaymentUseCase) CreatePayment(ctx context.Context, req *dto.RequestCrea
 	}
 	if u.returnURL == "" {
 		return nil, domain.ErrPaymentReturnURLUnset
+	}
+
+	if open, err := u.repo.PaymentGetOpenPendingByUser(ctx, req.UserID); err == nil && open != nil {
+		return responseFromDomain(open), nil
+	} else if err != nil && !errors.Is(err, domain.ErrPaymentNotFound) {
+		return nil, fmt.Errorf("payment get open pending: %w", err)
 	}
 
 	yooPayment, err := u.yookassa.CreatePayment(ctx, &yoopayment.Payment{

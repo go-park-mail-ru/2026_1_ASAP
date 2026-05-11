@@ -11,5 +11,8 @@ var GetByPaymentID string
 //go:embed get_by_id.sql
 var GetByID string
 
+//go:embed get_open_pending_by_user.sql
+var GetOpenPendingByUser string
+
 //go:embed update_by_payment_id.sql
 var UpdateByPaymentID string

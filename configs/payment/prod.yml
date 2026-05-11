@@ -14,7 +14,7 @@ subscription:
 payment:
   secret_key: ""
   shop_id: ""
-  return_url: "pulseapp.space"
+  return_url: "https://pulseapp.space/"
 
 app:
   shutdown_seconds: 10
