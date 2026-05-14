@@ -1,4 +1,4 @@
-.PHONY: test generate coverage install-linter lint lint-fix install-mockgen mocks mocks-contacts mocks-profile proto install-proto-tools
+.PHONY: test generate coverage install-linter lint lint-fix install-mockgen mocks mocks-contacts mocks-profile proto install-proto-tools db-admin-init
 
 MOCKGEN := $(shell go env GOPATH)/bin/mockgen
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
@@ -52,3 +52,9 @@ proto: $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC)
 		--go_out=. --go_opt=module=github.com/go-park-mail-ru/2026_1_ASAP --go_opt=paths=import \
 		--go-grpc_out=. --go-grpc_opt=module=github.com/go-park-mail-ru/2026_1_ASAP --go-grpc_opt=paths=import \
 		$(PROTO_FILES)
+
+db-admin-init:
+	@set -a; . ./.env; set +a; \
+	docker compose exec -T -e PGPASSWORD="$$POSTGRES_PASSWORD" db \
+	psql -U postgres -d asap -v app_password="$$ASAP_APP_DB_PASSWORD" \
+	< db/admin/001_service_user.sql

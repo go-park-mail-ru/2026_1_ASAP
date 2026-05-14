@@ -32,7 +32,17 @@ func NewAnalyticRepository(ctx context.Context, cfg config.PostgresConfig, logge
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
 
-	pool, err := pgxpool.New(ctx, connStr)
+	poolCfg, err := pgxpool.ParseConfig(connStr)
+	if err != nil {
+		return nil, err
+	}
+	poolCfg.MaxConns = cfg.MaxConns
+	poolCfg.MinConns = cfg.MinConns
+	poolCfg.MaxConnLifetime = cfg.MaxConnLifetime
+	poolCfg.MaxConnIdleTime = cfg.MaxConnIdleTime
+	poolCfg.HealthCheckPeriod = cfg.HealthCheckPeriod
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,7 @@ services:
     environment:
       APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
     ports:
-      - "8088:8088"
+      - "8080:8080"
     depends_on:
       - auth
       - profile
@@ -148,8 +148,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: asap
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    volumes:
+      - ./db/postgres/asap.conf:/etc/postgresql/postgresql.conf:ro
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     restart: always
 
   migrate:
@@ -201,6 +204,19 @@ services:
     restart: unless-stopped
     volumes:
       - "/:/host:ro"
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres_exporter
+    env_file:
+      - ./.env
+    environment:
+      DATA_SOURCE_NAME: "postgresql://asap_app:${ASAP_APP_DB_PASSWORD}@db:5432/asap?sslmode=disable"
+    depends_on:
+      - db
+    ports:
+      - "9187:9187"
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest

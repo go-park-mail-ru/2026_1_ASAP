@@ -38,3 +38,8 @@ scrape_configs:
     scrape_interval: 10s
     static_configs:
       - targets: ["host.docker.internal:9100"]
+
+  - job_name: postgres
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["postgres_exporter:9187"]
