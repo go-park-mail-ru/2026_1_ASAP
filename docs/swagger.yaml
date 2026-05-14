@@ -1,0 +1,1142 @@
+definitions:
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiError:
+    properties:
+      code:
+        example: ERROR_CODE
+        type: string
+      message:
+        example: Error message
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiError'
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: error
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any:
+    properties:
+      body: {}
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  ? github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ChatInformationDTO
+  : properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  ? github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers
+  : properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string:
+    properties:
+      body:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateChatSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateContactSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseDeleteContactSuccessForSwagger:
+    properties:
+      body:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatByIDSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatsSuccessForSwagger:
+    properties:
+      body:
+        items:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO'
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetContactsSuccessForSwagger:
+    properties:
+      body:
+        items:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse'
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetProfileSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseGetProfile'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLoginSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseLoginSuccess'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLogoutSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseLogoutSuccess'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseRegisterSuccessForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseRegisterSuccess'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus:
+    enum:
+    - success
+    - error
+    type: string
+    x-enum-varnames:
+    - Success
+    - Error
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger:
+    properties:
+      body:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseUpdateProfile'
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseStatus'
+        example: success
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestLogin:
+    properties:
+      login:
+        example: user1
+        type: string
+      password:
+        example: passWo1d&
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestRegistrate:
+    properties:
+      email:
+        example: testemail@dev.mail.ru
+        type: string
+      login:
+        example: user1
+        type: string
+      password:
+        example: passWo1d&
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseLoginSuccess:
+    properties:
+      login:
+        example: user1
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseLogoutSuccess:
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.ResponseRegisterSuccess:
+    properties:
+      email:
+        example: testemail@dev.mail.ru
+        type: string
+      login:
+        example: user1
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatCreate:
+    properties:
+      id:
+        type: integer
+      members_id:
+        items:
+          type: integer
+        type: array
+      title:
+        example: Chat Title
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatType'
+        example: Dialog
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatInformationDTO:
+    properties:
+      avatar:
+        type: string
+      chat_type:
+        allOf:
+        - $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatType'
+        example: dialog
+      id:
+        type: integer
+      last_message:
+        $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.MessageDTO'
+      title:
+        example: Chat Title
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatType:
+    enum:
+    - dialog
+    - group
+    - channel
+    type: string
+    x-enum-varnames:
+    - ChatTypeDialog
+    - ChatTypeGroup
+    - ChatTypeChannel
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.MessageDTO:
+    properties:
+      created_at:
+        example: "2026-01-01T00:00:00+09:00"
+        type: string
+      sender_id:
+        type: integer
+      text:
+        example: Hello, my name is Artem
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestAddMember:
+    properties:
+      members_id:
+        items:
+          type: integer
+        type: array
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestDeleteMember:
+    properties:
+      member_id:
+        type: integer
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestUpdateTitle:
+    properties:
+      title:
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ResponseGetChatMembers:
+    properties:
+      members_id:
+        items:
+          type: integer
+        type: array
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.AddContactRequest:
+    properties:
+      contact_user_id:
+        type: integer
+      first_name:
+        type: string
+      last_name:
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.ContactResponse:
+    properties:
+      contact_avatar_url:
+        type: string
+      contact_user_id:
+        type: integer
+      created_at:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBio:
+    properties:
+      bio:
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBirthDate:
+    properties:
+      birth_date:
+        type: string
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseGetProfile:
+    properties:
+      avatar:
+        type: string
+      bio:
+        type: string
+      birth_date:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      last_seen:
+        type: string
+      login:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.ResponseUpdateProfile:
+    properties:
+      avatar:
+        type: string
+      bio:
+        type: string
+      birth_date:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      last_seen:
+        type: string
+      login:
+        type: string
+      user_id:
+        type: integer
+    type: object
+host: pulseapp.space:8080
+info:
+  contact: {}
+  description: API веб-приложения Pulse
+  title: API Pulse App
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Аутентификация юзера с логином и паролем
+      parameters:
+      - description: Запрос на логин
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLoginSuccessForSwagger'
+        "400":
+          description: Неправильный запрос или ошибка формата полей
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Некорректные данные логины
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Логин пользователя
+      tags:
+      - auth
+  /api/v1/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Завершение сессии пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseLogoutSuccessForSwagger'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Ошибка выхода
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Выход пользователя
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт нового пользователя с email и login
+      parameters:
+      - description: Запрос на регистрацию
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_auth.RequestRegistrate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseRegisterSuccessForSwagger'
+        "400":
+          description: Неправильный запрос или ошибка формата полей
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "409":
+          description: пользователь уже существует
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Регистрация пользователя
+      tags:
+      - auth
+  /api/v1/chats:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все чаты пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatsSuccessForSwagger'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Невозможно получить чаты
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получить список чатов
+      tags:
+      - chats
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новый чат
+      parameters:
+      - description: Запрос на создание чата
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.ChatCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateChatSuccessForSwagger'
+        "400":
+          description: Некорретный запрос или ошибка формата полей
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Пользователь, которого вы пытаетесь добавить в чат, не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Ошибка создания чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Создать чат
+      tags:
+      - chats
+  /api/v1/chats/{chat_id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о чате
+      parameters:
+      - description: ID чата
+        in: path
+        name: chat_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetChatByIDSuccessForSwagger'
+        "400":
+          description: Некорректный ID чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутреняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получить чат по ID
+      tags:
+      - chats
+  /api/v1/chats/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет чат. Только владелец чата может выполнить это действие.
+        Чат удаляется полностью для всех участников вместе со всеми сообщениями.
+      parameters:
+      - description: ID чата
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Чат успешно удален
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-string'
+        "400":
+          description: Некорректный ID чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Нет прав на удаление чата (не владелец или не участник)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Нe удалось найти чат, который вы хотите удалить
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Удалить чат
+      tags:
+      - chats
+  /api/v1/chats/{id}/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        Обновляет аватар чата. Поддерживаются форматы: JPEG, PNG, GIF, WebP. Максимальный размер файла: 5MB.
+        Только участники чата могут обновлять аватар.
+        Для диалогов обновление аватара запрещено.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      - description: Файл аватара
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Аватар успешно обновлён
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ChatInformationDTO'
+        "400":
+          description: Неверный запрос (неверный ID, файл не найден, пустой файл,
+            неверный формат, файл слишком большой, попытка обновить аватар диалога)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Пользователь не является участником чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление аватара чата
+      tags:
+      - chats
+  /api/v1/chats/{id}/members:
+    delete:
+      consumes:
+      - application/json
+      description: |-
+        Удаляет участника из группового чата.
+        Только владелец чата может удалять других участников.
+        Нельзя удалить владельца чата.
+        Для диалогов (личных чатов) удаление участников запрещено.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      - description: ID пользователя для удаления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestDeleteMember'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Участник успешно удалён из чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any'
+        "400":
+          description: Неверный запрос (неверный ID, неверный JSON, ошибка валидации,
+            попытка удалить из диалога)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Нет прав для удаления (не участник чата, не владелец, попытка
+            удалить владельца)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден или участник не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление участника из чата
+      tags:
+      - chats
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Возвращает список ID всех участников чата.
+        Только участники чата могут просматривать список участников.
+        Для диалогов (личных чатов) возвращает ID обоих участников.
+        Для групп возвращает ID всех участников, включая владельца.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список участников успешно получен
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ResponseGetChatMembers'
+        "400":
+          description: Неверный запрос (неверный ID чата)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Пользователь не является участником чата
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка участников чата
+      tags:
+      - chats
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Добавляет одного или нескольких участников в групповой чат.
+        Только владелец чата может добавлять новых участников.
+        Для диалогов (личных чатов) добавление участников запрещено.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      - description: Список ID пользователей для добавления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestAddMember'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Участники успешно добавлены
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any'
+        "400":
+          description: Неверный запрос (неверный ID, неверный JSON, ошибка валидации,
+            попытка добавить в диалог, пользователь уже в чате)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Пользователь не является участником чата или не имеет прав
+            владельца
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Добавление участников в чат
+      tags:
+      - chats
+  /api/v1/chats/{id}/quit:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Позволяет пользователю выйти из группового чата.
+        Владелец чата не может выйти.
+        Выход из диалогов (личных чатов) запрещён.
+        При успешном выходе пользователь удаляется из списка участников чата.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь успешно покинул чат
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-any'
+        "400":
+          description: Неверный запрос (неверный ID чата, попытка выйти из диалога)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Нет прав для выхода (пользователь не участник чата или является
+            владельцем)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден или пользователь не найден в чате
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Выход из чата
+      tags:
+      - chats
+  /api/v1/chats/{id}/title:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Обновляет название чата.
+        Для диалогов (личных чатов) изменение названия запрещено.
+      parameters:
+      - description: ID чата
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      - description: Новое название чата
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat.RequestUpdateTitle'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Название успешно обновлено
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiSuccessResponse-github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_chat_ChatInformationDTO'
+        "400":
+          description: Неверный запрос (неверный ID, неверный JSON, ошибка валидации,
+            попытка изменить название диалога)
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "403":
+          description: Пользователь не является участником чата или не имеет прав
+            администратора
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Чат не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление названия чата
+      tags:
+      - chats
+  /api/v1/contacts:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все контакты текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное получение списка контактов
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetContactsSuccessForSwagger'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получить список контактов
+      tags:
+      - contacts
+    post:
+      consumes:
+      - application/json
+      description: Добавляет нового контакта в список контактов текущего пользователя
+      parameters:
+      - description: Запрос на создание контакта
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_contacts.AddContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Контакт успешно создан
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseCreateContactSuccessForSwagger'
+        "400":
+          description: Некорректный запрос или ошибка валидации
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "409":
+          description: Контакт уже существует
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Создать контакт
+      tags:
+      - contacts
+  /api/v1/contacts/{contact_user_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет контакт из списка контактов текущего пользователя
+      parameters:
+      - description: ID пользователя, которого нужно удалить из контактов
+        in: path
+        name: contact_user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Контакт успешно удален
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseDeleteContactSuccessForSwagger'
+        "400":
+          description: Некорректный ID контакта
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "404":
+          description: Контакт не найден
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Удалить контакт
+      tags:
+      - contacts
+  /api/v1/profile/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Получение собственного профиля пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetProfileSuccessForSwagger'
+        "400":
+          description: Невалидный формат json
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутреняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получение собственного профиля пользователя
+      tags:
+      - profile
+  /api/v1/profile/me:
+    get:
+      consumes:
+      - application/json
+      description: Получение собственного профиля пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseGetProfileSuccessForSwagger'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутреняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Получение профиля пользователя
+      tags:
+      - profile
+  /api/v1/profiles/me/avatar:
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Загружает новый аватар текущего пользователя
+      parameters:
+      - description: Файл аватара (image/jpeg|image/jpg|image/png|image/webp|image/gif),
+          до 5MB
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger'
+        "400":
+          description: Некорректный файл аватара
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутреняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Обновление аватара пользователя
+      tags:
+      - profile
+  /api/v1/profiles/me/bio:
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет bio текущего авторизованного пользователя
+      parameters:
+      - description: Запрос на обновление био (поле bio)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBio'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger'
+        "400":
+          description: Невалидный json или bio не может быть пустым
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Обновление bio пользователя
+      tags:
+      - profile
+  /api/v1/profiles/me/birth:
+    post:
+      consumes:
+      - application/json
+      description: Устанавливает дату рождения текущего авторизованного пользователя.
+        Ожидается строка в формате YYYY-MM-DD (RFC 3339, только дата), не в будущем.
+      parameters:
+      - description: 'Тело запроса: birth_date — дата в формате YYYY-MM-DD'
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_profile.RequestUpdateBirthDate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ResponseUpdateProfileForSwagger'
+        "400":
+          description: Невалидный JSON, отсутствует birth_date, неверный формат даты
+            или дата в будущем
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "401":
+          description: Неавторизован
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_go-park-mail-ru_2026_1_ASAP_internal_dto_api.ApiErrorResponse'
+      summary: Обновление даты рождения пользователя
+      tags:
+      - profile
+swagger: "2.0"
