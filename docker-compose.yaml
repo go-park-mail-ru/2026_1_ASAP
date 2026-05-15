@@ -1,38 +1,92 @@
 services:
-  backend:
-    build: .
+  gateway:
+    build:
+      context: .
+      dockerfile: ./docker/gateway.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
     ports:
       - "8080:8080"
+    depends_on:
+      - auth
+      - profile
+      - chat
+      - complaint
+      - search
+    restart: always
+
+  chat:
+    build:
+      context: .
+      dockerfile: ./docker/chat.Dockerfile
+    env_file:
+      - ./.env
     environment:
-      PORT: "8080"
-      HOST: ${BACKEND_HOST:-0.0.0.0}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+    ports:
+      - "8004:8004"
+      - "8005:8005"
+      - "9104:9104"
+    depends_on:
+      - db
+      - migrate
+      - media
+      - profile
+    restart: always
 
-      # Redis
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      REDIS_DATABASE: ${REDIS_DATABASE:-0}   # дефолтная база 0, если не указана
+  media:
+    build:
+      context: .
+      dockerfile: ./docker/media.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "8003:8003"
+      - "9103:9103"
+    depends_on:
+      - db
+      - migrate
+      - minio
+    restart: always
 
-      # Postgres / Database
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
+  profile:
+    build:
+      context: .
+      dockerfile: ./docker/profile.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "8002:8002"
+      - "9102:9102"
+    depends_on:
+      - db
+      - migrate
+      - minio
+    restart: always
 
-      # MinIO / S3-compatible storage
-      S3_HOST: ${S3_HOST:-minio}
-      S3_PORT: ${S3_PORT:-9000}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
-      S3_BUCKET: ${S3_BUCKET:-media}
-      S3_USE_SSL: ${S3_USE_SSL:-false}
-      S3_PUBLIC_USE_SSL: ${S3_PUBLIC_USE_SSL:-true}
-      S3_PUBLIC_HOST: ${S3_PUBLIC_HOST:-localhost}
-      S3_PUBLIC_PORT: ${S3_PUBLIC_PORT:-443}
-
+  auth:
+    build:
+      context: .
+      dockerfile: ./docker/auth.Dockerfile
+      args:
+        SERVICE_NAME: auth
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+    ports:
+      - "8001:8001"
+      - "9101:9101"
     depends_on:
       - redis
       - db
@@ -40,25 +94,74 @@ services:
       - minio
     restart: always
 
+  search:
+    build:
+      context: .
+      dockerfile: ./docker/search.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+    ports:
+      - "8010:8010"
+      - "9110:9110"
+    depends_on:
+      - db
+      - migrate
+    restart: always
+
+  complaint:
+    build:
+      context: .
+      dockerfile: ./docker/complaint.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+    ports:
+      - "8006:8006"
+      - "9106:9106"
+    depends_on:
+      - db
+      - migrate
+      - media
+    restart: always
+
   redis:
     image: redis:latest
+    env_file:
+      - ./.env
+    environment:
+      REDIS_PORT: "6379"
     ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+      - "6379:6379"
+    command:
+      - /bin/sh
+      - -c
+      - redis-server --requirepass "$$REDIS_PASSWORD"
     restart: always
 
   db:
     image: postgres:15
+    env_file:
+      - ./.env
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB: asap
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    volumes:
+      - ./db/postgres/asap.conf:/etc/postgresql/postgresql.conf:ro
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     restart: always
 
   migrate:
     image: migrate/migrate
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: asap
     volumes:
       - ./db/migrations:/migrations
     entrypoint:
@@ -67,7 +170,7 @@ services:
       - |
         set -e
         RETRIES=10
-        until migrate -path=/migrations -database="postgres://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable" up || [ $$RETRIES -eq 0 ]; do
+        until migrate -path=/migrations -database="postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@db:5432/$$POSTGRES_DB?sslmode=disable" up || [ $$RETRIES -eq 0 ]; do
           echo "Migration failed, retrying in 3s..."
           RETRIES=$$((RETRIES-1))
           sleep 3
@@ -78,16 +181,78 @@ services:
 
   minio:
     image: minio/minio:latest
+    env_file:
+      - ./.env
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
     restart: always
 
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.rootfs=/host'
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - "/:/host:ro"
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres_exporter
+    env_file:
+      - ./.env
+    environment:
+      DATA_SOURCE_NAME: "postgresql://asap_app:${ASAP_APP_DB_PASSWORD}@db:5432/asap?sslmode=disable"
+    depends_on:
+      - db
+    ports:
+      - "9187:9187"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/configuration:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    container_name: prometheus
+    hostname: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Moscow"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      GF_SERVER_ROOT_URL: "https://grafana.pulseapp.space/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+      GF_SERVER_DOMAIN: "grafana.pulseapp.space"
+      GF_SERVER_PROTOCOL: "http"
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
 volumes:
   minio_data:
+  prometheus_data:

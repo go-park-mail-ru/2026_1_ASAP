@@ -3,11 +3,10 @@ package validation
 import (
 	"regexp"
 	"unicode"
+	"unicode/utf8"
 
-	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/auth"
-	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
-	dtoChat "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/chat"
-	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/contacts"
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
+	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 )
 
 type ValidationError struct {
@@ -17,6 +16,10 @@ type ValidationError struct {
 }
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+
+func runeLen(s string) int {
+	return utf8.RuneCountInString(s)
+}
 
 func ValidateEmail(email string) []ValidationError {
 	var errs []ValidationError
@@ -53,7 +56,7 @@ func ValidateLogin(login string) []ValidationError {
 		return errs
 	}
 
-	if len(login) < 3 {
+	if runeLen(login) < 3 {
 		errs = append(errs, ValidationError{
 			Field:   "login",
 			Message: "Login must be at least 3 characters",
@@ -76,7 +79,7 @@ func ValidatePassword(password string) []ValidationError {
 		return errs
 	}
 
-	if len(password) < 6 {
+	if runeLen(password) < 6 {
 		errs = append(errs, ValidationError{
 			Field:   "password",
 			Message: "Password must be at least 6 characters",
@@ -84,7 +87,7 @@ func ValidatePassword(password string) []ValidationError {
 		})
 	}
 
-	if len(password) > 64 {
+	if runeLen(password) > 64 {
 		errs = append(errs, ValidationError{
 			Field:   "password",
 			Message: "Password must be less than 64 characters",
@@ -165,158 +168,38 @@ func ValidationRequestLogin(request *dtoAuth.RequestLogin) []ValidationError {
 	return errs
 }
 
-func ValidationChatCreate(req *dtoChat.ChatCreate) []ValidationError {
-	var errs []ValidationError
-
-	if req.Title == "" && req.Type != dtoChat.ChatTypeDialog{
-		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "Title is required",
-			Code:    "TITLE_REQUIRED",
-		})
-	} else if len(req.Title) > 100 {
-		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "Len of chat title must be less than 100 characters",
-			Code:    "TITLE_TOO_LONG",
-		})
-	}
-
-	if req.Type == "" {
-		errs = append(errs, ValidationError{
-			Field:   "type",
-			Message: "Type is required",
-			Code:    "TYPE_REQUIRED",
-		})
-	} else {
-		validTypes := map[dtoChat.ChatType]bool{
-			dtoChat.ChatTypeDialog:  true,
-			dtoChat.ChatTypeGroup:   true,
-			dtoChat.ChatTypeChannel: true,
-		}
-
-		if !validTypes[req.Type] {
-			errs = append(errs, ValidationError{
-				Field:   "type",
-				Message: "Invalid type",
-				Code:    "INVALID_TYPE",
-			})
-		}
-	}
-
-	if len(req.MembersID) == 0 {
-		errs = append(errs, ValidationError{
-			Field:   "members_id",
-			Message: "At least one member is required",
-			Code:    "MEMBERS_REQUIRED",
-		})
-	}
-
-	if req.Type == dtoChat.ChatTypeDialog && len(req.MembersID) > 2 {
-		errs = append(errs, ValidationError{
-			Field:   "members_id",
-			Message: "Dialog must have only 2 members",
-			Code:    "MUST_HAVE_2_MEMBERS",
-		})
-	}
-
-	if len(req.MembersID) > 1 {
-		memb := make(map[int64]bool)
-		for _, id := range req.MembersID {
-			if memb[id] {
-				errs = append(errs, ValidationError{
-					Field:   "members_id",
-					Message: "Duplicate users",
-					Code:    "USER_DUPLICATE",
-				})
-				break
-			}
-			memb[id] = true
-		}
-	}
-	return errs
-}
-
 func ValidationContactCreate(req *dtoContact.AddContactRequest) []ValidationError {
 	var errs []ValidationError
 
-	if req.FirstName != "" && len(req.FirstName) > 100{
+	if req.FirstName != "" && runeLen(req.FirstName) > 100 {
 		errs = append(errs, ValidationError{
-			Field: "first_name",
+			Field:   "first_name",
 			Message: "contact firstname must be less than 100 caracters",
-			Code: "CONTACT_FIRST_NAME_MUST_LESS_100_CHARACTERS",
+			Code:    "CONTACT_FIRST_NAME_MUST_LESS_100_CHARACTERS",
 		})
 	}
 
-	
-
-	if len(*req.LastName) > 100{
+	if req.LastName != nil && runeLen(*req.LastName) > 100 {
 		errs = append(errs, ValidationError{
-			Field: "last_name",
+			Field:   "last_name",
 			Message: "contact lastname must be less than 100 caracters",
-			Code: "CONTACT_LAST_NAME_MUST_LESS_100_CHARACTERS",
+			Code:    "CONTACT_LAST_NAME_MUST_LESS_100_CHARACTERS",
 		})
 	}
 
-	return errs
-}
-
-func ValidationRequestTitle(req *dto.RequestUpdateTitle) []ValidationError {
-	var errs []ValidationError
-
-	if req.Title == ""{
+	if req.ContactUserID == 0 {
 		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "Title is required",
-			Code:    "TITLE_REQUIRED",
+			Field:   "contact_user_id",
+			Message: "contact_user_id is required",
+			Code:    "CONTACT_USER_ID_REQUIRED",
 		})
-	} else if len(req.Title) > 100 {
+	} else if req.ContactUserID < 0 {
 		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "Len of chat title must be less than 100 characters",
-			Code:    "TITLE_TOO_LONG",
+			Field:   "contact_user_id",
+			Message: "contact_user_id must be positive",
+			Code:    "CONTACT_USER_ID_INVALID",
 		})
 	}
-	return errs
-}
 
-func ValidationRequestAddMember(req *dto.RequestAddMember) []ValidationError {
-	var errs []ValidationError
-
-	if len(req.MembersId) > 1 {
-		memb := make(map[int64]bool)
-		for _, id := range req.MembersId {
-			if memb[id] {
-				errs = append(errs, ValidationError{
-					Field:   "members_id",
-					Message: "Duplicate users",
-					Code:    "USER_DUPLICATE",
-				})
-				break
-			}
-			memb[id] = true
-		}
-	}
-
-	if len(req.MembersId) == 0 {
-		errs = append(errs, ValidationError{
-			Field:   "members_id",
-			Message: "At least one member is required",
-			Code:    "MEMBERS_REQUIRED",
-		})
-	}
-	return errs
-}
-
-func ValidationRequestDeleteMember(req *dto.RequestDeleteMember) []ValidationError {
-	var errs []ValidationError
-
-	if req.MemberId == 0 || req.MemberId < 0{
-		errs = append(errs, ValidationError{
-			Field:   "member_id",
-			Message: "Invalid id",
-			Code:    "INVALID_ID",
-		})
-	}
 	return errs
 }

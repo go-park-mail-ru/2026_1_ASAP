@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package complaint.v1;
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/complaint/v1;complaintv1";
+
+import "google/protobuf/timestamp.proto";
+
+service Complaint {
+  rpc CreateComplaint(RequestCreateComplaint) returns (ResponseCreateComplaint);
+  rpc GetComplaint(RequestGetComplaint) returns (ResponseGetComplaint);
+  rpc GetComplaintsByUser(RequestGetComplaintsByUser) returns (ResponseGetComplaints);
+  rpc GetAllComplaints(RequestGetAllComplaints) returns (ResponseGetComplaints);
+  rpc UpdateComplaintStatus(RequestUpdateComplaintStatus) returns (ResponseGetComplaint);
+  rpc GetUserComplaintAnalytic(RequestGetUserComplaintAnalytic) returns (ResponseGetUserComplaintAnalytic);
+}
+
+enum ComplaintErrorCode {
+  COMPLAINT_ERROR_UNSPECIFIED = 0;
+  COMPLAINT_ERROR_INVALID_INPUT = 1;
+  COMPLAINT_ERROR_NOT_FOUND = 2;
+  COMPLAINT_ERROR_INTERNAL = 3;
+}
+
+enum ComplaintType {
+  COMPLAINT_TYPE_UNSPECIFIED = 0;
+  COMPLAINT_TYPE_BUG = 1;
+  COMPLAINT_TYPE_PRODUCT = 2;
+  COMPLAINT_TYPE_UPGRADE = 3;
+}
+
+enum ComplaintStatus {
+  COMPLAINT_STATUS_UNSPECIFIED = 0;
+  COMPLAINT_STATUS_NEW = 1;
+  COMPLAINT_STATUS_IN_PROGRESS = 2;
+  COMPLAINT_STATUS_CLOSED = 3;
+}
+
+message Feedback {
+  string feedback_name = 1;
+  string feedback_email = 2;
+}
+
+message ComplaintFile {
+  bytes content = 1;
+  string type = 2;
+}
+
+message ComplaintItem {
+  int64 id = 1;
+  string type = 2;
+  string status = 3;
+  Feedback feedback = 4;
+  string body = 5;
+  int64 user_id = 6;
+  optional string attachment_url = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message RequestCreateComplaint {
+  ComplaintType type = 1;
+  Feedback feedback = 2;
+  string body = 3;
+  optional ComplaintFile file = 4;
+  optional int64 user_id = 5;
+}
+
+message RequestGetComplaint {
+  int64 complaint_id = 1;
+}
+
+message RequestGetComplaintsByUser {
+  int64 user_id = 1;
+}
+
+message RequestGetAllComplaints {}
+
+message RequestUpdateComplaintStatus {
+  int64 complaint_id = 1;
+  ComplaintStatus status = 2;
+}
+
+message ResponseCreateComplaint {
+  ComplaintItem complaint = 1;
+}
+
+message ResponseGetComplaint {
+  ComplaintItem complaint = 1;
+}
+
+message ResponseGetComplaints {
+  repeated ComplaintItem complaints = 1;
+}
+
+message CountStatus {
+  int64 count_status_opened = 1;
+  int64 count_status_in_work = 2;
+  int64 count_status_closed = 3;
+}
+
+message CountType {
+  int64 count_bug = 1;
+  int64 count_upgrade = 2;
+  int64 count_product = 3;
+}
+
+message RequestGetUserComplaintAnalytic {
+  int64 user_id = 1;
+}
+
+message ResponseGetUserComplaintAnalytic {
+  CountStatus count_status = 1;
+  CountType count_type = 2;
+}

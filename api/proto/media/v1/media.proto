@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package media.v1;
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1;mediav1";
+
+
+service Media {
+  rpc UpdateUserAvatar(RequestUpdateUserAvatar) returns (ResponseUpdateUserAvatar);
+  rpc UploadChatAvatar(RequestUpdateChatAvatar) returns (ResponseUpdateChatAvatar);
+  rpc UploadComplaintAttachment(RequestUpdateComplaintAttachment) returns (ResponseUpdateComplaintAttachment);
+  rpc DeleteUserAvatar(RequestDeleteUserAvatar) returns (ResponseDeleteUserAvatar);
+}
+
+enum MediaErrorCode {
+  MEDIA_ERROR_UNSPECIFIED      = 0;
+  MEDIA_ERROR_FILE_TOO_LARGE   = 1;
+  MEDIA_ERROR_FILE_INVALID_TYPE = 2;
+  MEDIA_ERROR_FILE_EMPTY       = 3;
+  MEDIA_ERROR_INTERNAL         = 4;
+  MEDIA_ERROR_INVALID_INPUT    = 5;
+}
+
+message File {
+  bytes content = 1;
+  string type = 2;
+  int64 size = 3;
+}
+
+message RequestUpdateUserAvatar {
+  int64 user_id = 1;
+  File avatar = 2;
+}
+
+message ResponseUpdateUserAvatar {
+  string avatar_url = 1;
+}
+
+message RequestUpdateChatAvatar {
+  int64 chat_id = 1;
+  File avatar = 2;
+}
+
+message ResponseUpdateChatAvatar {
+  string avatar_url = 1;
+}
+
+message RequestUpdateComplaintAttachment {
+  int64 complaint_id = 1;
+  File attachment = 2;
+}
+
+message ResponseUpdateComplaintAttachment {
+  string attachment_url = 1;
+}
+
+message RequestDeleteUserAvatar {
+  int64 user_id = 1;
+}
+
+message ResponseDeleteUserAvatar {}

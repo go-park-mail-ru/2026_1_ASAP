@@ -1,0 +1,21 @@
+server:
+  host: 0.0.0.0
+  port: "8006"
+
+postgres:
+  host: db
+  port: "5432"
+  user: asap_app
+  db: asap
+  max_conns: 10
+  min_conns: 2
+  max_conn_lifetime_seconds: 1800
+  max_conn_idle_time_seconds: 300
+  health_check_period_seconds: 30
+
+media:
+  grpc_addr: media:8003
+
+app:
+  shutdown_seconds: 10
+  log_level: info

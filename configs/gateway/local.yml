@@ -1,0 +1,19 @@
+server:
+  host: 0.0.0.0
+  port: "8080"
+
+auth:
+  grpc_addr: auth:8001
+
+profile:
+  grpc_addr: profile:8002
+
+chat:
+  ws_addr: chat:8005
+  grpc_addr: chat:8004
+
+complaint:
+  grpc_addr: complaint:8006
+
+search:
+  grpc_addr: search:8010

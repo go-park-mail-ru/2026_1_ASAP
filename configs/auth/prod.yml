@@ -1,0 +1,35 @@
+server:
+  host: 0.0.0.0
+  port: "8001"
+
+session:
+  ttl_seconds: 86400
+
+redis:
+  host: redis
+  port: "6379"
+  database: 0
+
+profile:
+  grpc_addr: profile:8002
+
+postgres:
+  host: db
+  port: "5432"
+  user: asap_app
+  db: asap
+  max_conns: 10
+  min_conns: 2
+  max_conn_lifetime_seconds: 1800
+  max_conn_idle_time_seconds: 300
+  health_check_period_seconds: 30
+
+app:
+  shutdown_seconds: 20
+  log_level: info
+
+vkid:
+  client_id: ""
+  redirect_uri: https://pulseapp.space/chats
+  auth_url: https://id.vk.ru/oauth2/auth
+  public_info_url: https://id.vk.ru/oauth2/public_info
