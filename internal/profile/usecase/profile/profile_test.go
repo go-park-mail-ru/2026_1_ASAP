@@ -360,7 +360,7 @@ func TestPositiveProfileService_UpdateBioEscapesHTML(t *testing.T) {
 				userID:  123,
 				request: &dto.RequestUpdateBio{Bio: strPtr(`<script>alert("xss")</script>`)},
 			},
-			wantBio: `&lt;script&gt;alert(&#34;xss&#34;)&lt;/script&gt;`,
+			wantBio: `<script>alert("xss")</script>`,
 		},
 		{
 			name: "ampersand",
@@ -378,7 +378,7 @@ func TestPositiveProfileService_UpdateBioEscapesHTML(t *testing.T) {
 				userID:  123,
 				request: &dto.RequestUpdateBio{Bio: strPtr(`Tom & Jerry`)},
 			},
-			wantBio: `Tom &amp; Jerry`,
+			wantBio: `Tom & Jerry`,
 		},
 	}
 
@@ -449,8 +449,8 @@ func TestPositiveProfileService_UpdateNameEscapesHTML(t *testing.T) {
 					LastName:  strPtr(`<img src=x onerror=alert(1)>`),
 				},
 			},
-			wantFirst:   `&lt;b&gt;Ann&lt;/b&gt;`,
-			wantLast:    `&lt;img src=x onerror=alert(1)&gt;`,
+			wantFirst:   `<b>Ann</b>`,
+			wantLast:    `<img src=x onerror=alert(1)>`,
 			wantNilLast: false,
 		},
 		{
@@ -473,7 +473,7 @@ func TestPositiveProfileService_UpdateNameEscapesHTML(t *testing.T) {
 					LastName:  nil,
 				},
 			},
-			wantFirst:   `A &amp; B`,
+			wantFirst:   `A & B`,
 			wantNilLast: true,
 		},
 	}

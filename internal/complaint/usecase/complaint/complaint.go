@@ -8,7 +8,6 @@ import (
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/domain/complaint"
 	dtoComplaint "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/dto/complaint"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/dto/media"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 type MediaRepositoryInterface interface {
@@ -162,13 +161,13 @@ func complaintToDTO(complaint domain.Complaint) dtoComplaint.ComplaintDTO {
 
 	return dtoComplaint.ComplaintDTO{
 		ID:     complaint.ID,
-		Type:   sanitize.Text(string(complaint.Type)),
-		Status: sanitize.Text(complaint.Status),
+		Type:   string(complaint.Type),
+		Status: complaint.Status,
 		FeedbackDTO: dtoComplaint.FeedbackDTO{
 			FeedBackName:  complaint.FeedBackName,
 			FeedBackEmail: complaint.FeedBackEmail,
 		},
-		Body:          sanitize.Text(complaint.Body),
+		Body:          complaint.Body,
 		UserID:        userID,
 		AttachmentURL: complaint.AttachmentURL,
 		CreatedAt:     complaint.CreatedAt,

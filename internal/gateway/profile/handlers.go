@@ -17,6 +17,7 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 type GatewayProfileHandler struct {
@@ -114,12 +115,13 @@ func profileResponseToDTO(resp *profilev1.ResponseGetProfile) *dto.ResponseGetPr
 	}
 	out := &dto.ResponseGetProfile{
 		UserId:    resp.GetUserId(),
-		FirstName: resp.GetFirstName(),
+		FirstName: sanitize.Text(resp.GetFirstName()),
 	}
 	if resp.LastName != nil {
-		out.LastName = resp.LastName
+		out.LastName = sanitize.TextPtr(resp.LastName)
 	}
 	if b := resp.GetBio(); b != "" {
+		b = sanitize.Text(b)
 		out.Bio = &b
 	}
 	if bd := resp.GetBirthDate(); bd != "" {
@@ -141,12 +143,13 @@ func updateProfileResponseToDTO(resp *profilev1.ResponseGetProfile) *dto.Respons
 	}
 	out := &dto.ResponseUpdateProfile{
 		UserId:    resp.GetUserId(),
-		FirstName: resp.GetFirstName(),
+		FirstName: sanitize.Text(resp.GetFirstName()),
 	}
 	if resp.LastName != nil {
-		out.LastName = resp.LastName
+		out.LastName = sanitize.TextPtr(resp.LastName)
 	}
 	if b := resp.GetBio(); b != "" {
+		b = sanitize.Text(b)
 		out.Bio = &b
 	}
 	if bd := resp.GetBirthDate(); bd != "" {
@@ -184,7 +187,7 @@ func (h *GatewayProfileHandler) GetMyProfile(w http.ResponseWriter, r *http.Requ
 			sendAuthError(w, errAuth)
 			return
 		}
-		body.Login = pub.GetLogin()
+		body.Login = sanitize.Text(pub.GetLogin())
 		body.Email = pub.GetEmail()
 	}
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[*dto.ResponseGetProfile]{
@@ -223,7 +226,7 @@ func (h *GatewayProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Re
 			sendAuthError(w, errAuth)
 			return
 		}
-		body.Login = pub.GetLogin()
+		body.Login = sanitize.Text(pub.GetLogin())
 		body.Email = pub.GetEmail()
 	}
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[*dto.ResponseGetProfile]{
@@ -274,7 +277,7 @@ func (h *GatewayProfileHandler) UpdateUserBio(w http.ResponseWriter, r *http.Req
 			sendAuthError(w, errAuth)
 			return
 		}
-		out.Login = pub.GetLogin()
+		out.Login = sanitize.Text(pub.GetLogin())
 	}
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[*dto.ResponseUpdateProfile]{
 		Status: dtoApi.Success,
@@ -346,7 +349,7 @@ func (h *GatewayProfileHandler) UpdateUserAvatar(w http.ResponseWriter, r *http.
 			sendAuthError(w, errAuth)
 			return
 		}
-		out.Login = pub.GetLogin()
+		out.Login = sanitize.Text(pub.GetLogin())
 	}
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[*dto.ResponseUpdateProfile]{
 		Status: dtoApi.Success,
@@ -396,7 +399,7 @@ func (h *GatewayProfileHandler) UpdateUserBirthDate(w http.ResponseWriter, r *ht
 			sendAuthError(w, errAuth)
 			return
 		}
-		out.Login = pub.GetLogin()
+		out.Login = sanitize.Text(pub.GetLogin())
 	}
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[*dto.ResponseUpdateProfile]{
 		Status: dtoApi.Success,
@@ -450,7 +453,7 @@ func (h *GatewayProfileHandler) UpdateProfileName(w http.ResponseWriter, r *http
 			sendAuthError(w, errAuth)
 			return
 		}
-		out.Login = pub.GetLogin()
+		out.Login = sanitize.Text(pub.GetLogin())
 	}
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[*dto.ResponseUpdateProfile]{
 		Status: dtoApi.Success,
@@ -477,7 +480,7 @@ func (h *GatewayProfileHandler) SearchIdByLogin(w http.ResponseWriter, r *http.R
 	if resp != nil {
 		body = &dto.ResponseSearchIdByLogin{
 			UserId: resp.GetUserId(),
-			Login:  resp.GetLogin(),
+			Login:  sanitize.Text(resp.GetLogin()),
 		}
 	}
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[*dto.ResponseSearchIdByLogin]{

@@ -10,7 +10,6 @@ import (
 	profile3 "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	media2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	profile2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=profile.go -destination=mock/profile_mock.go -package=mock
@@ -57,7 +56,7 @@ func (p ProfileService) SearchIdByLogin(ctx context.Context, login *profile2.Req
 	}
 
 	return &profile2.ResponseSearchIdByLogin{
-		Login:  sanitize.Text(login.Login),
+		Login:  login.Login,
 		UserId: userID,
 	}, nil
 }
@@ -96,10 +95,10 @@ func (p ProfileService) UpdateProfileBirthDate(ctx context.Context, userID int64
 	}
 	return &profile2.ResponseUpdateProfile{
 		UserId:    profile.UserId,
-		FirstName: sanitize.Text(profile.FirstName),
-		LastName:  sanitize.TextPtr(profile.LastName),
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
 		Avatar:    profile.Avatar,
-		Bio:       sanitize.TextPtr(profile.Bio),
+		Bio:       profile.Bio,
 		LastSeen:  profile.LastSeen,
 		BirthDate: birthDate,
 	}, nil
@@ -125,10 +124,10 @@ func (p ProfileService) UpdateProfileBio(ctx context.Context, userID int64, requ
 	}
 	return &profile2.ResponseUpdateProfile{
 		UserId:    profile.UserId,
-		FirstName: sanitize.Text(profile.FirstName),
-		LastName:  sanitize.TextPtr(profile.LastName),
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
 		Avatar:    profile.Avatar,
-		Bio:       sanitize.TextPtr(profile.Bio),
+		Bio:       profile.Bio,
 		LastSeen:  profile.LastSeen,
 		BirthDate: birthDate,
 	}, nil
@@ -170,11 +169,11 @@ func (p ProfileService) UpdateProfileAvatar(ctx context.Context, userID int64, r
 
 	return &profile2.ResponseUpdateProfile{
 		UserId:    profile.UserId,
-		FirstName: sanitize.Text(profile.FirstName),
-		LastName:  sanitize.TextPtr(profile.LastName),
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
 		Avatar:    profile.Avatar,
 		BirthDate: birthDate,
-		Bio:       sanitize.TextPtr(profile.Bio),
+		Bio:       profile.Bio,
 		LastSeen:  profile.LastSeen,
 	}, nil
 }
@@ -200,11 +199,11 @@ func (p ProfileService) UpdateProfileAvatarURL(ctx context.Context, userID int64
 
 	return &profile2.ResponseUpdateProfile{
 		UserId:    profile.UserId,
-		FirstName: sanitize.Text(profile.FirstName),
-		LastName:  sanitize.TextPtr(profile.LastName),
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
 		Avatar:    profile.Avatar,
 		BirthDate: birthDate,
-		Bio:       sanitize.TextPtr(profile.Bio),
+		Bio:       profile.Bio,
 		LastSeen:  profile.LastSeen,
 	}, nil
 }
@@ -231,11 +230,11 @@ func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (respo
 
 	return &profile2.ResponseGetProfile{
 		UserId:    profile.UserId,
-		FirstName: sanitize.Text(profile.FirstName),
-		LastName:  sanitize.TextPtr(profile.LastName),
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
 		Avatar:    profile.Avatar,
 		BirthDate: birthDate,
-		Bio:       sanitize.TextPtr(profile.Bio),
+		Bio:       profile.Bio,
 		LastSeen:  profile.LastSeen,
 	}, nil
 }
@@ -261,10 +260,10 @@ func (p ProfileService) UpdateProfileName(ctx context.Context, userID int64, req
 	}
 	return &profile2.ResponseUpdateProfile{
 		UserId:    profile.UserId,
-		FirstName: sanitize.Text(profile.FirstName),
-		LastName:  sanitize.TextPtr(profile.LastName),
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
 		Avatar:    profile.Avatar,
-		Bio:       sanitize.TextPtr(profile.Bio),
+		Bio:       profile.Bio,
 		LastSeen:  profile.LastSeen,
 		BirthDate: birthDate,
 	}, nil
@@ -289,11 +288,11 @@ func (p ProfileService) DeleteProfileAvatar(ctx context.Context, userID int64) (
 
 	return &profile2.ResponseDeleteProfile{
 		UserId:    profile.UserId,
-		FirstName: sanitize.Text(profile.FirstName),
-		LastName:  sanitize.TextPtr(profile.LastName),
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
 		Avatar:    profile.Avatar,
 		BirthDate: birthDate,
-		Bio:       sanitize.TextPtr(profile.Bio),
+		Bio:       profile.Bio,
 		LastSeen:  profile.LastSeen,
 	}, nil
 }

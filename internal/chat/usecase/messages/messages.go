@@ -8,7 +8,6 @@ import (
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 const maxMessageRunes = 2000
@@ -75,7 +74,7 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 			ID:        msg.Id,
 			ChatID:    msg.ChatId,
 			SenderID:  msg.SenderId,
-			Text:      sanitize.Text(msg.Content),
+			Text:      msg.Content,
 			CreatedAt: msg.CreatedAt,
 			Edited:    msg.Edited,
 		})
@@ -142,7 +141,7 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 		ID:        createdMessage.Id,
 		ChatID:    createdMessage.ChatId,
 		SenderID:  createdMessage.SenderId,
-		Text:      sanitize.Text(createdMessage.Content),
+		Text:      createdMessage.Content,
 		CreatedAt: createdMessage.CreatedAt,
 		Edited:    createdMessage.Edited,
 	}, nil
@@ -186,7 +185,7 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 		ID:                editedMessage.Id,
 		ChatID:            editedMessage.ChatId,
 		SenderID:          editedMessage.SenderId,
-		Text:              sanitize.Text(editedMessage.Content),
+		Text:              editedMessage.Content,
 		CreatedAt:         editedMessage.CreatedAt,
 		Edited:            editedMessage.Edited,
 		LastMessageEdited: lastMessageEdited,
@@ -194,7 +193,7 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 	if lastMessageEdited {
 		resp.LastMessage = &dto.LastMessageDTO{
 			SenderId:  editedMessage.SenderId,
-			Text:      sanitize.Text(editedMessage.Content),
+			Text:      editedMessage.Content,
 			CreatedAt: editedMessage.CreatedAt,
 		}
 	}
@@ -240,7 +239,7 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 		if err == nil && lm != nil {
 			resp.LastMessage = &dto.LastMessageDTO{
 				SenderId:  lm.SenderId,
-				Text:      sanitize.Text(lm.Content),
+				Text:      lm.Content,
 				CreatedAt: lm.CreatedAt,
 			}
 		}

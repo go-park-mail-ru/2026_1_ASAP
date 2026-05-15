@@ -11,7 +11,6 @@ import (
 	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=chat.go -destination=mock/chat_mock.go -package=mock
@@ -152,7 +151,7 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 		if lastMsg != nil {
 			messageDTO = dto.MessageDTO{
 				SenderId:  lastMsg.SenderId,
-				Text:      sanitize.Text(lastMsg.Content),
+				Text:      lastMsg.Content,
 				CreatedAt: lastMsg.CreatedAt,
 			}
 		}
@@ -171,12 +170,12 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 
 		result = append(result, dto.ChatInformationDTO{
 			ID:          chat.Id,
-			Title:       sanitize.Text(displayTitle),
+			Title:       displayTitle,
 			ChatType:    dto.ChatType(chat.Type),
 			LastMessage: messageDTO,
 			Avatar:      displayAvatar,
 			OwnerID:     chat.OwnerId,
-			Description: sanitize.TextPtr(chat.Description),
+			Description: chat.Description,
 		})
 	}
 
@@ -254,11 +253,11 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 	out := &dto.ChatInformationDTO{
 		ID:          created.Id,
 		ChatType:    dto.ChatType(created.Type),
-		Title:       sanitize.Text(displayTitle),
+		Title:       displayTitle,
 		LastMessage: dto.MessageDTO{},
 		Avatar:      displayAvatar,
 		OwnerID:     created.OwnerId,
-		Description: sanitize.TextPtr(created.Description),
+		Description: created.Description,
 	}
 
 	if s.notifier != nil {
@@ -296,7 +295,7 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 	if err == nil && lastMsg != nil {
 		messageDTO = dto.MessageDTO{
 			SenderId:  lastMsg.SenderId,
-			Text:      sanitize.Text(lastMsg.Content),
+			Text:      lastMsg.Content,
 			CreatedAt: lastMsg.CreatedAt,
 		}
 	}
@@ -315,11 +314,11 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 	return &dto.ChatInformationDTO{
 		ID:          chat.Id,
 		ChatType:    dto.ChatType(chat.Type),
-		Title:       sanitize.Text(displayTitle),
+		Title:       displayTitle,
 		LastMessage: messageDTO,
 		Avatar:      displayAvatar,
 		OwnerID:     chat.OwnerId,
-		Description: sanitize.TextPtr(chat.Description),
+		Description: chat.Description,
 	}, nil
 }
 
@@ -413,7 +412,7 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 	if lastMsg != nil {
 		messageDTO = dto.MessageDTO{
 			SenderId:  lastMsg.SenderId,
-			Text:      sanitize.Text(lastMsg.Content),
+			Text:      lastMsg.Content,
 			CreatedAt: lastMsg.CreatedAt,
 		}
 	}
@@ -421,11 +420,11 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 	out := &dto.ChatInformationDTO{
 		ID:          result.Id,
 		ChatType:    dto.ChatType(result.Type),
-		Title:       sanitize.Text(result.Title),
+		Title:       result.Title,
 		LastMessage: messageDTO,
 		Avatar:      result.AvatarUrl,
 		OwnerID:     result.OwnerId,
-		Description: sanitize.TextPtr(result.Description),
+		Description: result.Description,
 	}
 
 	if s.notifier != nil {
@@ -476,7 +475,7 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 	if lastMsg != nil {
 		messageDTO = dto.MessageDTO{
 			SenderId:  lastMsg.SenderId,
-			Text:      sanitize.Text(lastMsg.Content),
+			Text:      lastMsg.Content,
 			CreatedAt: lastMsg.CreatedAt,
 		}
 	}
@@ -484,11 +483,11 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 	out := &dto.ChatInformationDTO{
 		ID:          result.Id,
 		ChatType:    dto.ChatType(result.Type),
-		Title:       sanitize.Text(result.Title),
+		Title:       result.Title,
 		LastMessage: messageDTO,
 		Avatar:      result.AvatarUrl,
 		OwnerID:     result.OwnerId,
-		Description: sanitize.TextPtr(result.Description),
+		Description: result.Description,
 	}
 
 	if s.notifier != nil {
@@ -538,7 +537,7 @@ func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID 
 	if lastMsg != nil {
 		messageDTO = dto.MessageDTO{
 			SenderId:  lastMsg.SenderId,
-			Text:      sanitize.Text(lastMsg.Content),
+			Text:      lastMsg.Content,
 			CreatedAt: lastMsg.CreatedAt,
 		}
 	}
@@ -546,11 +545,11 @@ func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID 
 	out := &dto.ChatInformationDTO{
 		ID:          result.Id,
 		ChatType:    dto.ChatType(result.Type),
-		Title:       sanitize.Text(result.Title),
+		Title:       result.Title,
 		LastMessage: messageDTO,
 		Avatar:      result.AvatarUrl,
 		OwnerID:     result.OwnerId,
-		Description: sanitize.TextPtr(result.Description),
+		Description: result.Description,
 	}
 
 	if s.notifier != nil {

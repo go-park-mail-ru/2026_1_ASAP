@@ -1,9 +1,11 @@
 package sanitize
 
-import "html"
+import "github.com/microcosm-cc/bluemonday"
+
+var policy = bluemonday.UGCPolicy()
 
 func Text(value string) string {
-	return html.EscapeString(value)
+	return policy.Sanitize(value)
 }
 
 func TextPtr(value *string) *string {
@@ -11,6 +13,6 @@ func TextPtr(value *string) *string {
 		return nil
 	}
 
-	escaped := html.EscapeString(*value)
-	return &escaped
+	sanitized := policy.Sanitize(*value)
+	return &sanitized
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 type GatewayComplaintHandler struct {
@@ -325,16 +326,16 @@ func mapComplaint(c *complaintv1.ComplaintItem) *complaintDTO {
 	var fb feedback
 	if c.GetFeedback() != nil {
 		fb = feedback{
-			FeedbackName:  c.GetFeedback().GetFeedbackName(),
-			FeedbackEmail: c.GetFeedback().GetFeedbackEmail(),
+			FeedbackName:  sanitize.Text(c.GetFeedback().GetFeedbackName()),
+			FeedbackEmail: sanitize.Text(c.GetFeedback().GetFeedbackEmail()),
 		}
 	}
 	out := &complaintDTO{
 		ID:        c.GetId(),
-		Type:      c.GetType(),
-		Status:    c.GetStatus(),
+		Type:      sanitize.Text(c.GetType()),
+		Status:    sanitize.Text(c.GetStatus()),
 		Feedback:  fb,
-		Body:      c.GetBody(),
+		Body:      sanitize.Text(c.GetBody()),
 		UserID:    c.GetUserId(),
 		CreatedAt: c.GetCreatedAt().AsTime().Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt: c.GetUpdatedAt().AsTime().Format("2006-01-02T15:04:05Z07:00"),

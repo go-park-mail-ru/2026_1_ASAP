@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// AuthMiddleware reads X-User-ID header set by the API gateway after auth validation.
 func AuthMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +26,6 @@ func AuthMiddleware() func(http.Handler) http.Handler {
 	}
 }
 
-// RequestIDMiddleware injects a request ID into the context.
 func RequestIDMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

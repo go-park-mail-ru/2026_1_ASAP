@@ -5,6 +5,7 @@ import (
 
 	chatdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 func Encode[T any](status WsResponseStatus, payload T) ([]byte, error) {
@@ -16,22 +17,40 @@ func EncodeError(p WsErrorPayload) ([]byte, error) {
 }
 
 func EncodeMessageNew(m *dto.ResponseSendMessage) ([]byte, error) {
+	if m != nil {
+		m.Text = sanitize.Text(m.Text)
+	}
 	return Encode(MessageNew, m)
 }
 
 func EncodeMessageGet(m *dto.ResponseGetMessages) ([]byte, error) {
+	if m != nil {
+		for i := range m.Messages {
+			m.Messages[i].Text = sanitize.Text(m.Messages[i].Text)
+		}
+	}
 	return Encode(MessageGet, m)
 }
 
 func EncodeMessageEdit(m *dto.ResponseEditMessage) ([]byte, error) {
+	if m != nil {
+		m.Text = sanitize.Text(m.Text)
+		if m.LastMessage != nil {
+			m.LastMessage.Text = sanitize.Text(m.LastMessage.Text)
+		}
+	}
 	return Encode(MessageUpdate, m)
 }
 
 func EncodeMessageDelete(m *dto.ResponseClearMessage) ([]byte, error) {
+	if m != nil && m.LastMessage != nil {
+		m.LastMessage.Text = sanitize.Text(m.LastMessage.Text)
+	}
 	return Encode(MessageClear, m)
 }
 
 func EncodeChatNew(c *chatdto.ChatInformationDTO) ([]byte, error) {
+	sanitizeChatInformation(c)
 	return Encode(ChatNew, c)
 }
 
@@ -63,7 +82,7 @@ type ChatUpdatedTitlePayload struct {
 func EncodeChatUpdatedTitle(chatID int64, title string) ([]byte, error) {
 	return Encode(ChatUpdatedTitle, ChatUpdatedTitlePayload{
 		ChatID: chatID,
-		Title:  title,
+		Title:  sanitize.Text(title),
 	})
 }
 
@@ -75,7 +94,7 @@ type ChatUpdatedDescriptionPayload struct {
 func EncodeChatUpdatedDescription(chatID int64, description *string) ([]byte, error) {
 	return Encode(ChatUpdatedDescription, ChatUpdatedDescriptionPayload{
 		ChatID:      chatID,
-		Description: description,
+		Description: sanitize.TextPtr(description),
 	})
 }
 
@@ -92,6 +111,15 @@ func EncodeChatUpdatedMembers(chatID int64, changeType string, updatedMemberIDs 
 		ChatID:           chatID,
 		Type:             changeType,
 		UpdatedMembersID: ids,
-		Name:             name,
+		Name:             sanitize.Text(name),
 	})
+}
+
+func sanitizeChatInformation(c *chatdto.ChatInformationDTO) {
+	if c == nil {
+		return
+	}
+	c.Title = sanitize.Text(c.Title)
+	c.Description = sanitize.TextPtr(c.Description)
+	c.LastMessage.Text = sanitize.Text(c.LastMessage.Text)
 }

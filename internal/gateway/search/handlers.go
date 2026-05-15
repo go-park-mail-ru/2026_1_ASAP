@@ -12,6 +12,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 type GatewaySearchHandler struct {
@@ -94,13 +95,13 @@ func (h *GatewaySearchHandler) SearchMessages(w http.ResponseWriter, r *http.Req
 			MessageID:   m.GetMessageId(),
 			ChatID:      m.GetChatId(),
 			SenderID:    m.GetSenderId(),
-			TextPreview: m.GetTextPreview(),
+			TextPreview: sanitize.Text(m.GetTextPreview()),
 		}
 		if t := m.GetCreatedAt(); t != nil {
 			item.CreatedAt = t.AsTime()
 		}
 		if hl := m.GetHighlights(); hl != nil && hl.GetFragment() != "" {
-			item.Highlights = &searchHighlightJSON{Fragment: hl.GetFragment()}
+			item.Highlights = &searchHighlightJSON{Fragment: sanitize.Text(hl.GetFragment())}
 		}
 		items = append(items, item)
 	}
@@ -141,11 +142,11 @@ func (h *GatewaySearchHandler) SearchUsers(w http.ResponseWriter, r *http.Reques
 	for _, c := range resp.GetContacts() {
 		item := searchUserItemJSON{
 			UserID:      c.GetUserId(),
-			DisplayName: c.GetDisplayName(),
+			DisplayName: sanitize.Text(c.GetDisplayName()),
 			IsOnline:    c.GetIsOnline(),
 		}
 		if c.Login != nil {
-			ln := c.GetLogin()
+			ln := sanitize.Text(c.GetLogin())
 			item.Login = &ln
 		}
 		if c.AvatarUrl != nil {
@@ -200,7 +201,7 @@ func (h *GatewaySearchHandler) SearchChats(w http.ResponseWriter, r *http.Reques
 			item := searchChatItemJSON{
 				ChatID:      c.GetChatId(),
 				Type:        "channel",
-				Title:       c.GetTitle(),
+				Title:       sanitize.Text(c.GetTitle()),
 				UnreadCount: 0,
 				IsMember:    &member,
 			}
@@ -208,6 +209,7 @@ func (h *GatewaySearchHandler) SearchChats(w http.ResponseWriter, r *http.Reques
 				item.AvatarURL = &u
 			}
 			if p := c.GetLastMessagePreview(); p != "" {
+				p = sanitize.Text(p)
 				item.LastMessagePreview = &p
 			}
 			if ts := c.GetLastMessageAt(); ts != nil {
@@ -243,13 +245,14 @@ func (h *GatewaySearchHandler) SearchChats(w http.ResponseWriter, r *http.Reques
 		item := searchChatItemJSON{
 			ChatID:      c.GetChatId(),
 			Type:        mapSearchChatType(c.GetType()),
-			Title:       c.GetTitle(),
+			Title:       sanitize.Text(c.GetTitle()),
 			UnreadCount: c.GetUnreadCount(),
 		}
 		if u := c.GetAvatarUrl(); u != "" {
 			item.AvatarURL = &u
 		}
 		if p := c.GetLastMessagePreview(); p != "" {
+			p = sanitize.Text(p)
 			item.LastMessagePreview = &p
 		}
 		if ts := c.GetLastMessageAt(); ts != nil {

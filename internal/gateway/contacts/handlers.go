@@ -8,10 +8,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
-	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
+	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -31,10 +32,10 @@ func contactItemToResponse(c *profilev1.ContactItem) *contactdto.ContactResponse
 	out := &contactdto.ContactResponse{
 		UserID:        c.GetUserId(),
 		ContactUserID: c.GetContactUserId(),
-		FirstName:     c.GetFirstName(),
+		FirstName:     sanitize.Text(c.GetFirstName()),
 	}
 	if c.LastName != nil {
-		ln := c.GetLastName()
+		ln := sanitize.Text(c.GetLastName())
 		out.LastName = &ln
 	}
 	if u := c.GetContactAvatarUrl(); u != "" {

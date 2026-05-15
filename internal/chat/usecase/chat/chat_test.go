@@ -1350,7 +1350,7 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 				},
 				ownerID: 100,
 			},
-			wantTitle: `&lt;b&gt;Group&lt;/b&gt;`,
+			wantTitle: `<b>Group</b>`,
 		},
 		{
 			name: "ampersand in title",
@@ -1376,7 +1376,7 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 				},
 				ownerID: 10,
 			},
-			wantTitle: `A &amp; B team`,
+			wantTitle: `A & B team`,
 		},
 	}
 
@@ -1545,7 +1545,7 @@ func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 				chatID:  11,
 				request: &dto.RequestUpdateTitle{Title: `<script>alert(1)</script>`},
 			},
-			wantTitle: `&lt;script&gt;alert(1)&lt;/script&gt;`,
+			wantTitle: `<script>alert(1)</script>`,
 		},
 		{
 			name: "ampersand",
@@ -1569,7 +1569,7 @@ func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 				chatID:  12,
 				request: &dto.RequestUpdateTitle{Title: `X & Y`},
 			},
-			wantTitle: `X &amp; Y`,
+			wantTitle: `X & Y`,
 		},
 	}
 

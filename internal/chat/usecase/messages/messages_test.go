@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
+func TestPositiveMessageService_SendMessageReturnsContent(t *testing.T) {
 	type fields struct {
 		msgRepo  *mock.MockMessageRepositoryInterface
 		chatRepo *mock.MockChatRepositoryInterface
@@ -63,7 +63,7 @@ func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
 					Text:   `<img src=x onerror=alert(1)>`,
 				},
 			},
-			wantText: `&lt;img src=x onerror=alert(1)&gt;`,
+			wantText: `<img src=x onerror=alert(1)>`,
 		},
 		{
 			name: "ampersand",
@@ -96,7 +96,7 @@ func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
 					Text:   `a & b`,
 				},
 			},
-			wantText: `a &amp; b`,
+			wantText: `a & b`,
 		},
 	}
 
@@ -149,8 +149,8 @@ func TestNegativeMessageService_SendMessage(t *testing.T) {
 		wantSubstr string
 	}{
 		{
-			name:    "nil request",
-			args:    args{ctx: context.Background(), userID: 1, chatID: 1, req: nil},
+			name:       "nil request",
+			args:       args{ctx: context.Background(), userID: 1, chatID: 1, req: nil},
 			wantAnyErr: true,
 			wantSubstr: "send message nil request",
 		},
@@ -465,13 +465,13 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 				ID:                7,
 				ChatID:            1,
 				SenderID:          10,
-				Text:              "edited &lt;b&gt;text&lt;/b&gt;",
+				Text:              "edited <b>text</b>",
 				CreatedAt:         now,
 				Edited:            true,
 				LastMessageEdited: true,
 				LastMessage: &dto.LastMessageDTO{
 					SenderId:  10,
-					Text:      "edited &lt;b&gt;text&lt;/b&gt;",
+					Text:      "edited <b>text</b>",
 					CreatedAt: now,
 				},
 			},
@@ -649,7 +649,7 @@ func TestPositiveMessageService_DeleteMessage(t *testing.T) {
 				LastMessageEdited: true,
 				LastMessage: &dto.LastMessageDTO{
 					SenderId:  11,
-					Text:      "prev &lt;b&gt;msg&lt;/b&gt;",
+					Text:      "prev <b>msg</b>",
 					CreatedAt: now,
 				},
 			},

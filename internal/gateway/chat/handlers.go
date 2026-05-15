@@ -17,6 +17,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 type GatewayChatHandler struct {
@@ -233,7 +234,7 @@ func mapChatInfo(c *chatv1.ChatInformation) ChatInfoResponse {
 	out := ChatInfoResponse{
 		ID:      c.GetId(),
 		Type:    mapChatType(c.GetType()),
-		Title:   c.GetTitle(),
+		Title:   sanitize.Text(c.GetTitle()),
 		OwnerID: c.GetOwnerId(),
 	}
 	if a := c.GetAvatar(); a != "" {
@@ -241,13 +242,13 @@ func mapChatInfo(c *chatv1.ChatInformation) ChatInfoResponse {
 		out.Avatar = &v
 	}
 	if d := c.GetDescription(); d != "" {
-		v := d
+		v := sanitize.Text(d)
 		out.Description = &v
 	}
 	if lm := c.GetLastMessage(); lm != nil {
 		out.LastMessage = MessageInfoResponse{
 			SenderID:  lm.GetSenderId(),
-			Text:      lm.GetText(),
+			Text:      sanitize.Text(lm.GetText()),
 			CreatedAt: lm.GetCreatedAt().AsTime(),
 		}
 	}
@@ -518,9 +519,9 @@ func (h *GatewayChatHandler) UpdateChatDescription(w http.ResponseWriter, r *htt
 	}
 
 	resp, err := h.ChatService.UpdateChatDescription(ctx, &chatv1.RequestUpdateDescription{
-		UserId: uid,
-		ChatId: chatID,
-		Description:  req.Description,
+		UserId:      uid,
+		ChatId:      chatID,
+		Description: req.Description,
 	})
 	if err != nil {
 		sendChatError(w, err)

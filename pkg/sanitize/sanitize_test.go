@@ -58,12 +58,17 @@ func TestText(t *testing.T) {
 		{
 			name: "Text with HTML script tag",
 			args: args{value: "<script>alert('xss')</script>"},
-			want: "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;",
+			want: "",
 		},
 		{
 			name: "Text with HTML bold tag",
 			args: args{value: "<b>Bold text</b>"},
-			want: "&lt;b&gt;Bold text&lt;/b&gt;",
+			want: "<b>Bold text</b>",
+		},
+		{
+			name: "Malicious anchor tag",
+			args: args{value: `<a onblur="alert(document.cookie)" href="javascript:alert(document.cookie)">Mail.ru</a>`},
+			want: "Mail.ru",
 		},
 		{
 			name: "Text with multiple special characters",
@@ -158,12 +163,17 @@ func TestTextPtr(t *testing.T) {
 		{
 			name: "Text with HTML script tag",
 			args: args{value: strPtr("<script>alert('xss')</script>")},
-			want: strPtr("&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"),
+			want: strPtr(""),
 		},
 		{
 			name: "Text with HTML bold tag",
 			args: args{value: strPtr("<b>Bold text</b>")},
-			want: strPtr("&lt;b&gt;Bold text&lt;/b&gt;"),
+			want: strPtr("<b>Bold text</b>"),
+		},
+		{
+			name: "Malicious anchor tag",
+			args: args{value: strPtr(`<a onblur="alert(document.cookie)" href="javascript:alert(document.cookie)">Mail.ru</a>`)},
+			want: strPtr("Mail.ru"),
 		},
 		{
 			name: "Text with multiple special characters",
