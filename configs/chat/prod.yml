@@ -18,6 +18,11 @@ media:
 profile:
   grpc_addr: "profile:8002"
 
+redis:
+  host: redis
+  port: "6379"
+  database: 0
+
 app:
   shutdown_seconds: 20
   log_level: info
