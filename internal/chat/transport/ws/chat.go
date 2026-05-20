@@ -20,7 +20,11 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 )
 
-const wsWriteTimeout = 3 * time.Second
+const (
+	wsWriteTimeout = 3 * time.Second
+	wsPingInterval = 30 * time.Second
+	wsPingTimeout  = 10 * time.Second
+)
 
 type ctxKey string
 
@@ -266,10 +270,39 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	defer s.wg.Done()
 
 	go s.readClientMessages(ctx, wsConn, userID, sub)
+	go s.runWSPing(ctx, wsConn, sub)
 	if s.onlineRepo != nil {
 		go s.runPresenceRedisRefresh(ctx, userID, sub)
 	}
 	s.writeClientMessages(ctx, wsConn, sub)
+}
+
+func (s *ChatServer) runWSPing(ctx context.Context, wsConn *websocket.Conn, sub *subscriber) {
+	log := loggerctx.From(ctx)
+	t := time.NewTicker(wsPingInterval)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			pingCtx, pingCancel := context.WithTimeout(ctx, wsPingTimeout)
+			err := wsConn.Ping(pingCtx)
+			pingCancel()
+			if err == nil {
+				continue
+			}
+			if !errors.Is(err, context.Canceled) {
+				log.Debug("ws ping failed", zap.Error(err))
+			}
+			if sub.cancel != nil {
+				sub.cancel()
+			}
+			_ = wsConn.Close(websocket.StatusGoingAway, "ping timeout")
+			return
+		}
+	}
 }
 
 func (s *ChatServer) Shutdown(ctx context.Context) error {
