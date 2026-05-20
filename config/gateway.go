@@ -7,14 +7,15 @@ import (
 )
 
 type GatewayConfig struct {
-	Server       GatewayServerConfig       `yaml:"server"`
-	Auth         GatewayAuthConfig         `yaml:"auth"`
-	Profile      GatewayProfileConfig      `yaml:"profile"`
-	Chat         GatewayChatConfig         `yaml:"chat"`
-	Complaint    GatewayComplaintConfig    `yaml:"complaint"`
-	Search       GatewaySearchConfig       `yaml:"search"`
-	Subscription GatewaySubscriptionConfig `yaml:"subscription"`
-	Payment      GatewayPaymentConfig      `yaml:"payment"`
+	Server        GatewayServerConfig        `yaml:"server"`
+	SessionCookie GatewaySessionCookieConfig `yaml:"session_cookie"`
+	Auth          GatewayAuthConfig          `yaml:"auth"`
+	Profile       GatewayProfileConfig       `yaml:"profile"`
+	Chat          GatewayChatConfig          `yaml:"chat"`
+	Complaint     GatewayComplaintConfig     `yaml:"complaint"`
+	Search        GatewaySearchConfig        `yaml:"search"`
+	Subscription  GatewaySubscriptionConfig  `yaml:"subscription"`
+	Payment       GatewayPaymentConfig       `yaml:"payment"`
 }
 
 type GatewaySessionCookieConfig struct {
