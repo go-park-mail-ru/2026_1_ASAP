@@ -24,6 +24,10 @@ func EncodeMessageGet(m *dto.ResponseGetMessages) ([]byte, error) {
 	return Encode(MessageGet, m)
 }
 
+func EncodeMessageRead(m *dto.ResponseMarkRead) ([]byte, error) {
+	return Encode(MessageRead, m)
+}
+
 func EncodeMessageEdit(m *dto.ResponseEditMessage) ([]byte, error) {
 	return Encode(MessageUpdate, m)
 }

@@ -3,9 +3,10 @@ package ws
 type WsResponseStatus string
 
 const (
-	Error      WsResponseStatus = "error"
-	MessageNew WsResponseStatus = "message.New"
-	MessageGet WsResponseStatus = "message.Get"
+	Error       WsResponseStatus = "error"
+	MessageNew  WsResponseStatus = "message.New"
+	MessageGet  WsResponseStatus = "message.Get"
+	MessageRead WsResponseStatus = "message.Read"
 
 	MessageUpdate          WsResponseStatus = "message.Update"           // Добавить bool last_message_edited
 	MessageClear           WsResponseStatus = "message.Clear"            // Добавить bool last_message_edited

@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -420,6 +421,54 @@ func (r *ChatRepository) DeleteMember(ctx context.Context, chatID, userID int64)
 	}
 
 	return nil
+}
+
+// GetMemberLastReads returns last_read_message_id per member (nil pointer = never set in DB).
+func (r *ChatRepository) GetMemberLastReads(ctx context.Context, chatID int64) (map[int64]*int64, error) {
+	q := chatssql.GetMemberLastReads
+	start := time.Now()
+	rows, err := r.db.Query(ctx, q, chatID)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetMemberLastReads", q, start, err, []any{chatID})
+	if err != nil {
+		return nil, fmt.Errorf("get member last reads: %w", err)
+	}
+	defer rows.Close()
+
+	out := make(map[int64]*int64)
+	for rows.Next() {
+		var userID int64
+		var lastRead sql.NullInt64
+		if scanErr := rows.Scan(&userID, &lastRead); scanErr != nil {
+			return nil, fmt.Errorf("scan member last read: %w", scanErr)
+		}
+		if lastRead.Valid {
+			v := lastRead.Int64
+			out[userID] = &v
+		} else {
+			out[userID] = nil
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate member last reads: %w", err)
+	}
+	return out, nil
+}
+
+// UpdateMemberLastReadMessageID advances the reader's cursor to at least messageID (monotonic).
+// Returns the effective cursor and true when the member row was updated.
+func (r *ChatRepository) UpdateMemberLastReadMessageID(ctx context.Context, chatID, userID, messageID int64) (effectiveLastRead int64, updated bool, err error) {
+	q := chatssql.UpdateMemberLastReadMessageID
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, chatID, userID, messageID)
+	scanErr := row.Scan(&effectiveLastRead)
+	sqllog.LogQuery(ctx, r.log(ctx), "UpdateMemberLastReadMessageID", q, start, scanErr, []any{chatID, userID, messageID})
+	if scanErr != nil {
+		if errors.Is(scanErr, pgx.ErrNoRows) {
+			return 0, false, nil
+		}
+		return 0, false, fmt.Errorf("update member last read: %w", scanErr)
+	}
+	return effectiveLastRead, true, nil
 }
 
 func (r *ChatRepository) Close() {

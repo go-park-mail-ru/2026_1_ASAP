@@ -21,3 +21,8 @@ type RequestGetMessages struct {
 	ChatID   int64  `json:"chat_id"`
 	Limit    int    `json:"limit"`
 }
+
+type RequestMarkRead struct {
+	MessageID int64 `json:"message_id"`
+	ChatID    int64 `json:"chat_id"`
+}

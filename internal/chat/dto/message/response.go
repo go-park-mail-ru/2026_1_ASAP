@@ -15,6 +15,7 @@ type ResponseSendMessage struct {
 	ChatID    int64     `json:"chat_id"`
 	SenderID  int64     `json:"sender_id"`
 	Edited    bool      `json:"edited"`
+	Read      bool      `json:"read"`
 }
 
 type ResponseEditMessage struct {
@@ -24,6 +25,7 @@ type ResponseEditMessage struct {
 	ChatID            int64           `json:"chat_id"`
 	SenderID          int64           `json:"sender_id"`
 	Edited            bool            `json:"edited"`
+	Read              bool            `json:"read"`
 	LastMessageEdited bool            `json:"last_message_edited"`
 	LastMessage       *LastMessageDTO `json:"last_message,omitempty"`
 }
@@ -40,4 +42,10 @@ type ResponseGetMessages struct {
 	NextBeforeID *int64       `json:"next_before_id"`
 	Messages     []MessageDTO `json:"messages"`
 	HasMore      bool         `json:"has_more"`
+}
+
+type ResponseMarkRead struct {
+	ChatID            int64 `json:"chat_id"`
+	ReaderUserID      int64 `json:"reader_user_id"`
+	LastReadMessageID int64 `json:"last_read_message_id"`
 }
