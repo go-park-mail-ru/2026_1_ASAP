@@ -52,6 +52,8 @@ const (
 	OnlyChannelCanBeJoined        = "ONLY_CHANNEL_CAN_BE_JOINED"
 	CantHaveCustomDescription     = "DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION"
 	OnlyOwnerCanChangeDescription = "ONLY_OWNER_CAN_CHANGE_DESCRIPTION"
+	SubscriptionNotFound          = "SUBCRIPTION_NOT_FOUND"
+	SubscriptionExpired           = "SUBCRIPTION_EXPIRED"
 )
 
 const (
@@ -103,6 +105,8 @@ const (
 	OnlyChannelCanBeJoinedMsg        = "you can join only channel"
 	CantHaveCustomDescriptionMsg     = "dialog cant have custom description"
 	OnlyOwnerCanChangeDescriptionMsg = "Only owner of channel can change description"
+	SubscriptionNotFoundMsg          = "Subscription not found"
+	SubscriptionExpiredMsg           = "Subscription expired"
 )
 
 type ApiError struct {

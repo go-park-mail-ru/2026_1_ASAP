@@ -7,13 +7,14 @@ import (
 )
 
 type GatewayConfig struct {
-	Server        GatewayServerConfig        `yaml:"server"`
-	SessionCookie GatewaySessionCookieConfig `yaml:"session_cookie"`
-	Auth          GatewayAuthConfig          `yaml:"auth"`
-	Profile       GatewayProfileConfig       `yaml:"profile"`
-	Chat          GatewayChatConfig          `yaml:"chat"`
-	Complaint     GatewayComplaintConfig     `yaml:"complaint"`
-	Search        GatewaySearchConfig        `yaml:"search"`
+	Server       GatewayServerConfig       `yaml:"server"`
+	Auth         GatewayAuthConfig         `yaml:"auth"`
+	Profile      GatewayProfileConfig      `yaml:"profile"`
+	Chat         GatewayChatConfig         `yaml:"chat"`
+	Complaint    GatewayComplaintConfig    `yaml:"complaint"`
+	Search       GatewaySearchConfig       `yaml:"search"`
+	Subscription GatewaySubscriptionConfig `yaml:"subscription"`
+	Payment      GatewayPaymentConfig      `yaml:"payment"`
 }
 
 type GatewaySessionCookieConfig struct {
@@ -46,6 +47,14 @@ type GatewayComplaintConfig struct {
 
 type GatewaySearchConfig struct {
 	GRPCAddr string `yaml:"grpc_addr" env-default:"search:8010"`
+}
+
+type GatewaySubscriptionConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" env-default:"subscription:8011"`
+}
+
+type GatewayPaymentConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" env-default:"payment:8012"`
 }
 
 func LoadGatewayConfig(path string) (*GatewayConfig, error) {

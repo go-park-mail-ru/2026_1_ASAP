@@ -22,3 +22,9 @@ complaint:
 
 search:
   grpc_addr: search:8010
+
+subscription:
+  grpc_addr: subscription:8011
+
+payment:
+  grpc_addr: payment:8012
