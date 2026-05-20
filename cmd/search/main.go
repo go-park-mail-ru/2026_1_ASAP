@@ -12,6 +12,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	searchv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/search/v1"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
+	onlinerepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/repository/online"
 	searchpg "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/repository/postgres"
 	searchgrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/transport/grpc"
 	searchuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/usecase/search"
@@ -39,7 +40,8 @@ func main() {
 	}
 	defer repo.Close()
 
-	svc := searchuc.NewService(repo)
+	onlineRepo := onlinerepo.NewRedisRepository(cfg.RedisConfig, logger.Named("presence"))
+	svc := searchuc.NewService(repo, onlineRepo)
 	srv := searchgrpc.NewSearchServer(svc, logger.Named("search.transport"))
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())

@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
-	"mime/multipart" 
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -132,22 +132,22 @@ func TestNegativeGatewayChatHandler_GetChats(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		want       int
-		userID     interface{}
+		name    string
+		prepare func(*fields)
+		want    int
+		userID  interface{}
 	}{
 		{
-			name:       "Missing user_id in context",
-			prepare:    nil,
-			want:       http.StatusUnauthorized,
-			userID:     nil,
+			name:    "Missing user_id in context",
+			prepare: nil,
+			want:    http.StatusUnauthorized,
+			userID:  nil,
 		},
 		{
-			name:       "Invalid user_id type",
-			prepare:    nil,
-			want:       http.StatusUnauthorized,
-			userID:     "invalid",
+			name:    "Invalid user_id type",
+			prepare: nil,
+			want:    http.StatusUnauthorized,
+			userID:  "invalid",
 		},
 		{
 			name: "Chat service error",
@@ -409,7 +409,7 @@ func TestNegativeGatewayChatHandler_CreateChat(t *testing.T) {
 					"members_id": []int64{999},
 				},
 			},
-			want: http.StatusInternalServerError,
+			want: http.StatusNotFound,
 		},
 	}
 
@@ -524,23 +524,23 @@ func TestNegativeGatewayChatHandler_GetChatByID(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		want       int
-		chatID     string
-		userID     interface{}
+		name    string
+		prepare func(*fields)
+		want    int
+		chatID  string
+		userID  interface{}
 	}{
 		{
-			name:       "Invalid chat id",
-			want:       http.StatusBadRequest,
-			chatID:     "invalid",
-			userID:     int64(100),
+			name:   "Invalid chat id",
+			want:   http.StatusBadRequest,
+			chatID: "invalid",
+			userID: int64(100),
 		},
 		{
-			name:       "Missing user_id",
-			want:       http.StatusUnauthorized,
-			chatID:     "1",
-			userID:     nil,
+			name:   "Missing user_id",
+			want:   http.StatusUnauthorized,
+			chatID: "1",
+			userID: nil,
 		},
 		{
 			name: "Chat not found",
@@ -1093,9 +1093,9 @@ func TestPositiveGatewayChatHandler_UpdateChatDescription(t *testing.T) {
 	}
 
 	type args struct {
-		chatID      string
-		body        map[string]string
-		userID      int64
+		chatID string
+		body   map[string]string
+		userID int64
 	}
 
 	tests := []struct {
@@ -1534,11 +1534,11 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 		{
 			name: "Full chat info",
 			c: &chatv1.ChatInformation{
-				Id:      1,
-				Type:    chatv1.ChatType_GROUP,
-				Title:   "Group Chat",
-				OwnerId: 100,
-				Avatar:  strPtr("avatar.jpg"),
+				Id:          1,
+				Type:        chatv1.ChatType_GROUP,
+				Title:       "Group Chat",
+				OwnerId:     100,
+				Avatar:      strPtr("avatar.jpg"),
 				Description: strPtr("Description"),
 				LastMessage: &chatv1.MessageInformation{
 					SenderId:  101,
@@ -1547,11 +1547,11 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 				},
 			},
 			want: ChatInfoResponse{
-				ID:      1,
-				Type:    "group",
-				Title:   "Group Chat",
-				OwnerID: 100,
-				Avatar:  strPtr("avatar.jpg"),
+				ID:          1,
+				Type:        "group",
+				Title:       "Group Chat",
+				OwnerID:     100,
+				Avatar:      strPtr("avatar.jpg"),
 				Description: strPtr("Description"),
 				LastMessage: MessageInfoResponse{
 					SenderID:  101,
@@ -1569,10 +1569,10 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 				OwnerId: 200,
 			},
 			want: ChatInfoResponse{
-				ID:      2,
-				Type:    "dialog",
-				Title:   "Dialog",
-				OwnerID: 200,
+				ID:          2,
+				Type:        "dialog",
+				Title:       "Dialog",
+				OwnerID:     200,
 				LastMessage: MessageInfoResponse{},
 			},
 		},
@@ -1638,10 +1638,10 @@ func TestGatewayChatHandler_UserID(t *testing.T) {
 
 func TestGatewayChatHandler_ChatIDParam(t *testing.T) {
 	tests := []struct {
-		name       string
-		urlParam   string
-		wantID     int64
-		wantErr    bool
+		name     string
+		urlParam string
+		wantID   int64
+		wantErr  bool
 	}{
 		{
 			name:     "Valid id",

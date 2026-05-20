@@ -17,6 +17,7 @@ func mapGetProfileToProto(profileDTO *dto.ResponseGetProfile) *profilev1.Respons
 		Bio:       ptrStringOrEmpty(profileDTO.Bio),
 		BirthDate: ptrStringOrEmpty(profileDTO.BirthDate),
 		Avatar:    ptrStringOrEmpty(profileDTO.Avatar),
+		IsOnline:  profileDTO.IsOnline,
 	}
 
 	if profileDTO.LastName != nil {

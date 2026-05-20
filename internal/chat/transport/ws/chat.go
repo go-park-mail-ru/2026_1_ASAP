@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -56,17 +57,31 @@ type ChatServiceInterface interface {
 	GetChatByID(ctx context.Context, chatID, userID int64) (*chatdto.ChatInformationDTO, error)
 }
 
+type PresenceServiceInterface interface {
+	UpdateLastSeen(ctx context.Context, userID int64) error
+}
+
+type OnlineRepository interface {
+	SetOnline(ctx context.Context, userID int64) error
+	SetOffline(ctx context.Context, userID int64) error
+	TouchOnline(ctx context.Context, userID int64) error
+	IsOnline(ctx context.Context, userID int64) (bool, error)
+}
+
 type subscriber struct {
 	conn      *websocket.Conn
 	msgs      chan []byte
 	cancel    context.CancelFunc
 	closeSlow func()
 	userID    int64
+	away      atomic.Bool
 }
 
 type ChatServer struct {
 	messageService          MessagesServiceInterface
 	chatService             ChatServiceInterface
+	presenceService         PresenceServiceInterface
+	onlineRepo              OnlineRepository
 	subscribers             map[*subscriber]struct{}
 	subscribersByUserID     map[int64]map[*subscriber]struct{}
 	logger                  *zap.Logger
@@ -75,7 +90,13 @@ type ChatServer struct {
 	mu                      sync.RWMutex
 }
 
-func NewChatServer(logger *zap.Logger, messageService MessagesServiceInterface, chatService ChatServiceInterface) *ChatServer {
+func NewChatServer(
+	logger *zap.Logger,
+	messageService MessagesServiceInterface,
+	chatService ChatServiceInterface,
+	presenceService PresenceServiceInterface,
+	onlineRepo OnlineRepository,
+) *ChatServer {
 	if logger == nil {
 		logger = zap.NewNop()
 	}
@@ -85,6 +106,8 @@ func NewChatServer(logger *zap.Logger, messageService MessagesServiceInterface, 
 		logger:                  logger,
 		messageService:          messageService,
 		chatService:             chatService,
+		presenceService:         presenceService,
+		onlineRepo:              onlineRepo,
 		subscriberMessageBuffer: 16,
 	}
 }
@@ -223,7 +246,12 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.addSubscriber(sub)
-	defer s.removeSubscriber(sub)
+	defer func() {
+		s.removeSubscriber(sub)
+		s.notifyUserOffline(reqCtx, userID)
+	}()
+
+	s.notifyUserOnline(reqCtx, userID)
 
 	defer func() {
 		_ = wsConn.CloseNow()
@@ -237,6 +265,9 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	defer s.wg.Done()
 
 	go s.readClientMessages(ctx, wsConn, userID, sub)
+	if s.onlineRepo != nil {
+		go s.runPresenceRedisRefresh(ctx, userID, sub)
+	}
 	s.writeClientMessages(ctx, wsConn, sub)
 }
 
@@ -338,6 +369,12 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 		}
 
 		switch env.Type {
+		case dtoWs.PresencePing:
+			s.handlePresencePing(ctx, userID, sub)
+		case dtoWs.PresenceBackground:
+			s.handlePresenceBackground(ctx, userID, sub)
+		case dtoWs.PresenceForeground:
+			s.handlePresenceForeground(ctx, userID, sub)
 		case dtoWs.MessageSend:
 			var req dto.RequestSendMessage
 			if len(env.Payload) == 0 {
@@ -578,12 +615,22 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
 
+		case dtoWs.PresenceTypingStart:
+			s.handlePresenceTyping(ctx, userID, sub, env, true)
+
+		case dtoWs.PresenceTypingStop:
+			s.handlePresenceTyping(ctx, userID, sub, env, false)
+
 		default:
 			log.Debug("ws unknown message type", zap.String("type", string(env.Type)))
 			s.sendErr(sub, dtoWs.WsErrorPayload{
 				Code:    dtoWs.ErrCodeUnknownType,
 				Message: dtoWs.ErrCodeUnknownTypeMsg,
 			})
+		}
+
+		if env.Type != dtoWs.PresenceBackground {
+			s.touchOnlineIfPresent(ctx, userID, sub)
 		}
 	}
 }

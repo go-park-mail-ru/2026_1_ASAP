@@ -18,6 +18,7 @@ import (
 	grpcMedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/transport/grpc/clients/media"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
+	onlinerepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/online"
 	contactuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/contact"
 	profileuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/profile"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -58,8 +59,10 @@ func main() {
 	}
 	defer cRepo.Close()
 
-	contactService := contactuc.NewContactService(cRepo, pRepo)
-	svc := profileuc.NewProfileService(pRepo, mRepo)
+	onlineRepo := onlinerepo.NewRedisRepository(cfg.RedisConfig, logger.Named("presence"))
+
+	contactService := contactuc.NewContactService(cRepo, pRepo, onlineRepo)
+	svc := profileuc.NewProfileService(pRepo, mRepo, onlineRepo)
 	srv := grpcTransport.NewProfileServer(svc, contactService, logger.Named("profile.transport"))
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())

@@ -7,12 +7,19 @@ import (
 )
 
 type GatewayConfig struct {
-	Server    GatewayServerConfig    `yaml:"server"`
-	Auth      GatewayAuthConfig      `yaml:"auth"`
-	Profile   GatewayProfileConfig   `yaml:"profile"`
-	Chat      GatewayChatConfig      `yaml:"chat"`
-	Complaint GatewayComplaintConfig `yaml:"complaint"`
-	Search    GatewaySearchConfig    `yaml:"search"`
+	Server        GatewayServerConfig        `yaml:"server"`
+	SessionCookie GatewaySessionCookieConfig `yaml:"session_cookie"`
+	Auth          GatewayAuthConfig          `yaml:"auth"`
+	Profile       GatewayProfileConfig       `yaml:"profile"`
+	Chat          GatewayChatConfig          `yaml:"chat"`
+	Complaint     GatewayComplaintConfig     `yaml:"complaint"`
+	Search        GatewaySearchConfig        `yaml:"search"`
+}
+
+type GatewaySessionCookieConfig struct {
+	Secure   bool   `yaml:"secure"`
+	HTTPOnly bool   `yaml:"http_only"`
+	SameSite string `yaml:"same_site" env-default:"Lax"`
 }
 
 type GatewayServerConfig struct {

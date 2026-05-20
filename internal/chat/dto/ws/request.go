@@ -11,6 +11,12 @@ const (
 	MessageRecv   WsRequestType = "message.Receive"
 	MessageEdit   WsRequestType = "message.Edit"
 	MessageDelete WsRequestType = "message.Delete"
+
+	PresenceTypingStart WsRequestType = "presence.TypingStart"
+	PresenceTypingStop  WsRequestType = "presence.TypingStop"
+	PresencePing        WsRequestType = "presence.Ping"
+	PresenceBackground  WsRequestType = "presence.Background"
+	PresenceForeground  WsRequestType = "presence.Foreground"
 )
 
 const (

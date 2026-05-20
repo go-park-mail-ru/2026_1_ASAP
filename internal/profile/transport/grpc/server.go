@@ -34,6 +34,7 @@ type ProfileServiceInterface interface {
 	SearchIdByLogin(ctx context.Context, login *profile.RequestSearchIdByLogin) (response *profile.ResponseSearchIdByLogin, err error)
 	UpdateProfileName(ctx context.Context, userID int64, request *profile.RequestUpdateName) (*profile.ResponseUpdateProfile, error)
 	DeleteProfileAvatar(ctx context.Context, userID int64) (response *profile.ResponseDeleteProfile, err error)
+	UpdateLastSeen(ctx context.Context, userID int64) error
 }
 
 type ProfileServer struct {
@@ -231,6 +232,21 @@ func (p ProfileServer) UpdateProfileName(ctx context.Context, name *profilev1.Re
 		}
 	}
 	return mapUpdateProfileToProto(profileDTO), nil
+}
+
+func (p ProfileServer) UpdateLastSeen(ctx context.Context, request *profilev1.RequestUpdateLastSeen) (*emptypb.Empty, error) {
+	if request == nil || request.GetUserId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INVALID_INPUT), "user_id is required")
+	}
+	if err := p.profileUseCase.UpdateLastSeen(ctx, request.GetUserId()); err != nil {
+		if errors.Is(err, pdomain.ErrNotFound) {
+			p.Log(ctx).Info("profile not found", zap.Int64("user_id", request.GetUserId()), zap.Error(err))
+			return nil, grpcerr.New(codes.NotFound, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_NOT_FOUND), "profile not found")
+		}
+		p.Log(ctx).Error("failed to update last seen", zap.Int64("user_id", request.GetUserId()), zap.Error(err))
+		return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "profile internal error")
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (p ProfileServer) SearchIdByLogin(ctx context.Context, request *profilev1.RequestSearchIdByLogin) (*profilev1.ResponseSearchIdByLogin, error) {

@@ -2,6 +2,7 @@ package ws
 
 import (
 	"encoding/json"
+	"time"
 
 	chatdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
@@ -94,4 +95,46 @@ func EncodeChatUpdatedMembers(chatID int64, changeType string, updatedMemberIDs 
 		UpdatedMembersID: ids,
 		Name:             name,
 	})
+}
+
+type PresenceTypingPayload struct {
+	ChatID int64 `json:"chat_id"`
+	UserID int64 `json:"user_id"`
+	Typing bool  `json:"typing"`
+}
+
+func EncodePresenceTyping(chatID, userID int64, typing bool) ([]byte, error) {
+	return Encode(PresenceTyping, PresenceTypingPayload{
+		ChatID: chatID,
+		UserID: userID,
+		Typing: typing,
+	})
+}
+
+type PresenceUserPayload struct {
+	UserID int64 `json:"user_id"`
+}
+
+func EncodePresenceOnline(userID int64) ([]byte, error) {
+	return Encode(PresenceOnline, PresenceUserPayload{UserID: userID})
+}
+
+func EncodePresenceOffline(userID int64) ([]byte, error) {
+	return Encode(PresenceOffline, PresenceUserPayload{UserID: userID})
+}
+
+type PresenceLastSeenPayload struct {
+	UserID     int64     `json:"user_id"`
+	LastSeenAt time.Time `json:"last_seen_at"`
+}
+
+func EncodePresenceLastSeen(userID int64, lastSeenAt time.Time) ([]byte, error) {
+	return Encode(PresenceLastSeen, PresenceLastSeenPayload{
+		UserID:     userID,
+		LastSeenAt: lastSeenAt.UTC(),
+	})
+}
+
+type RequestPresenceTyping struct {
+	ChatID int64 `json:"chat_id"`
 }

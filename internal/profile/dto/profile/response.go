@@ -12,6 +12,7 @@ type ResponseGetProfile struct {
 	FirstName string     `json:"first_name"`
 	Email     string     `json:"email"`
 	UserId    int64      `json:"user_id"`
+	IsOnline  bool       `json:"is_online"`
 }
 
 type ResponseUpdateProfile struct {
