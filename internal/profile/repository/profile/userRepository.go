@@ -194,6 +194,20 @@ func (r *UserRepository) DeleteUserAvatar(ctx context.Context, userId int64) (*p
 	return toDomainProfile(p), nil
 }
 
+func (r *UserRepository) UpdateLastSeen(ctx context.Context, userID int64) error {
+	q := usersql.UpdateLastSeen
+	start := time.Now()
+	tag, err := r.db.Exec(ctx, q, userID)
+	sqllog.LogQuery(ctx, r.log(ctx), "UpdateLastSeen", q, start, err, []any{userID})
+	if err != nil {
+		return fmt.Errorf("userRepository failed update last seen: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return profile2.ErrNotFound
+	}
+	return nil
+}
+
 func (r *UserRepository) Close() {
 	r.db.Close()
 }

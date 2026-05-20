@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
-	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
+	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,6 +32,7 @@ func contactItemToResponse(c *profilev1.ContactItem) *contactdto.ContactResponse
 		UserID:        c.GetUserId(),
 		ContactUserID: c.GetContactUserId(),
 		FirstName:     c.GetFirstName(),
+		IsOnline:      c.GetIsOnline(),
 	}
 	if c.LastName != nil {
 		ln := c.GetLastName()

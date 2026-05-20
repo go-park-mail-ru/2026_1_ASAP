@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -486,7 +485,7 @@ func TestNegativeChatService_CreateChat(t *testing.T) {
 				},
 				ownerID: 100,
 			},
-			wantErr: fmt.Errorf("get user %d: %w", 101, pdomain.ErrNotFound),
+			wantErr: domain.ErrUserNotFound,
 		},
 	}
 

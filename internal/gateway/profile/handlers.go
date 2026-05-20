@@ -115,6 +115,7 @@ func profileResponseToDTO(resp *profilev1.ResponseGetProfile) *dto.ResponseGetPr
 	out := &dto.ResponseGetProfile{
 		UserId:    resp.GetUserId(),
 		FirstName: resp.GetFirstName(),
+		IsOnline:  resp.GetIsOnline(),
 	}
 	if resp.LastName != nil {
 		out.LastName = resp.LastName

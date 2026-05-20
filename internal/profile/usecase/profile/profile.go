@@ -28,11 +28,29 @@ type ProfileRepositoryInterface interface {
 	GetProfileIdByLogin(ctx context.Context, login string) (int64, error)
 	UploadName(ctx context.Context, userID int64, firstName string, lastName *string) (*profile3.Profile, error)
 	DeleteUserAvatar(ctx context.Context, userId int64) (*profile3.Profile, error)
+	UpdateLastSeen(ctx context.Context, userID int64) error
+}
+
+type OnlineRepository interface {
+	IsOnline(ctx context.Context, userID int64) (bool, error)
 }
 
 type ProfileService struct {
 	profileRepository ProfileRepositoryInterface
 	mediaRepository   MediaService
+	onlineRepo        OnlineRepository
+}
+
+func NewProfileService(
+	profileRepository ProfileRepositoryInterface,
+	mediaRepository MediaService,
+	onlineRepo OnlineRepository,
+) *ProfileService {
+	return &ProfileService{
+		profileRepository: profileRepository,
+		mediaRepository:   mediaRepository,
+		onlineRepo:        onlineRepo,
+	}
 }
 
 func (p ProfileService) CreateProfile(ctx context.Context, profile *profile2.RequestCreateProfile) error {
@@ -209,11 +227,6 @@ func (p ProfileService) UpdateProfileAvatarURL(ctx context.Context, userID int64
 	}, nil
 }
 
-func NewProfileService(profileRepository ProfileRepositoryInterface, mediaRepositoryInterface MediaService) *ProfileService {
-	return &ProfileService{profileRepository: profileRepository,
-		mediaRepository: mediaRepositoryInterface}
-}
-
 func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (response *profile2.ResponseGetProfile, err error) {
 	profile, err := p.profileRepository.GetProfileById(ctx, userID)
 	if err != nil {
@@ -229,6 +242,8 @@ func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (respo
 		birthDate = &date
 	}
 
+	isOnline := p.lookupOnline(ctx, userID)
+
 	return &profile2.ResponseGetProfile{
 		UserId:    profile.UserId,
 		FirstName: sanitize.Text(profile.FirstName),
@@ -237,7 +252,19 @@ func (p ProfileService) GetUserProfile(ctx context.Context, userID int64) (respo
 		BirthDate: birthDate,
 		Bio:       sanitize.TextPtr(profile.Bio),
 		LastSeen:  profile.LastSeen,
+		IsOnline:  isOnline,
 	}, nil
+}
+
+func (p ProfileService) lookupOnline(ctx context.Context, userID int64) bool {
+	if p.onlineRepo == nil || userID <= 0 {
+		return false
+	}
+	online, err := p.onlineRepo.IsOnline(ctx, userID)
+	if err != nil {
+		return false
+	}
+	return online
 }
 
 func (p ProfileService) UpdateProfileName(ctx context.Context, userID int64, request *profile2.RequestUpdateName) (*profile2.ResponseUpdateProfile, error) {
@@ -296,6 +323,19 @@ func (p ProfileService) DeleteProfileAvatar(ctx context.Context, userID int64) (
 		Bio:       sanitize.TextPtr(profile.Bio),
 		LastSeen:  profile.LastSeen,
 	}, nil
+}
+
+func (p ProfileService) UpdateLastSeen(ctx context.Context, userID int64) error {
+	if userID <= 0 {
+		return profile3.ErrNotFound
+	}
+	if err := p.profileRepository.UpdateLastSeen(ctx, userID); err != nil {
+		if errors.Is(err, profile3.ErrNotFound) {
+			return profile3.ErrNotFound
+		}
+		return fmt.Errorf("update last seen: %w", err)
+	}
+	return nil
 }
 
 var allowedAvatarTypes = map[string]bool{

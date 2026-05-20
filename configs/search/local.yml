@@ -8,6 +8,11 @@ postgres:
   user: postgres
   db: asap
 
+redis:
+  host: redis
+  port: "6379"
+  database: 0
+
 app:
   shutdown_seconds: 10
   log_level: info

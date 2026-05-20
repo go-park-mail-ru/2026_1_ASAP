@@ -31,6 +31,7 @@ const (
 	Profile_ListContacts_FullMethodName           = "/profile.v1.Profile/ListContacts"
 	Profile_AddContact_FullMethodName             = "/profile.v1.Profile/AddContact"
 	Profile_DeleteContact_FullMethodName          = "/profile.v1.Profile/DeleteContact"
+	Profile_UpdateLastSeen_FullMethodName         = "/profile.v1.Profile/UpdateLastSeen"
 )
 
 // ProfileClient is the client API for Profile service.
@@ -48,6 +49,7 @@ type ProfileClient interface {
 	ListContacts(ctx context.Context, in *RequestListContacts, opts ...grpc.CallOption) (*ResponseListContacts, error)
 	AddContact(ctx context.Context, in *RequestAddContact, opts ...grpc.CallOption) (*ResponseAddContact, error)
 	DeleteContact(ctx context.Context, in *RequestDeleteContact, opts ...grpc.CallOption) (*ResponseDeleteContact, error)
+	UpdateLastSeen(ctx context.Context, in *RequestUpdateLastSeen, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type profileClient struct {
@@ -168,6 +170,16 @@ func (c *profileClient) DeleteContact(ctx context.Context, in *RequestDeleteCont
 	return out, nil
 }
 
+func (c *profileClient) UpdateLastSeen(ctx context.Context, in *RequestUpdateLastSeen, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Profile_UpdateLastSeen_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProfileServer is the server API for Profile service.
 // All implementations must embed UnimplementedProfileServer
 // for forward compatibility.
@@ -183,6 +195,7 @@ type ProfileServer interface {
 	ListContacts(context.Context, *RequestListContacts) (*ResponseListContacts, error)
 	AddContact(context.Context, *RequestAddContact) (*ResponseAddContact, error)
 	DeleteContact(context.Context, *RequestDeleteContact) (*ResponseDeleteContact, error)
+	UpdateLastSeen(context.Context, *RequestUpdateLastSeen) (*emptypb.Empty, error)
 	mustEmbedUnimplementedProfileServer()
 }
 
@@ -225,6 +238,9 @@ func (UnimplementedProfileServer) AddContact(context.Context, *RequestAddContact
 }
 func (UnimplementedProfileServer) DeleteContact(context.Context, *RequestDeleteContact) (*ResponseDeleteContact, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteContact not implemented")
+}
+func (UnimplementedProfileServer) UpdateLastSeen(context.Context, *RequestUpdateLastSeen) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateLastSeen not implemented")
 }
 func (UnimplementedProfileServer) mustEmbedUnimplementedProfileServer() {}
 func (UnimplementedProfileServer) testEmbeddedByValue()                 {}
@@ -445,6 +461,24 @@ func _Profile_DeleteContact_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Profile_UpdateLastSeen_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestUpdateLastSeen)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).UpdateLastSeen(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Profile_UpdateLastSeen_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).UpdateLastSeen(ctx, req.(*RequestUpdateLastSeen))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Profile_ServiceDesc is the grpc.ServiceDesc for Profile service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -495,6 +529,10 @@ var Profile_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteContact",
 			Handler:    _Profile_DeleteContact_Handler,
+		},
+		{
+			MethodName: "UpdateLastSeen",
+			Handler:    _Profile_UpdateLastSeen_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

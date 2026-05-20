@@ -11,6 +11,7 @@ import (
 type ProfileConfig struct {
 	ServerConfig       ServerConfig
 	PostgresConfig     PostgresConfig
+	RedisConfig        RedisConfig
 	ProfileMediaConfig ProfileMediaConfig
 	S3Config           S3Config
 	AppConfig          AppConfig
@@ -33,7 +34,13 @@ type profileFile struct {
 		Password string `yaml:"password" env:"POSTGRES_PASSWORD" env-default:""`
 	} `yaml:"postgres"`
 	ProfileMediaConfig ProfileMediaConfig `yaml:"media"`
-	App                struct {
+	Redis              struct {
+		Host     string `yaml:"host"`
+		Port     string `yaml:"port"`
+		Password string `yaml:"password" env:"REDIS_PASSWORD" env-default:""`
+		Database int    `yaml:"database"`
+	} `yaml:"redis"`
+	App struct {
 		ShutdownSeconds int    `yaml:"shutdown_seconds"`
 		LogLevel        string `yaml:"log_level"`
 	} `yaml:"app"`
@@ -71,6 +78,12 @@ func LoadProfileConfigFromPath(path string) (*ProfileConfig, error) {
 		},
 		ProfileMediaConfig: ProfileMediaConfig{
 			GRPCAddr: raw.ProfileMediaConfig.GRPCAddr,
+		},
+		RedisConfig: RedisConfig{
+			Host:     raw.Redis.Host,
+			Port:     raw.Redis.Port,
+			Password: raw.Redis.Password,
+			Database: raw.Redis.Database,
 		},
 		AppConfig: AppConfig{
 			ShutdownTime: time.Duration(raw.App.ShutdownSeconds) * time.Second,

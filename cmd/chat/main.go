@@ -15,6 +15,7 @@ import (
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	chatrepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/chat"
 	messagesrepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/messages"
+	onlinerepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/online"
 	chatgrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc"
 	grpcMedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc/clients/media"
 	grpcProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc/clients/profile"
@@ -88,8 +89,10 @@ func main() {
 		Handler: promhttp.Handler(),
 	}
 
+	onlineRepo := onlinerepo.NewRedisRepository(cfg.RedisConfig, logger.Named("presence"))
+
 	// WS HTTP server
-	wsSrv := chatws.NewChatServer(logger.Named("chat.ws"), messageService, chatService)
+	wsSrv := chatws.NewChatServer(logger.Named("chat.ws"), messageService, chatService, profileClient, onlineRepo)
 	realtime.BindHub(wsSrv)
 
 	mux := http.NewServeMux()

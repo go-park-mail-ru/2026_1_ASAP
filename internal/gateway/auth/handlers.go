@@ -12,15 +12,19 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 )
 
 type GatewayAuthHandler struct {
-	AuthService authv1.AuthClient
+	AuthService   authv1.AuthClient
+	sessionCookie config.GatewaySessionCookieConfig
 }
 
-func NewGatewayAuthHandler(authService authv1.AuthClient) *GatewayAuthHandler {
+func NewGatewayAuthHandler(authService authv1.AuthClient, sessionCookie config.GatewaySessionCookieConfig) *GatewayAuthHandler {
 	return &GatewayAuthHandler{
-		AuthService: authService,
+		AuthService:   authService,
+		sessionCookie: sessionCookie,
 	}
 }
 
@@ -71,14 +75,7 @@ func (h *GatewayAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    session.GetSession().GetSessionId(),
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
-	})
+	http.SetCookie(w, gatewaySessionCookie(h.sessionCookie, session.GetSession().GetSessionId(), 0))
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.GetSession().GetCsrfToken())
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseLoginSuccess]{
@@ -139,14 +136,7 @@ func (h *GatewayAuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    resp.GetSession().GetSessionId(),
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
-	})
+	http.SetCookie(w, gatewaySessionCookie(h.sessionCookie, resp.GetSession().GetSessionId(), 0))
 	w.Header().Set("X-NEW-CSRF-TOKEN", resp.GetSession().GetCsrfToken())
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseRegisterSuccess]{
@@ -184,6 +174,8 @@ func (h *GatewayAuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	http.SetCookie(w, gatewaySessionCookie(h.sessionCookie, "", -1))
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseLogoutSuccess]{
 		Status: dtoApi.Success,
@@ -232,14 +224,7 @@ func (h *GatewayAuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    session.GetSession().GetSessionId(),
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   false,
-	})
+	http.SetCookie(w, gatewaySessionCookie(h.sessionCookie, session.GetSession().GetSessionId(), 0))
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.GetSession().GetCsrfToken())
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseLoginSuccess]{

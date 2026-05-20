@@ -15,6 +15,11 @@ const (
 	ChatUpdatedTitle       WsResponseStatus = "chat.Updated.Title"       // chat_id + title
 	ChatUpdatedDescription WsResponseStatus = "chat.Updated.Description" // chat_id + description
 	ChatUpdatedMembers     WsResponseStatus = "chat.Updated.Members"     // chat_id + type (deleted, added) + updated_members_id[] + name
+
+	PresenceTyping   WsResponseStatus = "presence.Typing"
+	PresenceOnline   WsResponseStatus = "presence.Online"
+	PresenceOffline  WsResponseStatus = "presence.Offline"
+	PresenceLastSeen WsResponseStatus = "presence.LastSeen"
 )
 
 type WsResponse[T any] struct {
