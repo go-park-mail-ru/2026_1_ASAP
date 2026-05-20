@@ -25,6 +25,8 @@ type ChatRepositoryInterface interface {
 	IsMember(ctx context.Context, chatId int64, userId int64) (bool, error)
 	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
 	GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error)
+	GetMemberLastReads(ctx context.Context, chatID int64) (map[int64]*int64, error)
+	UpdateMemberLastReadMessageID(ctx context.Context, chatID, userID, messageID int64) (effectiveLastRead int64, updated bool, err error)
 }
 
 type MessageService struct {
@@ -69,6 +71,11 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 		raw = raw[:limit]
 	}
 
+	lastReads, err := m.chatRepo.GetMemberLastReads(ctx, chatID)
+	if err != nil {
+		return nil, fmt.Errorf("chatrepo member last reads: %w", err)
+	}
+
 	items := make([]dto.MessageDTO, 0, len(raw))
 	for _, msg := range raw {
 		items = append(items, dto.MessageDTO{
@@ -78,6 +85,7 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 			Text:      sanitize.Text(msg.Content),
 			CreatedAt: msg.CreatedAt,
 			Edited:    msg.Edited,
+			Read:      outgoingReadByPeers(msg.Id, msg.SenderId, userID, lastReads),
 		})
 	}
 
@@ -145,6 +153,7 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 		Text:      sanitize.Text(createdMessage.Content),
 		CreatedAt: createdMessage.CreatedAt,
 		Edited:    createdMessage.Edited,
+		Read:      false,
 	}, nil
 }
 
@@ -182,6 +191,12 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 		return nil, fmt.Errorf("messageRepo updated message: %w", err)
 	}
 
+	lastReads, lrErr := m.chatRepo.GetMemberLastReads(ctx, chatID)
+	if lrErr != nil {
+		return nil, fmt.Errorf("chatrepo member last reads: %w", lrErr)
+	}
+	read := outgoingReadByPeers(editedMessage.Id, editedMessage.SenderId, userID, lastReads)
+
 	resp := &dto.ResponseEditMessage{
 		ID:                editedMessage.Id,
 		ChatID:            editedMessage.ChatId,
@@ -189,6 +204,7 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 		Text:              sanitize.Text(editedMessage.Content),
 		CreatedAt:         editedMessage.CreatedAt,
 		Edited:            editedMessage.Edited,
+		Read:              read,
 		LastMessageEdited: lastMessageEdited,
 	}
 	if lastMessageEdited {
@@ -246,6 +262,54 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 		}
 	}
 	return resp, nil
+}
+
+func (m MessageService) MarkMessagesRead(ctx context.Context, userID int64, chatID int64, req *dto.RequestMarkRead) (*dto.ResponseMarkRead, error) {
+	if req == nil {
+		return nil, errors.New("mark read nil request")
+	}
+	if req.MessageID <= 0 || chatID <= 0 {
+		return nil, domain.ErrReadMessageInvalid
+	}
+
+	isUserMember, err := m.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("chatrepo check is member: %w", err)
+	}
+	if !isUserMember {
+		return nil, domain.ErrMessageNotMember
+	}
+
+	effective, ok, err := m.chatRepo.UpdateMemberLastReadMessageID(ctx, chatID, userID, req.MessageID)
+	if err != nil {
+		return nil, fmt.Errorf("chatrepo update last read: %w", err)
+	}
+	if !ok {
+		return nil, domain.ErrReadMessageInvalid
+	}
+
+	return &dto.ResponseMarkRead{
+		ChatID:            chatID,
+		ReaderUserID:      userID,
+		LastReadMessageID: effective,
+	}, nil
+}
+
+// outgoingReadByPeers reports whether every chat member except the viewer has a read cursor >= messageID
+// for messages authored by the viewer (read receipts).
+func outgoingReadByPeers(messageID, messageSenderID, viewerID int64, lastReads map[int64]*int64) bool {
+	if messageSenderID != viewerID {
+		return false
+	}
+	for uid, lr := range lastReads {
+		if uid == viewerID {
+			continue
+		}
+		if lr == nil || *lr < messageID {
+			return false
+		}
+	}
+	return true
 }
 
 func NewMessageService(messageRepo MessageRepositoryInterface, chatRepo ChatRepositoryInterface) *MessageService {

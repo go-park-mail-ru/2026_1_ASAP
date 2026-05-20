@@ -50,6 +50,7 @@ type MessagesServiceInterface interface {
 	GetMessagesByChatId(ctx context.Context, userID int64, chatID int64, req *dto.RequestGetMessages) (*dto.ResponseGetMessages, error)
 	EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error)
 	DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseClearMessage, error)
+	MarkMessagesRead(ctx context.Context, userID, chatID int64, req *dto.RequestMarkRead) (*dto.ResponseMarkRead, error)
 }
 
 type ChatServiceInterface interface {
@@ -496,6 +497,65 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 			}
 
 			s.enqueueToSubscriber(sub, out)
+
+		case dtoWs.MessageMarkRead:
+			var req dto.RequestMarkRead
+			if len(env.Payload) == 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if err := json.Unmarshal(env.Payload, &req); err != nil {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if req.ChatID <= 0 || req.MessageID <= 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+
+			resp, err := s.messageService.MarkMessagesRead(ctx, userID, req.ChatID, &req)
+			if err != nil {
+				log.Warn("ws mark read", zap.Int64("chat_id", req.ChatID), zap.Error(err))
+				switch {
+				case errors.Is(err, domain.ErrMessageNotMember):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeNotMemberOfChat,
+						Message: dtoWs.ErrCodeNotMemberOfChatMsg,
+					})
+				case errors.Is(err, domain.ErrReadMessageInvalid):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeReadMessageInvalid,
+						Message: dtoWs.ErrCodeReadMessageInvalidMsg,
+					})
+				default:
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeInternal,
+						Message: dtoWs.ErrCodeInternalMsg,
+					})
+				}
+				continue
+			}
+
+			out, err := dtoWs.EncodeMessageRead(resp)
+			if err != nil {
+				log.Error("ws encode message read", zap.Error(err))
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInternal,
+					Message: dtoWs.ErrCodeInternalMsg,
+				})
+				continue
+			}
+
+			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
 
 		case dtoWs.MessageEdit:
 			var req dto.RequestEditMessage

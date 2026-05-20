@@ -9,4 +9,6 @@ type MessageDTO struct {
 	ChatID    int64     `json:"chat_id"`
 	SenderID  int64     `json:"sender_id"`
 	Edited    bool      `json:"edited"`
+	// Read is meaningful for outgoing messages (sender_id == current user): all other chat members have read up to this message id.
+	Read bool `json:"read"`
 }

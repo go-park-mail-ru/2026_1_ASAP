@@ -37,4 +37,5 @@ var (
 	ErrAlreadyInChat                     = errors.New("you already in chat you try to join")
 	ErrOnlyOwnerCanChangeDescription     = errors.New("Only owner can change description")
 	ErrDialogCannotHaveCustomDescription = errors.New("Cant change desription in dialog")
+	ErrReadMessageInvalid                = errors.New("invalid message for read cursor")
 )
