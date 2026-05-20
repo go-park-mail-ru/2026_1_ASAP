@@ -11,6 +11,7 @@ type ChatConfig struct {
 	ServerConfig      ServerConfig
 	WSServerConfig    ServerConfig
 	PostgresConfig    PostgresConfig
+	RedisConfig       RedisConfig
 	ChatMediaConfig   ChatMediaConfig
 	ChatProfileConfig ChatProfileConfig
 	AppConfig         AppConfig
@@ -42,7 +43,13 @@ type chatFile struct {
 	} `yaml:"postgres"`
 	Media   ChatMediaConfig   `yaml:"media"`
 	Profile ChatProfileConfig `yaml:"profile"`
-	App     struct {
+	Redis   struct {
+		Host     string `yaml:"host"`
+		Port     string `yaml:"port"`
+		Password string `yaml:"password" env:"REDIS_PASSWORD" env-default:""`
+		Database int    `yaml:"database"`
+	} `yaml:"redis"`
+	App struct {
 		ShutdownSeconds int    `yaml:"shutdown_seconds"`
 		LogLevel        string `yaml:"log_level"`
 	} `yaml:"app"`
@@ -79,6 +86,12 @@ func LoadChatConfigFromPath(path string) (*ChatConfig, error) {
 		},
 		ChatMediaConfig:   ChatMediaConfig{GRPCAddr: raw.Media.GRPCAddr},
 		ChatProfileConfig: ChatProfileConfig{GRPCAddr: raw.Profile.GRPCAddr},
+		RedisConfig: RedisConfig{
+			Host:     raw.Redis.Host,
+			Port:     raw.Redis.Port,
+			Password: raw.Redis.Password,
+			Database: raw.Redis.Database,
+		},
 		AppConfig: AppConfig{
 			ShutdownTime: time.Duration(raw.App.ShutdownSeconds) * time.Second,
 			LogLevel:     logLevel,

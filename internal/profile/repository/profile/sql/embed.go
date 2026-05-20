@@ -28,3 +28,6 @@ var UploadNameFull string
 
 //go:embed delete_user_avatar.sql
 var DeleteUserAvatar string
+
+//go:embed update_last_seen.sql
+var UpdateLastSeen string

@@ -58,6 +58,13 @@ func mapDomainErr(err error) error {
 			err.Error(),
 		)
 
+	case errors.Is(err, domain.ErrUserNotFound):
+		return grpcerr.New(
+			codes.NotFound,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_USER_NOT_FOUND),
+			err.Error(),
+		)
+
 	case errors.Is(err, domain.ErrOnlyOwnerCanDeleteChat),
 		errors.Is(err, domain.ErrOnlyOwnerCanAddPeople),
 		errors.Is(err, domain.ErrOnlyOwnerCanChangeAvatar),

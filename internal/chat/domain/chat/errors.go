@@ -21,6 +21,7 @@ var (
 	ErrOnlyOwnerCanAddPeople             = errors.New("Only owner of chat can add people to chat")
 	ErrMemberAlreadyInChat               = errors.New("Member you try to add already in chat")
 	ErrCantAddMemberToDialog             = errors.New("You cant add member in your dialog chat")
+	ErrUserNotFound                      = errors.New("user not found")
 	ErrMemberNotFound                    = errors.New("Not found member you want to delete")
 	ErrOnlyOwnerCanDeletePeople          = errors.New("Only owner of chat can delete people from chat")
 	ErrCantDeleteMemberFromDialog        = errors.New("You cant delete member from your dialog chat")
@@ -36,4 +37,5 @@ var (
 	ErrAlreadyInChat                     = errors.New("you already in chat you try to join")
 	ErrOnlyOwnerCanChangeDescription     = errors.New("Only owner can change description")
 	ErrDialogCannotHaveCustomDescription = errors.New("Cant change desription in dialog")
+	ErrReadMessageInvalid                = errors.New("invalid message for read cursor")
 )

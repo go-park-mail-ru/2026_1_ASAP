@@ -78,7 +78,6 @@ func rowToContactHit(row *contactSearchRow) searchdomain.ContactHit {
 	h := searchdomain.ContactHit{
 		UserID:      row.UserID,
 		DisplayName: display,
-		IsOnline:    false,
 	}
 	h.Login = null.NullStringToPtrString(row.Login)
 	h.AvatarURL = null.NullStringToPtrString(row.Avatar)

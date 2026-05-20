@@ -17,6 +17,12 @@ type GatewayConfig struct {
 	Payment      GatewayPaymentConfig      `yaml:"payment"`
 }
 
+type GatewaySessionCookieConfig struct {
+	Secure   bool   `yaml:"secure"`
+	HTTPOnly bool   `yaml:"http_only"`
+	SameSite string `yaml:"same_site" env-default:"Lax"`
+}
+
 type GatewayServerConfig struct {
 	Host string `yaml:"host" env-default:"0.0.0.0"`
 	Port string `yaml:"port" env-default:"8080"`

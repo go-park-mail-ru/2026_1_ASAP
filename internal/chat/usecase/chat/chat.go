@@ -213,6 +213,9 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 
 	for _, memberID := range chatDTO.MembersID {
 		if _, err := s.userSvc.GetUserByID(ctx, memberID); err != nil {
+			if errors.Is(err, pdomain.ErrNotFound) {
+				return nil, domain.ErrUserNotFound
+			}
 			return nil, fmt.Errorf("get user %d: %w", memberID, err)
 		}
 	}

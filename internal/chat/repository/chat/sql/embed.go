@@ -52,3 +52,9 @@ var UpdateChatDescription string
 
 //go:embed delete_chat_member.sql
 var DeleteChatMember string
+
+//go:embed get_member_last_reads.sql
+var GetMemberLastReads string
+
+//go:embed update_member_last_read_message_id.sql
+var UpdateMemberLastReadMessageID string

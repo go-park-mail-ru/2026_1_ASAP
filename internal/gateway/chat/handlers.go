@@ -106,6 +106,11 @@ func sendChatError(w http.ResponseWriter, err error) {
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.NotFound, Message: dtoApi.CantFindChatMsg}},
 		})
+	case chatv1.ChatErrorCode_CHAT_ERROR_USER_NOT_FOUND:
+		response.Send(w, http.StatusNotFound, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.UserNotFound, Message: dtoApi.UserNotFoundMsg}},
+		})
 	case chatv1.ChatErrorCode_CHAT_ERROR_USER_NOT_MEMBER,
 		chatv1.ChatErrorCode_CHAT_ERROR_NOT_MEMBER:
 		response.Send(w, http.StatusForbidden, dtoApi.ApiErrorResponse{
@@ -518,9 +523,9 @@ func (h *GatewayChatHandler) UpdateChatDescription(w http.ResponseWriter, r *htt
 	}
 
 	resp, err := h.ChatService.UpdateChatDescription(ctx, &chatv1.RequestUpdateDescription{
-		UserId: uid,
-		ChatId: chatID,
-		Description:  req.Description,
+		UserId:      uid,
+		ChatId:      chatID,
+		Description: req.Description,
 	})
 	if err != nil {
 		sendChatError(w, err)

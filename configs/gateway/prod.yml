@@ -2,6 +2,11 @@ server:
   host: 0.0.0.0
   port: "8088"
 
+session_cookie:
+  secure: true
+  http_only: true
+  same_site: Lax
+
 auth:
   grpc_addr: auth:8001
 

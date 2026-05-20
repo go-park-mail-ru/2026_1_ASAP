@@ -149,8 +149,8 @@ func TestNegativeMessageService_SendMessage(t *testing.T) {
 		wantSubstr string
 	}{
 		{
-			name:    "nil request",
-			args:    args{ctx: context.Background(), userID: 1, chatID: 1, req: nil},
+			name:       "nil request",
+			args:       args{ctx: context.Background(), userID: 1, chatID: 1, req: nil},
 			wantAnyErr: true,
 			wantSubstr: "send message nil request",
 		},
@@ -267,6 +267,11 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 					{Id: 4, ChatId: 1, SenderId: 11, Content: "two", CreatedAt: now.Add(-time.Minute), Edited: true},
 					{Id: 3, ChatId: 1, SenderId: 12, Content: "three", CreatedAt: now.Add(-2 * time.Minute)},
 				}, nil)
+				f.chatRepo.EXPECT().GetMemberLastReads(context.Background(), int64(1)).Return(map[int64]*int64{
+					10: ptrInt64(50),
+					11: ptrInt64(5),
+					12: ptrInt64(5),
+				}, nil)
 			},
 			args: args{
 				ctx:    context.Background(),
@@ -276,8 +281,8 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 			},
 			want: &dto.ResponseGetMessages{
 				Messages: []dto.MessageDTO{
-					{ID: 5, ChatID: 1, SenderID: 10, Text: "one", CreatedAt: now, Edited: false},
-					{ID: 4, ChatID: 1, SenderID: 11, Text: "two", CreatedAt: now.Add(-time.Minute), Edited: true},
+					{ID: 5, ChatID: 1, SenderID: 10, Text: "one", CreatedAt: now, Edited: false, Read: true},
+					{ID: 4, ChatID: 1, SenderID: 11, Text: "two", CreatedAt: now.Add(-time.Minute), Edited: true, Read: false},
 				},
 				NextBeforeID: ptrInt64(4),
 				HasMore:      true,
@@ -294,6 +299,9 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 				f.msgRepo.EXPECT().GetMessagesByChatId(context.Background(), int64(2), (*int64)(nil), 21).Return([]*domain.Message{
 					{Id: 9, ChatId: 2, SenderId: 1, Content: "post", CreatedAt: now},
 				}, nil)
+				f.chatRepo.EXPECT().GetMemberLastReads(context.Background(), int64(2)).Return(map[int64]*int64{
+					1: ptrInt64(100),
+				}, nil)
 			},
 			args: args{
 				ctx:    context.Background(),
@@ -303,7 +311,7 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 			},
 			want: &dto.ResponseGetMessages{
 				Messages: []dto.MessageDTO{
-					{ID: 9, ChatID: 2, SenderID: 1, Text: "post", CreatedAt: now, Edited: false},
+					{ID: 9, ChatID: 2, SenderID: 1, Text: "post", CreatedAt: now, Edited: false, Read: false},
 				},
 				NextBeforeID: ptrInt64(9),
 				HasMore:      false,
@@ -454,6 +462,11 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 					CreatedAt: now,
 					Edited:    true,
 				}, true, nil)
+				f.chatRepo.EXPECT().GetMemberLastReads(context.Background(), int64(1)).Return(map[int64]*int64{
+					10: ptrInt64(7),
+					11: ptrInt64(7),
+					12: ptrInt64(7),
+				}, nil)
 			},
 			args: args{
 				ctx:    context.Background(),
@@ -468,6 +481,7 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 				Text:              "edited &lt;b&gt;text&lt;/b&gt;",
 				CreatedAt:         now,
 				Edited:            true,
+				Read:              true,
 				LastMessageEdited: true,
 				LastMessage: &dto.LastMessageDTO{
 					SenderId:  10,

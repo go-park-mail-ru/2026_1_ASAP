@@ -95,6 +95,7 @@ func contactResponseToProto(c *dto.ContactResponse) *profilev1.ContactItem {
 		ContactUserId: c.ContactUserID,
 		FirstName:     c.FirstName,
 		CreatedAt:     timestamppb.New(c.CreatedAt),
+		IsOnline:      c.IsOnline,
 	}
 	if c.LastName != nil {
 		ln := *c.LastName

@@ -7,10 +7,17 @@ type WsErrorCode string
 type WsErrorMessage string
 
 const (
-	MessageSend   WsRequestType = "message.Send"
-	MessageRecv   WsRequestType = "message.Receive"
-	MessageEdit   WsRequestType = "message.Edit"
-	MessageDelete WsRequestType = "message.Delete"
+	MessageSend     WsRequestType = "message.Send"
+	MessageRecv     WsRequestType = "message.Receive"
+	MessageEdit     WsRequestType = "message.Edit"
+	MessageDelete   WsRequestType = "message.Delete"
+	MessageMarkRead WsRequestType = "message.MarkRead"
+
+	PresenceTypingStart WsRequestType = "presence.TypingStart"
+	PresenceTypingStop  WsRequestType = "presence.TypingStop"
+	PresencePing        WsRequestType = "presence.Ping"
+	PresenceBackground  WsRequestType = "presence.Background"
+	PresenceForeground  WsRequestType = "presence.Foreground"
 )
 
 const (
@@ -25,6 +32,7 @@ const (
 	ErrCodeServerShutdown           WsErrorCode = "SERVER_SHUTDOWN"
 	ErrCodeOnlyOwnerCanSendMessaage WsErrorCode = "YOU_CANT_SEND_MESSAGE"
 	ErrCodeCantDeleteMessage        WsErrorCode = "YOU_CANT_DELETE_THIS_MESSAGE"
+	ErrCodeReadMessageInvalid       WsErrorCode = "READ_MESSAGE_INVALID"
 )
 
 const (
@@ -39,6 +47,7 @@ const (
 	ErrCodeServerShutdownMsg           WsErrorMessage = "server shutdown"
 	ErrCodeOnlyOwnerCanSendMessaageMsg WsErrorMessage = "only owner of channel can send message"
 	ErrCodeCantDeleteMessageMsg        WsErrorMessage = "you cant delete this message"
+	ErrCodeReadMessageInvalidMsg       WsErrorMessage = "invalid message for read cursor"
 )
 
 type WsRequest struct {

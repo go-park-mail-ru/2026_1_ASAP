@@ -49,6 +49,7 @@ func main() {
 	logger.Info(
 		"gateway config loaded",
 		zap.String("http_addr", cfg.Server.Host+":"+cfg.Server.Port),
+		zap.Bool("session_cookie_secure", cfg.SessionCookie.Secure),
 		zap.String("auth_grpc", cfg.Auth.GRPCAddr),
 		zap.String("profile_grpc", cfg.Profile.GRPCAddr),
 		zap.String("chat_grpc", cfg.Chat.GRPCAddr),
@@ -116,7 +117,7 @@ func main() {
 	subscriptionClient := subscriptionv1.NewSubscriptionClient(subscriptionConn)
 	paymentClient := paymentv1.NewPaymentClient(paymentConn)
 
-	authHandler := gwauth.NewGatewayAuthHandler(authClient)
+	authHandler := gwauth.NewGatewayAuthHandler(authClient, cfg.SessionCookie)
 	profileHandler := gwprofile.NewGatewayProfileHandler(authClient, profileClient)
 	contactsHandler := gwcontacts.NewGatewayContactsHandler(profileClient)
 	chatHandler := gwchat.NewGatewayChatHandler(chatClient)

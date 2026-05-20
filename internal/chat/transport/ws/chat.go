@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -49,11 +50,23 @@ type MessagesServiceInterface interface {
 	GetMessagesByChatId(ctx context.Context, userID int64, chatID int64, req *dto.RequestGetMessages) (*dto.ResponseGetMessages, error)
 	EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error)
 	DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseClearMessage, error)
+	MarkMessagesRead(ctx context.Context, userID, chatID int64, req *dto.RequestMarkRead) (*dto.ResponseMarkRead, error)
 }
 
 type ChatServiceInterface interface {
 	GetChatMemberIDs(ctx context.Context, chatID int64) ([]int64, error)
 	GetChatByID(ctx context.Context, chatID, userID int64) (*chatdto.ChatInformationDTO, error)
+}
+
+type PresenceServiceInterface interface {
+	UpdateLastSeen(ctx context.Context, userID int64) error
+}
+
+type OnlineRepository interface {
+	SetOnline(ctx context.Context, userID int64) error
+	SetOffline(ctx context.Context, userID int64) error
+	TouchOnline(ctx context.Context, userID int64) error
+	IsOnline(ctx context.Context, userID int64) (bool, error)
 }
 
 type subscriber struct {
@@ -62,11 +75,14 @@ type subscriber struct {
 	cancel    context.CancelFunc
 	closeSlow func()
 	userID    int64
+	away      atomic.Bool
 }
 
 type ChatServer struct {
 	messageService          MessagesServiceInterface
 	chatService             ChatServiceInterface
+	presenceService         PresenceServiceInterface
+	onlineRepo              OnlineRepository
 	subscribers             map[*subscriber]struct{}
 	subscribersByUserID     map[int64]map[*subscriber]struct{}
 	logger                  *zap.Logger
@@ -75,7 +91,13 @@ type ChatServer struct {
 	mu                      sync.RWMutex
 }
 
-func NewChatServer(logger *zap.Logger, messageService MessagesServiceInterface, chatService ChatServiceInterface) *ChatServer {
+func NewChatServer(
+	logger *zap.Logger,
+	messageService MessagesServiceInterface,
+	chatService ChatServiceInterface,
+	presenceService PresenceServiceInterface,
+	onlineRepo OnlineRepository,
+) *ChatServer {
 	if logger == nil {
 		logger = zap.NewNop()
 	}
@@ -85,6 +107,8 @@ func NewChatServer(logger *zap.Logger, messageService MessagesServiceInterface, 
 		logger:                  logger,
 		messageService:          messageService,
 		chatService:             chatService,
+		presenceService:         presenceService,
+		onlineRepo:              onlineRepo,
 		subscriberMessageBuffer: 16,
 	}
 }
@@ -223,7 +247,12 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.addSubscriber(sub)
-	defer s.removeSubscriber(sub)
+	defer func() {
+		s.removeSubscriber(sub)
+		s.notifyUserOffline(reqCtx, userID)
+	}()
+
+	s.notifyUserOnline(reqCtx, userID)
 
 	defer func() {
 		_ = wsConn.CloseNow()
@@ -237,6 +266,9 @@ func (s *ChatServer) SubscribeHandler(w http.ResponseWriter, r *http.Request) {
 	defer s.wg.Done()
 
 	go s.readClientMessages(ctx, wsConn, userID, sub)
+	if s.onlineRepo != nil {
+		go s.runPresenceRedisRefresh(ctx, userID, sub)
+	}
 	s.writeClientMessages(ctx, wsConn, sub)
 }
 
@@ -338,6 +370,12 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 		}
 
 		switch env.Type {
+		case dtoWs.PresencePing:
+			s.handlePresencePing(ctx, userID, sub)
+		case dtoWs.PresenceBackground:
+			s.handlePresenceBackground(ctx, userID, sub)
+		case dtoWs.PresenceForeground:
+			s.handlePresenceForeground(ctx, userID, sub)
 		case dtoWs.MessageSend:
 			var req dto.RequestSendMessage
 			if len(env.Payload) == 0 {
@@ -460,6 +498,65 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 			s.enqueueToSubscriber(sub, out)
 
+		case dtoWs.MessageMarkRead:
+			var req dto.RequestMarkRead
+			if len(env.Payload) == 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if err := json.Unmarshal(env.Payload, &req); err != nil {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if req.ChatID <= 0 || req.MessageID <= 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+
+			resp, err := s.messageService.MarkMessagesRead(ctx, userID, req.ChatID, &req)
+			if err != nil {
+				log.Warn("ws mark read", zap.Int64("chat_id", req.ChatID), zap.Error(err))
+				switch {
+				case errors.Is(err, domain.ErrMessageNotMember):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeNotMemberOfChat,
+						Message: dtoWs.ErrCodeNotMemberOfChatMsg,
+					})
+				case errors.Is(err, domain.ErrReadMessageInvalid):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeReadMessageInvalid,
+						Message: dtoWs.ErrCodeReadMessageInvalidMsg,
+					})
+				default:
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeInternal,
+						Message: dtoWs.ErrCodeInternalMsg,
+					})
+				}
+				continue
+			}
+
+			out, err := dtoWs.EncodeMessageRead(resp)
+			if err != nil {
+				log.Error("ws encode message read", zap.Error(err))
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInternal,
+					Message: dtoWs.ErrCodeInternalMsg,
+				})
+				continue
+			}
+
+			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+
 		case dtoWs.MessageEdit:
 			var req dto.RequestEditMessage
 			if len(env.Payload) == 0 {
@@ -578,12 +675,22 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 
 			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
 
+		case dtoWs.PresenceTypingStart:
+			s.handlePresenceTyping(ctx, userID, sub, env, true)
+
+		case dtoWs.PresenceTypingStop:
+			s.handlePresenceTyping(ctx, userID, sub, env, false)
+
 		default:
 			log.Debug("ws unknown message type", zap.String("type", string(env.Type)))
 			s.sendErr(sub, dtoWs.WsErrorPayload{
 				Code:    dtoWs.ErrCodeUnknownType,
 				Message: dtoWs.ErrCodeUnknownTypeMsg,
 			})
+		}
+
+		if env.Type != dtoWs.PresenceBackground {
+			s.touchOnlineIfPresent(ctx, userID, sub)
 		}
 	}
 }

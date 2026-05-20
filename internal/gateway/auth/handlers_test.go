@@ -13,10 +13,19 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/auth/mock"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 )
+
+func testSessionCookie() config.GatewaySessionCookieConfig {
+	return config.GatewaySessionCookieConfig{
+		Secure:   false,
+		HTTPOnly: true,
+		SameSite: "Lax",
+	}
+}
 
 func TestPositiveGatewayAuthHandler_Login(t *testing.T) {
 	type fields struct {
@@ -94,9 +103,7 @@ func TestPositiveGatewayAuthHandler_Login(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			handler := &GatewayAuthHandler{
-				AuthService: f.authClient,
-			}
+			handler := NewGatewayAuthHandler(f.authClient, testSessionCookie())
 
 			r := chi.NewRouter()
 			r.Post("/login", handler.Login)
@@ -220,9 +227,7 @@ func TestNegativeGatewayAuthHandler_Login(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			handler := &GatewayAuthHandler{
-				AuthService: f.authClient,
-			}
+			handler := NewGatewayAuthHandler(f.authClient, testSessionCookie())
 
 			r := chi.NewRouter()
 			r.Post("/login", handler.Login)
@@ -301,9 +306,7 @@ func TestPositiveGatewayAuthHandler_Register(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			handler := &GatewayAuthHandler{
-				AuthService: f.authClient,
-			}
+			handler := NewGatewayAuthHandler(f.authClient, testSessionCookie())
 
 			r := chi.NewRouter()
 			r.Post("/register", handler.Register)
@@ -434,9 +437,7 @@ func TestNegativeGatewayAuthHandler_Register(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			handler := &GatewayAuthHandler{
-				AuthService: f.authClient,
-			}
+			handler := NewGatewayAuthHandler(f.authClient, testSessionCookie())
 
 			r := chi.NewRouter()
 			r.Post("/register", handler.Register)
@@ -501,9 +502,7 @@ func TestPositiveGatewayAuthHandler_Logout(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			handler := &GatewayAuthHandler{
-				AuthService: f.authClient,
-			}
+			handler := NewGatewayAuthHandler(f.authClient, testSessionCookie())
 
 			r := chi.NewRouter()
 			r.Post("/logout", handler.Logout)
@@ -540,14 +539,14 @@ func TestNegativeGatewayAuthHandler_Logout(t *testing.T) {
 		args    args
 	}{
 		{
-			name:        "No session cookie",
-			args:        args{cookieValue: ""},
-			want:        http.StatusUnauthorized,
+			name: "No session cookie",
+			args: args{cookieValue: ""},
+			want: http.StatusUnauthorized,
 		},
 		{
-			name:        "Empty session cookie",
-			args:        args{cookieValue: ""},
-			want:        http.StatusUnauthorized,
+			name: "Empty session cookie",
+			args: args{cookieValue: ""},
+			want: http.StatusUnauthorized,
 		},
 		{
 			name: "Session not found",
@@ -584,9 +583,7 @@ func TestNegativeGatewayAuthHandler_Logout(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			handler := &GatewayAuthHandler{
-				AuthService: f.authClient,
-			}
+			handler := NewGatewayAuthHandler(f.authClient, testSessionCookie())
 
 			r := chi.NewRouter()
 			r.Post("/logout", handler.Logout)
@@ -664,9 +661,7 @@ func TestPositiveGatewayAuthHandler_VkIDLogin(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			handler := &GatewayAuthHandler{
-				AuthService: f.authClient,
-			}
+			handler := NewGatewayAuthHandler(f.authClient, testSessionCookie())
 
 			r := chi.NewRouter()
 			r.Post("/auth/vk", handler.VkIDLogin)
@@ -760,9 +755,7 @@ func TestNegativeGatewayAuthHandler_VkIDLogin(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			handler := &GatewayAuthHandler{
-				AuthService: f.authClient,
-			}
+			handler := NewGatewayAuthHandler(f.authClient, testSessionCookie())
 
 			r := chi.NewRouter()
 			r.Post("/auth/vk", handler.VkIDLogin)
