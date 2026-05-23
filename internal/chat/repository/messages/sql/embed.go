@@ -22,3 +22,12 @@ var GetMessagesByChatBeforeID string
 
 //go:embed get_messages_by_chat.sql
 var GetMessagesByChat string
+
+//go:embed insert_message_attachment.sql
+var InsertMessageAttachment string
+
+//go:embed get_attachments_by_message_ids.sql
+var GetAttachmentsByMessageIDs string
+
+//go:embed can_access_attachment.sql
+var CanAccessAttachment string

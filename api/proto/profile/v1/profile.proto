@@ -19,6 +19,8 @@ service Profile {
     rpc ListContacts(RequestListContacts) returns (ResponseListContacts);
     rpc AddContact(RequestAddContact) returns (ResponseAddContact);
     rpc DeleteContact(RequestDeleteContact) returns (ResponseDeleteContact);
+    rpc HasContact(RequestHasContact) returns (ResponseHasContact);
+    rpc GetContact(RequestGetContact) returns (ResponseGetContact);
     rpc UpdateLastSeen(RequestUpdateLastSeen) returns (google.protobuf.Empty);
 }
 
@@ -122,6 +124,24 @@ message RequestDeleteContact {
 }
 
 message ResponseDeleteContact {}
+
+message RequestHasContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+}
+
+message ResponseHasContact {
+    bool exists = 1;
+}
+
+message RequestGetContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+}
+
+message ResponseGetContact {
+    ContactItem contact = 1;
+}
 
 message ResponseGetProfile {
     int64 user_id = 1;

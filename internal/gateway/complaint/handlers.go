@@ -296,9 +296,9 @@ func mapComplaintTypeFromString(t string) complaintv1.ComplaintType {
 	switch strings.ToLower(strings.TrimSpace(t)) {
 	case "bug":
 		return complaintv1.ComplaintType_COMPLAINT_TYPE_BUG
-	case "product":
+	case "suggestion":
 		return complaintv1.ComplaintType_COMPLAINT_TYPE_PRODUCT
-	case "upgrade":
+	case "complaint":
 		return complaintv1.ComplaintType_COMPLAINT_TYPE_UPGRADE
 	default:
 		return complaintv1.ComplaintType_COMPLAINT_TYPE_UNSPECIFIED

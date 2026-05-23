@@ -32,10 +32,7 @@ const (
 type PaymentClient interface {
 	CreatePayment(ctx context.Context, in *RequestCreatePayment, opts ...grpc.CallOption) (*ResponseCreatePayment, error)
 	GetPayment(ctx context.Context, in *RequestGetPayment, opts ...grpc.CallOption) (*ResponseGetPayment, error)
-	// Pulls latest status from YooKassa for the user's open (pending) payment, updates DB,
-	// and extends subscription when the payment becomes succeeded.
 	SyncOpenPayment(ctx context.Context, in *RequestSyncOpenPayment, opts ...grpc.CallOption) (*ResponseGetPayment, error)
-	// HTTP notification from YooKassa (configure URL in merchant profile). raw_body is the POST JSON body.
 	ProcessYooKassaWebhook(ctx context.Context, in *ProcessYooKassaWebhookRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -93,10 +90,7 @@ func (c *paymentClient) ProcessYooKassaWebhook(ctx context.Context, in *ProcessY
 type PaymentServer interface {
 	CreatePayment(context.Context, *RequestCreatePayment) (*ResponseCreatePayment, error)
 	GetPayment(context.Context, *RequestGetPayment) (*ResponseGetPayment, error)
-	// Pulls latest status from YooKassa for the user's open (pending) payment, updates DB,
-	// and extends subscription when the payment becomes succeeded.
 	SyncOpenPayment(context.Context, *RequestSyncOpenPayment) (*ResponseGetPayment, error)
-	// HTTP notification from YooKassa (configure URL in merchant profile). raw_body is the POST JSON body.
 	ProcessYooKassaWebhook(context.Context, *ProcessYooKassaWebhookRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedPaymentServer()
 }

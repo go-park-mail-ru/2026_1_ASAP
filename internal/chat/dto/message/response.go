@@ -9,13 +9,14 @@ type LastMessageDTO struct {
 }
 
 type ResponseSendMessage struct {
-	CreatedAt time.Time `json:"created_at"`
-	Text      string    `json:"text"`
-	ID        int64     `json:"id"`
-	ChatID    int64     `json:"chat_id"`
-	SenderID  int64     `json:"sender_id"`
-	Edited    bool      `json:"edited"`
-	Read      bool      `json:"read"`
+	CreatedAt   time.Time              `json:"created_at"`
+	Text        string                 `json:"text"`
+	ID          int64                  `json:"id"`
+	ChatID      int64                  `json:"chat_id"`
+	SenderID    int64                  `json:"sender_id"`
+	Edited      bool                   `json:"edited"`
+	Read        bool                   `json:"read"`
+	Attachments []MessageAttachmentDTO `json:"attachments,omitempty"`
 }
 
 type ResponseEditMessage struct {

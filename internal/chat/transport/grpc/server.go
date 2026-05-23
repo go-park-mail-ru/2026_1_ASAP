@@ -15,6 +15,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -36,6 +37,9 @@ type ChatUsecaseInterface interface {
 type MessageUsecaseInterface interface {
 	GetMessagesByChatId(ctx context.Context, userID, chatID int64, req *msgdto.RequestGetMessages) (*msgdto.ResponseGetMessages, error)
 	SendMessage(ctx context.Context, userID, chatID int64, req *msgdto.RequestSendMessage) (*msgdto.ResponseSendMessage, error)
+	SendMessageWithAttachments(ctx context.Context, userID, chatID int64, req *msgdto.RequestSendMessageAttachments) (*msgdto.ResponseSendMessage, error)
+	UploadMessageAttachment(ctx context.Context, userID int64, kind chatv1.MessageAttachmentKind, input *media.FileInput, fileName string) (*msgdto.UploadAttachmentResponse, error)
+	AuthorizeMessageAttachment(ctx context.Context, userID int64, objectKey string) error
 	EditMessage(ctx context.Context, userID, chatID int64, req *msgdto.RequestEditMessage) (*msgdto.ResponseEditMessage, error)
 }
 
@@ -120,6 +124,41 @@ func mapDomainErr(err error) error {
 		return grpcerr.New(
 			codes.FailedPrecondition,
 			int32(chatv1.ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION),
+			err.Error(),
+		)
+
+	case errors.Is(err, domain.ErrInvalidAttachment):
+		return grpcerr.New(
+			codes.InvalidArgument,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_INVALID_ATTACHMENT),
+			err.Error(),
+		)
+
+	case errors.Is(err, domain.ErrAttachmentNotOwned):
+		return grpcerr.New(
+			codes.PermissionDenied,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_ATTACHMENT_NOT_OWNED),
+			err.Error(),
+		)
+
+	case errors.Is(err, domain.ErrContactNotFound):
+		return grpcerr.New(
+			codes.NotFound,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_CONTACT_NOT_FOUND),
+			err.Error(),
+		)
+
+	case errors.Is(err, domain.ErrTooManyAttachments):
+		return grpcerr.New(
+			codes.InvalidArgument,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_TOO_MANY_ATTACHMENTS),
+			err.Error(),
+		)
+
+	case errors.Is(err, domain.ErrAttachmentForbidden):
+		return grpcerr.New(
+			codes.PermissionDenied,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_NOT_MEMBER),
 			err.Error(),
 		)
 
@@ -264,6 +303,43 @@ func (s *ChatServer) GetChatMembers(ctx context.Context, members *chatv1.Request
 	return &chatv1.ResponseGetChatMembers{
 		MembersId: membersRes.MembersId,
 	}, nil
+}
+
+func (s *ChatServer) UploadMessageAttachment(ctx context.Context, req *chatv1.RequestUploadMessageAttachment) (*chatv1.ResponseUploadMessageAttachment, error) {
+	if req == nil || req.GetUserId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(chatv1.ChatErrorCode_CHAT_ERROR_INVALID_INPUT), "user_id is required")
+	}
+	resp, err := s.messageUsecase.UploadMessageAttachment(ctx, req.GetUserId(), req.GetKind(), &media.FileInput{
+		Body:        bytes.NewReader(req.GetContent()),
+		ContentType: req.GetType(),
+		Size:        int64(len(req.GetContent())),
+	}, req.GetFileName())
+	if err != nil {
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
+		return nil, mapDomainErr(err)
+	}
+	out := &chatv1.ResponseUploadMessageAttachment{
+		AttachmentUrl: resp.AttachmentURL,
+		MimeType:      resp.MimeType,
+		FileSize:      resp.FileSize,
+		ObjectKey:     resp.ObjectKey,
+	}
+	if resp.FileName != nil {
+		out.FileName = resp.FileName
+	}
+	return out, nil
+}
+
+func (s *ChatServer) AuthorizeMessageAttachment(ctx context.Context, req *chatv1.RequestAuthorizeMessageAttachment) (*chatv1.ResponseAuthorizeMessageAttachment, error) {
+	if req == nil || req.GetUserId() <= 0 || req.GetObjectKey() == "" {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(chatv1.ChatErrorCode_CHAT_ERROR_INVALID_INPUT), "user_id and object_key are required")
+	}
+	if err := s.messageUsecase.AuthorizeMessageAttachment(ctx, req.GetUserId(), req.GetObjectKey()); err != nil {
+		return nil, mapDomainErr(err)
+	}
+	return &chatv1.ResponseAuthorizeMessageAttachment{}, nil
 }
 
 func (s *ChatServer) QuitChat(ctx context.Context, chat *chatv1.RequestQuitChat) (*emptypb.Empty, error) {

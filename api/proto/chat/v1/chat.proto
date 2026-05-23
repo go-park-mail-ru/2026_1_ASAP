@@ -21,6 +21,8 @@ service Chat {
   rpc QuitChat(RequestQuitChat) returns (google.protobuf.Empty);
   rpc JoinChannel(RequestJoinChannel) returns (google.protobuf.Empty);
   rpc UpdateChatDescription(RequestUpdateDescription) returns (ChatInformation);
+  rpc UploadMessageAttachment(RequestUploadMessageAttachment) returns (ResponseUploadMessageAttachment);
+  rpc AuthorizeMessageAttachment(RequestAuthorizeMessageAttachment) returns (ResponseAuthorizeMessageAttachment);
 }
 
 enum ChatErrorCode {
@@ -63,6 +65,11 @@ enum ChatErrorCode {
   CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED = 28;
   CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION = 29;
   CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION = 30;
+
+  CHAT_ERROR_INVALID_ATTACHMENT = 31;
+  CHAT_ERROR_ATTACHMENT_NOT_OWNED = 32;
+  CHAT_ERROR_CONTACT_NOT_FOUND = 33;
+  CHAT_ERROR_TOO_MANY_ATTACHMENTS = 34;
 }
 
 message RequestQuitChat {
@@ -160,4 +167,38 @@ enum ChatType {
   DIALOG = 0;
   GROUP = 1;
   CHANNEL = 2;
+}
+
+enum MessageAttachmentKind {
+  MESSAGE_ATTACHMENT_KIND_UNSPECIFIED = 0;
+  MESSAGE_ATTACHMENT_KIND_PHOTO = 1;
+  MESSAGE_ATTACHMENT_KIND_VIDEO = 2;
+  MESSAGE_ATTACHMENT_KIND_FILE = 3;
+}
+
+message RequestUploadMessageAttachment {
+  int64 user_id = 1;
+  MessageAttachmentKind kind = 2;
+  bytes content = 3;
+  string type = 4;
+  optional string file_name = 5;
+}
+
+message ResponseUploadMessageAttachment {
+  string attachment_url = 1;
+  string mime_type = 2;
+  int64 file_size = 3;
+  optional string file_name = 4;
+  string object_key = 5;
+}
+
+message RequestAuthorizeMessageAttachment {
+  int64 user_id = 1;
+  string object_key = 2;
+}
+
+message ResponseAuthorizeMessageAttachment {
+  string content_type = 1;
+  int64 size = 2;
+  optional string file_name = 3;
 }

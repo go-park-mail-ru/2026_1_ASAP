@@ -20,18 +20,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Chat_GetChats_FullMethodName              = "/chat.v1.Chat/GetChats"
-	Chat_Create_FullMethodName                = "/chat.v1.Chat/Create"
-	Chat_GetChatByID_FullMethodName           = "/chat.v1.Chat/GetChatByID"
-	Chat_DeleteChat_FullMethodName            = "/chat.v1.Chat/DeleteChat"
-	Chat_UpdateChatAvatar_FullMethodName      = "/chat.v1.Chat/UpdateChatAvatar"
-	Chat_UpdateChatTitle_FullMethodName       = "/chat.v1.Chat/UpdateChatTitle"
-	Chat_AddMembersToChat_FullMethodName      = "/chat.v1.Chat/AddMembersToChat"
-	Chat_DeleteMemberFromChat_FullMethodName  = "/chat.v1.Chat/DeleteMemberFromChat"
-	Chat_GetChatMembers_FullMethodName        = "/chat.v1.Chat/GetChatMembers"
-	Chat_QuitChat_FullMethodName              = "/chat.v1.Chat/QuitChat"
-	Chat_JoinChannel_FullMethodName           = "/chat.v1.Chat/JoinChannel"
-	Chat_UpdateChatDescription_FullMethodName = "/chat.v1.Chat/UpdateChatDescription"
+	Chat_GetChats_FullMethodName                   = "/chat.v1.Chat/GetChats"
+	Chat_Create_FullMethodName                     = "/chat.v1.Chat/Create"
+	Chat_GetChatByID_FullMethodName                = "/chat.v1.Chat/GetChatByID"
+	Chat_DeleteChat_FullMethodName                 = "/chat.v1.Chat/DeleteChat"
+	Chat_UpdateChatAvatar_FullMethodName           = "/chat.v1.Chat/UpdateChatAvatar"
+	Chat_UpdateChatTitle_FullMethodName            = "/chat.v1.Chat/UpdateChatTitle"
+	Chat_AddMembersToChat_FullMethodName           = "/chat.v1.Chat/AddMembersToChat"
+	Chat_DeleteMemberFromChat_FullMethodName       = "/chat.v1.Chat/DeleteMemberFromChat"
+	Chat_GetChatMembers_FullMethodName             = "/chat.v1.Chat/GetChatMembers"
+	Chat_QuitChat_FullMethodName                   = "/chat.v1.Chat/QuitChat"
+	Chat_JoinChannel_FullMethodName                = "/chat.v1.Chat/JoinChannel"
+	Chat_UpdateChatDescription_FullMethodName      = "/chat.v1.Chat/UpdateChatDescription"
+	Chat_UploadMessageAttachment_FullMethodName    = "/chat.v1.Chat/UploadMessageAttachment"
+	Chat_AuthorizeMessageAttachment_FullMethodName = "/chat.v1.Chat/AuthorizeMessageAttachment"
 )
 
 // ChatClient is the client API for Chat service.
@@ -50,6 +52,8 @@ type ChatClient interface {
 	QuitChat(ctx context.Context, in *RequestQuitChat, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	JoinChannel(ctx context.Context, in *RequestJoinChannel, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateChatDescription(ctx context.Context, in *RequestUpdateDescription, opts ...grpc.CallOption) (*ChatInformation, error)
+	UploadMessageAttachment(ctx context.Context, in *RequestUploadMessageAttachment, opts ...grpc.CallOption) (*ResponseUploadMessageAttachment, error)
+	AuthorizeMessageAttachment(ctx context.Context, in *RequestAuthorizeMessageAttachment, opts ...grpc.CallOption) (*ResponseAuthorizeMessageAttachment, error)
 }
 
 type chatClient struct {
@@ -180,6 +184,26 @@ func (c *chatClient) UpdateChatDescription(ctx context.Context, in *RequestUpdat
 	return out, nil
 }
 
+func (c *chatClient) UploadMessageAttachment(ctx context.Context, in *RequestUploadMessageAttachment, opts ...grpc.CallOption) (*ResponseUploadMessageAttachment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseUploadMessageAttachment)
+	err := c.cc.Invoke(ctx, Chat_UploadMessageAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatClient) AuthorizeMessageAttachment(ctx context.Context, in *RequestAuthorizeMessageAttachment, opts ...grpc.CallOption) (*ResponseAuthorizeMessageAttachment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseAuthorizeMessageAttachment)
+	err := c.cc.Invoke(ctx, Chat_AuthorizeMessageAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServer is the server API for Chat service.
 // All implementations must embed UnimplementedChatServer
 // for forward compatibility.
@@ -196,6 +220,8 @@ type ChatServer interface {
 	QuitChat(context.Context, *RequestQuitChat) (*emptypb.Empty, error)
 	JoinChannel(context.Context, *RequestJoinChannel) (*emptypb.Empty, error)
 	UpdateChatDescription(context.Context, *RequestUpdateDescription) (*ChatInformation, error)
+	UploadMessageAttachment(context.Context, *RequestUploadMessageAttachment) (*ResponseUploadMessageAttachment, error)
+	AuthorizeMessageAttachment(context.Context, *RequestAuthorizeMessageAttachment) (*ResponseAuthorizeMessageAttachment, error)
 	mustEmbedUnimplementedChatServer()
 }
 
@@ -241,6 +267,12 @@ func (UnimplementedChatServer) JoinChannel(context.Context, *RequestJoinChannel)
 }
 func (UnimplementedChatServer) UpdateChatDescription(context.Context, *RequestUpdateDescription) (*ChatInformation, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateChatDescription not implemented")
+}
+func (UnimplementedChatServer) UploadMessageAttachment(context.Context, *RequestUploadMessageAttachment) (*ResponseUploadMessageAttachment, error) {
+	return nil, status.Error(codes.Unimplemented, "method UploadMessageAttachment not implemented")
+}
+func (UnimplementedChatServer) AuthorizeMessageAttachment(context.Context, *RequestAuthorizeMessageAttachment) (*ResponseAuthorizeMessageAttachment, error) {
+	return nil, status.Error(codes.Unimplemented, "method AuthorizeMessageAttachment not implemented")
 }
 func (UnimplementedChatServer) mustEmbedUnimplementedChatServer() {}
 func (UnimplementedChatServer) testEmbeddedByValue()              {}
@@ -479,6 +511,42 @@ func _Chat_UpdateChatDescription_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Chat_UploadMessageAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestUploadMessageAttachment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).UploadMessageAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Chat_UploadMessageAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).UploadMessageAttachment(ctx, req.(*RequestUploadMessageAttachment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Chat_AuthorizeMessageAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestAuthorizeMessageAttachment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).AuthorizeMessageAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Chat_AuthorizeMessageAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).AuthorizeMessageAttachment(ctx, req.(*RequestAuthorizeMessageAttachment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Chat_ServiceDesc is the grpc.ServiceDesc for Chat service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -533,6 +601,14 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateChatDescription",
 			Handler:    _Chat_UpdateChatDescription_Handler,
+		},
+		{
+			MethodName: "UploadMessageAttachment",
+			Handler:    _Chat_UploadMessageAttachment_Handler,
+		},
+		{
+			MethodName: "AuthorizeMessageAttachment",
+			Handler:    _Chat_AuthorizeMessageAttachment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

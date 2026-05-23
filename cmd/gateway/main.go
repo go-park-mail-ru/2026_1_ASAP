@@ -14,6 +14,7 @@ import (
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	complaintv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/complaint/v1"
+	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	paymentv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	searchv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/search/v1"
@@ -22,6 +23,7 @@ import (
 	gwchat "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/chat"
 	gwcomplaint "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/complaint"
 	gwcontacts "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/contacts"
+	gwmessage "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/message"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	gwpayment "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/payment"
 	gwprofile "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/profile"
@@ -33,7 +35,10 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding/gzip"
 )
+
+const grpcMaxMessageBytes = 64 << 20
 
 func main() {
 	logger, err := zap.NewProduction()
@@ -74,12 +79,28 @@ func main() {
 	logger.Info("connected to profile grpc", zap.String("addr", cfg.Profile.GRPCAddr))
 	defer func() { _ = profileConn.Close() }()
 
-	chatConn, err := grpc.NewClient(cfg.Chat.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcDialOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(grpcMaxMessageBytes),
+			grpc.MaxCallSendMsgSize(grpcMaxMessageBytes),
+			grpc.UseCompressor(gzip.Name),
+		),
+	}
+
+	chatConn, err := grpc.NewClient(cfg.Chat.GRPCAddr, grpcDialOpts...)
 	if err != nil {
 		logger.Fatal("dial chat grpc", zap.String("addr", cfg.Chat.GRPCAddr), zap.Error(err))
 	}
 	logger.Info("connected to chat grpc", zap.String("addr", cfg.Chat.GRPCAddr))
 	defer func() { _ = chatConn.Close() }()
+
+	mediaConn, err := grpc.NewClient(cfg.Media.GRPCAddr, grpcDialOpts...)
+	if err != nil {
+		logger.Fatal("dial media grpc", zap.String("addr", cfg.Media.GRPCAddr), zap.Error(err))
+	}
+	logger.Info("connected to media grpc", zap.String("addr", cfg.Media.GRPCAddr))
+	defer func() { _ = mediaConn.Close() }()
 
 	complaintConn, err := grpc.NewClient(cfg.Complaint.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -112,6 +133,7 @@ func main() {
 	authClient := authv1.NewAuthClient(authConn)
 	profileClient := profilev1.NewProfileClient(profileConn)
 	chatClient := chatv1.NewChatClient(chatConn)
+	mediaClient := mediav1.NewMediaClient(mediaConn)
 	complaintClient := complaintv1.NewComplaintClient(complaintConn)
 	searchClient := searchv1.NewSearchClient(searchConn)
 	subscriptionClient := subscriptionv1.NewSubscriptionClient(subscriptionConn)
@@ -121,6 +143,7 @@ func main() {
 	profileHandler := gwprofile.NewGatewayProfileHandler(authClient, profileClient)
 	contactsHandler := gwcontacts.NewGatewayContactsHandler(profileClient)
 	chatHandler := gwchat.NewGatewayChatHandler(chatClient)
+	messageHandler := gwmessage.NewGatewayMessageHandler(chatClient, mediaClient, cfg.PublicBaseURL)
 	complaintHandler := gwcomplaint.NewGatewayComplaintHandler(complaintClient)
 	analyticHandler := gwcomplaint.NewGatewayAnalyticHandler(complaintClient)
 	searchHandler := searchgw.NewGatewaySearchHandler(searchClient)
@@ -198,6 +221,11 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Get("/{id}", profileHandler.GetUserProfile)
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/birth", profileHandler.UpdateUserBirthDate)
 		mux.With(authMiddleware, csrfMiddleware).Post("/me/name", profileHandler.UpdateProfileName)
+	})
+
+	router.Route("/api/v1/messages", func(mux chi.Router) {
+		mux.With(authMiddleware, csrfMiddleware).Post("/attachments/upload", messageHandler.UploadAttachment)
+		mux.With(authMiddleware).Get("/attachments/*", messageHandler.DownloadAttachment)
 	})
 
 	router.Route("/api/v1/chats", func(mux chi.Router) {

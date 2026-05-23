@@ -7,11 +7,12 @@ type WsErrorCode string
 type WsErrorMessage string
 
 const (
-	MessageSend     WsRequestType = "message.Send"
-	MessageRecv     WsRequestType = "message.Receive"
-	MessageEdit     WsRequestType = "message.Edit"
-	MessageDelete   WsRequestType = "message.Delete"
-	MessageMarkRead WsRequestType = "message.MarkRead"
+	MessageSend            WsRequestType = "message.Send"
+	MessageSendAttachments WsRequestType = "message.SendAttachments"
+	MessageRecv            WsRequestType = "message.Receive"
+	MessageEdit            WsRequestType = "message.Edit"
+	MessageDelete          WsRequestType = "message.Delete"
+	MessageMarkRead        WsRequestType = "message.MarkRead"
 
 	PresenceTypingStart WsRequestType = "presence.TypingStart"
 	PresenceTypingStop  WsRequestType = "presence.TypingStop"
@@ -33,6 +34,10 @@ const (
 	ErrCodeOnlyOwnerCanSendMessaage WsErrorCode = "YOU_CANT_SEND_MESSAGE"
 	ErrCodeCantDeleteMessage        WsErrorCode = "YOU_CANT_DELETE_THIS_MESSAGE"
 	ErrCodeReadMessageInvalid       WsErrorCode = "READ_MESSAGE_INVALID"
+	ErrCodeInvalidAttachment        WsErrorCode = "INVALID_ATTACHMENT"
+	ErrCodeAttachmentNotOwned       WsErrorCode = "ATTACHMENT_NOT_OWNED"
+	ErrCodeContactNotFound          WsErrorCode = "CONTACT_NOT_FOUND"
+	ErrCodeTooManyAttachments       WsErrorCode = "TOO_MANY_ATTACHMENTS"
 )
 
 const (
@@ -48,6 +53,10 @@ const (
 	ErrCodeOnlyOwnerCanSendMessaageMsg WsErrorMessage = "only owner of channel can send message"
 	ErrCodeCantDeleteMessageMsg        WsErrorMessage = "you cant delete this message"
 	ErrCodeReadMessageInvalidMsg       WsErrorMessage = "invalid message for read cursor"
+	ErrCodeInvalidAttachmentMsg        WsErrorMessage = "invalid attachment"
+	ErrCodeAttachmentNotOwnedMsg       WsErrorMessage = "attachment not owned by user"
+	ErrCodeContactNotFoundMsg          WsErrorMessage = "contact not found"
+	ErrCodeTooManyAttachmentsMsg       WsErrorMessage = "too many attachments"
 )
 
 type WsRequest struct {

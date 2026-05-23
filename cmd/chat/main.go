@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 func main() {
@@ -72,7 +73,7 @@ func main() {
 
 	realtime := chatws.NewRealtimeNotifier(logger.Named("chat.realtime"))
 	chatService := chatuc.NewChatService(chatRepo, profileClient, mediaClient, realtime)
-	messageService := messagesuc.NewMessageService(msgRepo, chatRepo)
+	messageService := messagesuc.NewMessageService(msgRepo, chatRepo, mediaClient, profileClient, cfg.GatewayPublicURL)
 
 	// gRPC server
 	grpcSrv := chatgrpc.NewChatServer(chatService, messageService, logger.Named("chat.grpc"))

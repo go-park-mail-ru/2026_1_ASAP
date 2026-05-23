@@ -51,6 +51,7 @@ func requestIDFromContext(ctx context.Context) (string, bool) {
 
 type MessagesServiceInterface interface {
 	SendMessage(ctx context.Context, userID int64, chatID int64, req *dto.RequestSendMessage) (*dto.ResponseSendMessage, error)
+	SendMessageWithAttachments(ctx context.Context, userID int64, chatID int64, req *dto.RequestSendMessageAttachments) (*dto.ResponseSendMessage, error)
 	GetMessagesByChatId(ctx context.Context, userID int64, chatID int64, req *dto.RequestGetMessages) (*dto.ResponseGetMessages, error)
 	EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error)
 	DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseClearMessage, error)
@@ -476,6 +477,94 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
+			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+
+		case dtoWs.MessageSendAttachments:
+			var req dto.RequestSendMessageAttachments
+			if len(env.Payload) == 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if err := json.Unmarshal(env.Payload, &req); err != nil {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if req.ChatID <= 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+
+			resp, err := s.messageService.SendMessageWithAttachments(ctx, userID, req.ChatID, &req)
+			if err != nil {
+				log.Warn("ws send message attachments", zap.Int64("chat_id", req.ChatID), zap.Error(err))
+				switch {
+				case errors.Is(err, domain.ErrMessageEmpty):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeEmptyText,
+						Message: dtoWs.ErrCodeEmptyTextMsg,
+					})
+				case errors.Is(err, domain.ErrMessageTooLong):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeMessageTooLong,
+						Message: dtoWs.ErrCodeMessageTooLongMsg,
+					})
+				case errors.Is(err, domain.ErrMessageNotMember):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeNotMemberOfChat,
+						Message: dtoWs.ErrCodeNotMemberOfChatMsg,
+					})
+				case errors.Is(err, domain.ErrOnlyOwnerCanSendMessaage):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeOnlyOwnerCanSendMessaage,
+						Message: dtoWs.ErrCodeOnlyOwnerCanSendMessaageMsg,
+					})
+				case errors.Is(err, domain.ErrInvalidAttachment):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeInvalidAttachment,
+						Message: dtoWs.ErrCodeInvalidAttachmentMsg,
+					})
+				case errors.Is(err, domain.ErrAttachmentNotOwned):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeAttachmentNotOwned,
+						Message: dtoWs.ErrCodeAttachmentNotOwnedMsg,
+					})
+				case errors.Is(err, domain.ErrContactNotFound):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeContactNotFound,
+						Message: dtoWs.ErrCodeContactNotFoundMsg,
+					})
+				case errors.Is(err, domain.ErrTooManyAttachments):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeTooManyAttachments,
+						Message: dtoWs.ErrCodeTooManyAttachmentsMsg,
+					})
+				default:
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeSendFailed,
+						Message: dtoWs.ErrCodeSendFailedMsg,
+					})
+				}
+				continue
+			}
+
+			out, err := dtoWs.EncodeMessageNew(resp)
+			if err != nil {
+				log.Error("ws encode message new", zap.Error(err))
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInternal,
+					Message: dtoWs.ErrCodeInternalMsg,
+				})
+				continue
+			}
 			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
 
 		case dtoWs.MessageRecv:

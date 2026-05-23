@@ -8,6 +8,8 @@ import (
 
 type GatewayConfig struct {
 	Server        GatewayServerConfig        `yaml:"server"`
+	PublicBaseURL string                     `yaml:"public_base_url" env-default:"http://localhost:8080"`
+	Media         GatewayMediaConfig         `yaml:"media"`
 	SessionCookie GatewaySessionCookieConfig `yaml:"session_cookie"`
 	Auth          GatewayAuthConfig          `yaml:"auth"`
 	Profile       GatewayProfileConfig       `yaml:"profile"`
@@ -40,6 +42,10 @@ type GatewayProfileConfig struct {
 type GatewayChatConfig struct {
 	WSAddr   string `yaml:"ws_addr" env-default:"chat:8005"`
 	GRPCAddr string `yaml:"grpc_addr" env-default:"chat:8004"`
+}
+
+type GatewayMediaConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" env-default:"media:8003"`
 }
 
 type GatewayComplaintConfig struct {

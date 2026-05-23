@@ -20,6 +20,8 @@ import (
 
 type ContactServiceInterface interface {
 	GetContacts(ctx context.Context, userID int64) ([]*dto.ContactResponse, error)
+	HasContact(ctx context.Context, userID, contactUserID int64) (bool, error)
+	GetContact(ctx context.Context, userID, contactUserID int64) (*dto.ContactResponse, error)
 	AddContact(ctx context.Context, contactRequest dto.AddContactRequest, userID int64) (*dto.ContactResponse, error)
 	DeleteContact(ctx context.Context, contactRequest dto.DeleteContactRequest, userID int64) error
 }

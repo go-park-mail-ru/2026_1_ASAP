@@ -6,7 +6,19 @@ import (
 	"net/http"
 )
 
-const MaxAvatarBytes = 5 * 1024 * 1024
+const (
+	MaxAvatarBytes       = 5 * 1024 * 1024
+	MaxMessagePhotoBytes = 10 * 1024 * 1024
+	MaxMessageVideoBytes = 50 * 1024 * 1024
+	MaxMessageFileBytes  = 20 * 1024 * 1024
+)
+
+type UploadMessageAttachmentResult struct {
+	ObjectKey string
+	MimeType  string
+	FileSize  int64
+	FileName  *string
+}
 
 type FileInput struct {
 	Body        io.Reader

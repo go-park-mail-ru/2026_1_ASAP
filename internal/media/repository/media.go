@@ -3,11 +3,14 @@ package repository
 import (
 	"context"
 	"fmt"
+	"io"
+	"strings"
 	"time"
 
 	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/s3log"
+	"github.com/google/uuid"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"go.uber.org/zap"
@@ -128,6 +131,88 @@ func (m *MediaRepository) UploadComplaint(ctx context.Context, complaintID int64
 	return fmt.Sprintf("%s/%s/%s", m.publicURL, m.bucket, objectName), nil
 }
 
+type MessageAttachmentObject struct {
+	ObjectKey   string
+	ContentType string
+	Size        int64
+}
+
+func (m *MediaRepository) UploadMessageAttachment(
+	ctx context.Context,
+	userID int64,
+	kind mediadto.MessageAttachmentKind,
+	input *mediadto.FileInput,
+) (*MessageAttachmentObject, error) {
+	if input == nil || input.Body == nil {
+		return nil, mediadto.ErrEmptyFile
+	}
+	if err := input.ValidateMessageAttachment(kind); err != nil {
+		return nil, err
+	}
+
+	extension := getExtensionFromContentType(input.ContentType)
+	objectName := fmt.Sprintf("message/%d/%s_%d%s", userID, uuid.NewString(), time.Now().UnixNano(), extension)
+
+	start := time.Now()
+	_, err := m.client.PutObject(ctx, m.bucket, objectName, input.Body, input.Size, minio.PutObjectOptions{
+		ContentType: input.ContentType,
+	})
+	s3log.LogOp(ctx, m.log(ctx), "UploadMessageAttachment", objectName, start, err, []any{userID, kind, input.ContentType, input.Size})
+	if err != nil {
+		return nil, fmt.Errorf("upload message attachment: %w", err)
+	}
+
+	return &MessageAttachmentObject{
+		ObjectKey:   objectName,
+		ContentType: input.ContentType,
+		Size:        input.Size,
+	}, nil
+}
+
+func (m *MediaRepository) GetMessageAttachment(ctx context.Context, objectKey string) ([]byte, string, error) {
+	if err := validateMessageObjectKey(objectKey); err != nil {
+		return nil, "", err
+	}
+	start := time.Now()
+	obj, err := m.client.GetObject(ctx, m.bucket, objectKey, minio.GetObjectOptions{})
+	s3log.LogOp(ctx, m.log(ctx), "GetMessageAttachment", objectKey, start, err, []any{objectKey})
+	if err != nil {
+		return nil, "", fmt.Errorf("get message attachment: %w", err)
+	}
+	defer func() { _ = obj.Close() }()
+
+	info, err := obj.Stat()
+	if err != nil {
+		return nil, "", fmt.Errorf("stat message attachment: %w", err)
+	}
+	ct := info.ContentType
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+
+	const maxGet = mediadto.MaxMessageVideoBytes
+	data, err := io.ReadAll(io.LimitReader(obj, maxGet+1))
+	if err != nil {
+		return nil, "", fmt.Errorf("read message attachment: %w", err)
+	}
+	if len(data) > maxGet {
+		return nil, "", mediadto.ErrFileTooLarge
+	}
+	return data, ct, nil
+}
+
+func validateMessageObjectKey(objectKey string) error {
+	key := strings.TrimPrefix(strings.TrimSpace(objectKey), "/")
+	if !strings.HasPrefix(key, "message/") {
+		return fmt.Errorf("invalid object key")
+	}
+	parts := strings.Split(key, "/")
+	if len(parts) != 3 || parts[2] == "" {
+		return fmt.Errorf("invalid object key format")
+	}
+	return nil
+}
+
 func (m *MediaRepository) DeleteAvatar(ctx context.Context, userID int64) error {
 	extensions := []string{".jpg", ".png", ".webp"}
 
@@ -164,7 +249,27 @@ func getExtensionFromContentType(contentType string) string {
 		return ".webp"
 	case "image/gif":
 		return ".gif"
+	case "video/mp4":
+		return ".mp4"
+	case "video/webm":
+		return ".webm"
+	case "video/quicktime":
+		return ".mov"
+	case "application/pdf":
+		return ".pdf"
+	case "application/zip", "application/x-zip-compressed":
+		return ".zip"
+	case "application/msword":
+		return ".doc"
+	case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+		return ".docx"
+	case "application/vnd.ms-excel":
+		return ".xls"
+	case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+		return ".xlsx"
+	case "text/plain":
+		return ".txt"
 	default:
-		return ".jpg"
+		return ".bin"
 	}
 }
