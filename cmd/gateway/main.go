@@ -243,6 +243,10 @@ func main() {
 		mux.With(authMiddleware, csrfMiddleware).Post("/{id}/description", chatHandler.UpdateChatDescription)
 	})
 
+	router.Route("/api/v1/sticker-packs", func(mux chi.Router) {
+		mux.With(authMiddleware, csrfMiddleware).Get("/", chatHandler.GetStickerPacks)
+	})
+
 	router.Route("/api/v1/complaints", func(mux chi.Router) {
 		mux.Post("/createUnauthorized", complaintHandler.CreateComplaintUnAuthorized)
 		mux.With(authMiddleware, csrfMiddleware).Post("/create", complaintHandler.CreateComplaintAuthorized)

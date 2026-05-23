@@ -8,6 +8,7 @@ type WsErrorMessage string
 
 const (
 	MessageSend            WsRequestType = "message.Send"
+	MessageSendSticker     WsRequestType = "message.SendSticker"
 	MessageSendAttachments WsRequestType = "message.SendAttachments"
 	MessageRecv            WsRequestType = "message.Receive"
 	MessageEdit            WsRequestType = "message.Edit"
@@ -38,6 +39,8 @@ const (
 	ErrCodeAttachmentNotOwned       WsErrorCode = "ATTACHMENT_NOT_OWNED"
 	ErrCodeContactNotFound          WsErrorCode = "CONTACT_NOT_FOUND"
 	ErrCodeTooManyAttachments       WsErrorCode = "TOO_MANY_ATTACHMENTS"
+	ErrCodeInvalidSticker           WsErrorCode = "INVALID_STICKER"
+	ErrCodeStickerNotFound          WsErrorCode = "STICKER_NOT_FOUND"
 )
 
 const (
@@ -57,6 +60,8 @@ const (
 	ErrCodeAttachmentNotOwnedMsg       WsErrorMessage = "attachment not owned by user"
 	ErrCodeContactNotFoundMsg          WsErrorMessage = "contact not found"
 	ErrCodeTooManyAttachmentsMsg       WsErrorMessage = "too many attachments"
+	ErrCodeInvalidStickerMsg           WsErrorMessage = "invalid sticker"
+	ErrCodeStickerNotFoundMsg          WsErrorMessage = "sticker not found"
 )
 
 type WsRequest struct {

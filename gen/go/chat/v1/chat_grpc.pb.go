@@ -34,6 +34,7 @@ const (
 	Chat_UpdateChatDescription_FullMethodName      = "/chat.v1.Chat/UpdateChatDescription"
 	Chat_UploadMessageAttachment_FullMethodName    = "/chat.v1.Chat/UploadMessageAttachment"
 	Chat_AuthorizeMessageAttachment_FullMethodName = "/chat.v1.Chat/AuthorizeMessageAttachment"
+	Chat_GetStickerPacks_FullMethodName            = "/chat.v1.Chat/GetStickerPacks"
 )
 
 // ChatClient is the client API for Chat service.
@@ -54,6 +55,7 @@ type ChatClient interface {
 	UpdateChatDescription(ctx context.Context, in *RequestUpdateDescription, opts ...grpc.CallOption) (*ChatInformation, error)
 	UploadMessageAttachment(ctx context.Context, in *RequestUploadMessageAttachment, opts ...grpc.CallOption) (*ResponseUploadMessageAttachment, error)
 	AuthorizeMessageAttachment(ctx context.Context, in *RequestAuthorizeMessageAttachment, opts ...grpc.CallOption) (*ResponseAuthorizeMessageAttachment, error)
+	GetStickerPacks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ResponseGetStickerPacks, error)
 }
 
 type chatClient struct {
@@ -204,6 +206,16 @@ func (c *chatClient) AuthorizeMessageAttachment(ctx context.Context, in *Request
 	return out, nil
 }
 
+func (c *chatClient) GetStickerPacks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ResponseGetStickerPacks, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseGetStickerPacks)
+	err := c.cc.Invoke(ctx, Chat_GetStickerPacks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServer is the server API for Chat service.
 // All implementations must embed UnimplementedChatServer
 // for forward compatibility.
@@ -222,6 +234,7 @@ type ChatServer interface {
 	UpdateChatDescription(context.Context, *RequestUpdateDescription) (*ChatInformation, error)
 	UploadMessageAttachment(context.Context, *RequestUploadMessageAttachment) (*ResponseUploadMessageAttachment, error)
 	AuthorizeMessageAttachment(context.Context, *RequestAuthorizeMessageAttachment) (*ResponseAuthorizeMessageAttachment, error)
+	GetStickerPacks(context.Context, *emptypb.Empty) (*ResponseGetStickerPacks, error)
 	mustEmbedUnimplementedChatServer()
 }
 
@@ -273,6 +286,9 @@ func (UnimplementedChatServer) UploadMessageAttachment(context.Context, *Request
 }
 func (UnimplementedChatServer) AuthorizeMessageAttachment(context.Context, *RequestAuthorizeMessageAttachment) (*ResponseAuthorizeMessageAttachment, error) {
 	return nil, status.Error(codes.Unimplemented, "method AuthorizeMessageAttachment not implemented")
+}
+func (UnimplementedChatServer) GetStickerPacks(context.Context, *emptypb.Empty) (*ResponseGetStickerPacks, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStickerPacks not implemented")
 }
 func (UnimplementedChatServer) mustEmbedUnimplementedChatServer() {}
 func (UnimplementedChatServer) testEmbeddedByValue()              {}
@@ -547,6 +563,24 @@ func _Chat_AuthorizeMessageAttachment_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Chat_GetStickerPacks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).GetStickerPacks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Chat_GetStickerPacks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).GetStickerPacks(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Chat_ServiceDesc is the grpc.ServiceDesc for Chat service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -609,6 +643,10 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AuthorizeMessageAttachment",
 			Handler:    _Chat_AuthorizeMessageAttachment_Handler,
+		},
+		{
+			MethodName: "GetStickerPacks",
+			Handler:    _Chat_GetStickerPacks_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

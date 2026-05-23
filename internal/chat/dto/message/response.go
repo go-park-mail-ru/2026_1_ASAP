@@ -1,6 +1,10 @@
 package message
 
-import "time"
+import (
+	"time"
+
+	stickerdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/sticker"
+)
 
 type LastMessageDTO struct {
 	CreatedAt time.Time `json:"created_at"`
@@ -17,6 +21,7 @@ type ResponseSendMessage struct {
 	Edited      bool                   `json:"edited"`
 	Read        bool                   `json:"read"`
 	Attachments []MessageAttachmentDTO `json:"attachments,omitempty"`
+	Sticker     *stickerdto.StickerDTO `json:"sticker,omitempty"`
 }
 
 type ResponseEditMessage struct {

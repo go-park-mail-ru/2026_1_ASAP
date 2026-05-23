@@ -16,12 +16,14 @@ import (
 	chatrepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/chat"
 	messagesrepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/messages"
 	onlinerepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/online"
+	stickersrepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/stickers"
 	chatgrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc"
 	grpcMedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc/clients/media"
 	grpcProfile "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc/clients/profile"
 	chatws "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/ws"
 	chatuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/chat"
 	messagesuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages"
+	stickersuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/stickers"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
@@ -56,6 +58,12 @@ func main() {
 	}
 	defer msgRepo.Close()
 
+	stickerRepo, err := stickersrepo.NewRepository(ctx, cfg.PostgresConfig, logger.Named("stickers_repo"))
+	if err != nil {
+		logger.Fatal("init stickers repository", zap.Error(err))
+	}
+	defer stickerRepo.Close()
+
 	mediaConn, err := grpc.NewClient(cfg.ChatMediaConfig.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("dial media grpc: %v", err)
@@ -73,10 +81,11 @@ func main() {
 
 	realtime := chatws.NewRealtimeNotifier(logger.Named("chat.realtime"))
 	chatService := chatuc.NewChatService(chatRepo, profileClient, mediaClient, realtime)
-	messageService := messagesuc.NewMessageService(msgRepo, chatRepo, mediaClient, profileClient, cfg.GatewayPublicURL)
+	messageService := messagesuc.NewMessageService(msgRepo, chatRepo, mediaClient, profileClient, cfg.GatewayPublicURL, stickerRepo)
+	stickerService := stickersuc.NewService(stickerRepo)
 
 	// gRPC server
-	grpcSrv := chatgrpc.NewChatServer(chatService, messageService, logger.Named("chat.grpc"))
+	grpcSrv := chatgrpc.NewChatServer(chatService, messageService, logger.Named("chat.grpc"), stickerService)
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())
 	if err != nil {

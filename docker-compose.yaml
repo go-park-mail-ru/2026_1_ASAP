@@ -37,6 +37,26 @@ services:
       - profile
     restart: always
 
+  seed_stickers:
+    build:
+      context: .
+      dockerfile: ./docker/chat.Dockerfile
+      args:
+        SERVICE_NAME: seed_stickers
+    env_file:
+      - ./.env
+    environment:
+      APPLICATION_CONFIG: ${APPLICATION_CONFIG:-local}
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - ./assets:/app/assets:ro
+    depends_on:
+      - db
+      - migrate
+      - minio
+    restart: "no"
+
   media:
     build:
       context: .

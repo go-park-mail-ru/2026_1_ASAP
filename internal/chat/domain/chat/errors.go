@@ -43,4 +43,6 @@ var (
 	ErrContactNotFound                   = errors.New("contact not found")
 	ErrTooManyAttachments                = errors.New("too many attachments")
 	ErrAttachmentForbidden               = errors.New("attachment access forbidden")
+	ErrStickerNotFound                   = errors.New("sticker not found")
+	ErrInvalidSticker                    = errors.New("invalid sticker")
 )

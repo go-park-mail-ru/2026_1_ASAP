@@ -11,6 +11,7 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
 	msgdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
+	stickerdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/sticker"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 	"go.uber.org/zap"
@@ -41,6 +42,10 @@ type MessageUsecaseInterface interface {
 	UploadMessageAttachment(ctx context.Context, userID int64, kind chatv1.MessageAttachmentKind, input *media.FileInput, fileName string) (*msgdto.UploadAttachmentResponse, error)
 	AuthorizeMessageAttachment(ctx context.Context, userID int64, objectKey string) error
 	EditMessage(ctx context.Context, userID, chatID int64, req *msgdto.RequestEditMessage) (*msgdto.ResponseEditMessage, error)
+}
+
+type StickerUsecaseInterface interface {
+	GetStickerPacks(ctx context.Context) (*stickerdto.ResponseGetStickerPacks, error)
 }
 
 func mapDomainErr(err error) error {
@@ -134,6 +139,20 @@ func mapDomainErr(err error) error {
 			err.Error(),
 		)
 
+	case errors.Is(err, domain.ErrInvalidSticker):
+		return grpcerr.New(
+			codes.InvalidArgument,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_INVALID_STICKER),
+			err.Error(),
+		)
+
+	case errors.Is(err, domain.ErrStickerNotFound):
+		return grpcerr.New(
+			codes.NotFound,
+			int32(chatv1.ChatErrorCode_CHAT_ERROR_STICKER_NOT_FOUND),
+			err.Error(),
+		)
+
 	case errors.Is(err, domain.ErrAttachmentNotOwned):
 		return grpcerr.New(
 			codes.PermissionDenied,
@@ -175,13 +194,19 @@ type ChatServer struct {
 	chatv1.UnimplementedChatServer
 	chatUsecase    ChatUsecaseInterface
 	messageUsecase MessageUsecaseInterface
+	stickerUsecase StickerUsecaseInterface
 	logger         *zap.Logger
 }
 
-func NewChatServer(chatSvc ChatUsecaseInterface, messageSvc MessageUsecaseInterface, logger *zap.Logger) *ChatServer {
+func NewChatServer(chatSvc ChatUsecaseInterface, messageSvc MessageUsecaseInterface, logger *zap.Logger, stickerSvc ...StickerUsecaseInterface) *ChatServer {
+	var stickers StickerUsecaseInterface
+	if len(stickerSvc) > 0 {
+		stickers = stickerSvc[0]
+	}
 	return &ChatServer{
 		chatUsecase:    chatSvc,
 		messageUsecase: messageSvc,
+		stickerUsecase: stickers,
 		logger:         logger,
 	}
 }
@@ -340,6 +365,17 @@ func (s *ChatServer) AuthorizeMessageAttachment(ctx context.Context, req *chatv1
 		return nil, mapDomainErr(err)
 	}
 	return &chatv1.ResponseAuthorizeMessageAttachment{}, nil
+}
+
+func (s *ChatServer) GetStickerPacks(ctx context.Context, _ *emptypb.Empty) (*chatv1.ResponseGetStickerPacks, error) {
+	if s.stickerUsecase == nil {
+		return nil, mapDomainErr(errors.New("sticker usecase is nil"))
+	}
+	resp, err := s.stickerUsecase.GetStickerPacks(ctx)
+	if err != nil {
+		return nil, mapDomainErr(err)
+	}
+	return mapStickerPacksDTOToProto(resp), nil
 }
 
 func (s *ChatServer) QuitChat(ctx context.Context, chat *chatv1.RequestQuitChat) (*emptypb.Empty, error) {

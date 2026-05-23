@@ -17,6 +17,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type GatewayChatHandler struct {
@@ -70,6 +71,29 @@ type JoinChannelRequest struct {
 
 type ChatMembersResponse struct {
 	MembersID []int64 `json:"members_id"`
+}
+
+type StickerResponse struct {
+	Slug    *string `json:"slug,omitempty"`
+	Emoji   *string `json:"emoji,omitempty"`
+	FileURL string  `json:"file_url"`
+	ID      int64   `json:"id"`
+	PackID  int64   `json:"pack_id"`
+	Width   *int32  `json:"width,omitempty"`
+	Height  *int32  `json:"height,omitempty"`
+}
+
+type StickerPackResponse struct {
+	Slug         *string           `json:"slug,omitempty"`
+	ThumbnailURL *string           `json:"thumbnail_url,omitempty"`
+	Name         string            `json:"name"`
+	Title        string            `json:"title"`
+	ID           int64             `json:"id"`
+	Stickers     []StickerResponse `json:"stickers"`
+}
+
+type StickerPacksResponse struct {
+	Packs []StickerPackResponse `json:"packs"`
 }
 
 // helpers
@@ -257,6 +281,51 @@ func mapChatInfo(c *chatv1.ChatInformation) ChatInfoResponse {
 		}
 	}
 	return out
+}
+
+func mapStickerPacks(resp *chatv1.ResponseGetStickerPacks) StickerPacksResponse {
+	if resp == nil {
+		return StickerPacksResponse{}
+	}
+	packs := make([]StickerPackResponse, 0, len(resp.GetPacks()))
+	for _, pack := range resp.GetPacks() {
+		item := StickerPackResponse{
+			ID:       pack.GetId(),
+			Name:     pack.GetName(),
+			Title:    pack.GetTitle(),
+			Stickers: make([]StickerResponse, 0, len(pack.GetStickers())),
+		}
+		if slug := pack.GetSlug(); slug != "" {
+			item.Slug = &slug
+		}
+		if thumbnail := pack.GetThumbnailUrl(); thumbnail != "" {
+			item.ThumbnailURL = &thumbnail
+		}
+		for _, sticker := range pack.GetStickers() {
+			stickerItem := StickerResponse{
+				ID:      sticker.GetId(),
+				PackID:  sticker.GetPackId(),
+				FileURL: sticker.GetFileUrl(),
+			}
+			if slug := sticker.GetSlug(); slug != "" {
+				stickerItem.Slug = &slug
+			}
+			if emoji := sticker.GetEmoji(); emoji != "" {
+				stickerItem.Emoji = &emoji
+			}
+			if sticker.Width != nil {
+				width := sticker.GetWidth()
+				stickerItem.Width = &width
+			}
+			if sticker.Height != nil {
+				height := sticker.GetHeight()
+				stickerItem.Height = &height
+			}
+			item.Stickers = append(item.Stickers, stickerItem)
+		}
+		packs = append(packs, item)
+	}
+	return StickerPacksResponse{Packs: packs}
 }
 
 // Handlers
@@ -688,5 +757,18 @@ func (h *GatewayChatHandler) QuitChat(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[struct{}]{
 		Status: dtoApi.Success,
 		Body:   struct{}{},
+	})
+}
+
+func (h *GatewayChatHandler) GetStickerPacks(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.ChatService.GetStickerPacks(r.Context(), &emptypb.Empty{})
+	if err != nil {
+		sendChatError(w, err)
+		return
+	}
+
+	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[StickerPacksResponse]{
+		Status: dtoApi.Success,
+		Body:   mapStickerPacks(resp),
 	})
 }
