@@ -32,6 +32,8 @@ import (
 	_ "google.golang.org/grpc/encoding/gzip"
 )
 
+const grpcMaxMessageBytes = 64 << 20
+
 func main() {
 	cfg, err := config.LoadChatConfig()
 	if err != nil {
@@ -64,7 +66,14 @@ func main() {
 	}
 	defer stickerRepo.Close()
 
-	mediaConn, err := grpc.NewClient(cfg.ChatMediaConfig.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	mediaConn, err := grpc.NewClient(
+		cfg.ChatMediaConfig.GRPCAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(grpcMaxMessageBytes),
+			grpc.MaxCallSendMsgSize(grpcMaxMessageBytes),
+		),
+	)
 	if err != nil {
 		log.Fatalf("dial media grpc: %v", err)
 	}
@@ -92,7 +101,11 @@ func main() {
 		logger.Fatal("listen grpc", zap.Error(err))
 	}
 
-	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("chat")))
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("chat")),
+		grpc.MaxRecvMsgSize(grpcMaxMessageBytes),
+		grpc.MaxSendMsgSize(grpcMaxMessageBytes),
+	)
 	chatv1.RegisterChatServer(grpcServer, grpcSrv)
 	metricsServer := &http.Server{
 		Addr:    ":9104",
