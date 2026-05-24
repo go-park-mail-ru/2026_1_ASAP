@@ -164,6 +164,8 @@ message ChatInformation {
   optional string avatar = 5;
   int64 owner_id = 6;
   optional string description = 7;
+  int64 unread_count = 8;
+  int64 last_read_message_id = 9;
 }
 
 enum ChatType {

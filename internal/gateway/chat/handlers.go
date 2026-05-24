@@ -37,13 +37,15 @@ type MessageInfoResponse struct {
 }
 
 type ChatInfoResponse struct {
-	Avatar      *string             `json:"avatar"`
-	Description *string             `json:"description"`
-	Type        string              `json:"type"`
-	Title       string              `json:"title"`
-	LastMessage MessageInfoResponse `json:"last_message"`
-	ID          int64               `json:"id"`
-	OwnerID     int64               `json:"owner_id"`
+	Avatar            *string             `json:"avatar"`
+	Description       *string             `json:"description"`
+	Type              string              `json:"type"`
+	Title             string              `json:"title"`
+	LastMessage       MessageInfoResponse `json:"last_message"`
+	ID                int64               `json:"id"`
+	OwnerID           int64               `json:"owner_id"`
+	UnreadCount       int64               `json:"unread_count"`
+	LastReadMessageID int64               `json:"last_read_message_id"`
 }
 
 type CreateChatRequest struct {
@@ -260,10 +262,12 @@ func parseChatType(s string) (chatv1.ChatType, error) {
 
 func mapChatInfo(c *chatv1.ChatInformation) ChatInfoResponse {
 	out := ChatInfoResponse{
-		ID:      c.GetId(),
-		Type:    mapChatType(c.GetType()),
-		Title:   c.GetTitle(),
-		OwnerID: c.GetOwnerId(),
+		ID:                c.GetId(),
+		Type:              mapChatType(c.GetType()),
+		Title:             c.GetTitle(),
+		OwnerID:           c.GetOwnerId(),
+		UnreadCount:       c.GetUnreadCount(),
+		LastReadMessageID: c.GetLastReadMessageId(),
 	}
 	if a := c.GetAvatar(); a != "" {
 		v := a

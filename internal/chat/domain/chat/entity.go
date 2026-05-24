@@ -13,14 +13,16 @@ const (
 )
 
 type Chat struct {
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Description *string
-	AvatarUrl   *string
-	Type        ChatType
-	Title       string
-	Id          int64
-	OwnerId     int64
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	Description       *string
+	AvatarUrl         *string
+	Type              ChatType
+	Title             string
+	Id                int64
+	OwnerId           int64
+	UnreadCount       int64
+	LastReadMessageID int64
 }
 
 type AttachmentType string

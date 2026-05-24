@@ -18,13 +18,15 @@ func mapChatsInformationDTOToProtos(chats []dto.ChatInformationDTO) []*chatv1.Ch
 
 func mapChatInformationDTOToProto(dto *dto.ChatInformationDTO) *chatv1.ChatInformation {
 	return &chatv1.ChatInformation{
-		Id:          dto.ID,
-		Title:       dto.Title,
-		Type:        mapChatTypeToProto(&dto.ChatType),
-		Avatar:      dto.Avatar,
-		LastMessage: mapMessageDTOToProto(&dto.LastMessage),
-		OwnerId:     dto.OwnerID,
-		Description: dto.Description,
+		Id:                dto.ID,
+		Title:             dto.Title,
+		Type:              mapChatTypeToProto(&dto.ChatType),
+		Avatar:            dto.Avatar,
+		LastMessage:       mapMessageDTOToProto(&dto.LastMessage),
+		OwnerId:           dto.OwnerID,
+		Description:       dto.Description,
+		UnreadCount:       dto.UnreadCount,
+		LastReadMessageId: dto.LastReadMessageID,
 	}
 }
 

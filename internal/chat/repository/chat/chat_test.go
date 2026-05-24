@@ -272,9 +272,10 @@ func TestChatRepository_GetAllChatsByUserID(t *testing.T) {
 			prepare: func(m pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{
 					"id", "type", "title", "description", "owner_id", "avatar_url", "created_at", "updated_at",
+					"last_read_message_id", "unread_count",
 				}).
-					AddRow(1, "group", "chat1", sql.NullString{String: "desc", Valid: true}, 10, sql.NullString{Valid: false}, time.Now(), time.Now()).
-					AddRow(2, "dialog", "chat2", sql.NullString{String: "desc", Valid: true}, 11, sql.NullString{Valid: false}, time.Now(), time.Now())
+					AddRow(1, "group", "chat1", sql.NullString{String: "desc", Valid: true}, 10, sql.NullString{Valid: false}, time.Now(), time.Now(), int64(5), int64(3)).
+					AddRow(2, "dialog", "chat2", sql.NullString{String: "desc", Valid: true}, 11, sql.NullString{Valid: false}, time.Now(), time.Now(), int64(0), int64(1))
 
 				m.ExpectQuery(chatssql.GetAllChatsByUserID).
 					WithArgs(int64(1)).
@@ -283,6 +284,9 @@ func TestChatRepository_GetAllChatsByUserID(t *testing.T) {
 			assert: func(t *testing.T, chats []*domain.Chat, err error) {
 				require.NoError(t, err)
 				require.Len(t, chats, 2)
+				require.Equal(t, int64(5), chats[0].LastReadMessageID)
+				require.Equal(t, int64(3), chats[0].UnreadCount)
+				require.Equal(t, int64(1), chats[1].UnreadCount)
 			},
 		},
 		{
@@ -291,6 +295,7 @@ func TestChatRepository_GetAllChatsByUserID(t *testing.T) {
 			prepare: func(m pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{
 					"id", "type", "title", "description", "owner_id", "avatar_url", "created_at", "updated_at",
+					"last_read_message_id", "unread_count",
 				})
 
 				m.ExpectQuery(chatssql.GetAllChatsByUserID).
@@ -327,6 +332,62 @@ func TestChatRepository_GetAllChatsByUserID(t *testing.T) {
 
 			tt.assert(t, chats, err)
 
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestChatRepository_GetChatMemberUnread(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		prepare func(m pgxmock.PgxPoolIface)
+		assert  func(t *testing.T, lastRead, unread int64, err error)
+		name    string
+		chatID  int64
+		userID  int64
+	}{
+		{
+			name:   "success",
+			chatID: 1,
+			userID: 100,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.GetChatMemberUnread).
+					WithArgs(int64(1), int64(100)).
+					WillReturnRows(pgxmock.NewRows([]string{"last_read_message_id", "unread_count"}).
+						AddRow(int64(10), int64(2)))
+			},
+			assert: func(t *testing.T, lastRead, unread int64, err error) {
+				require.NoError(t, err)
+				require.Equal(t, int64(10), lastRead)
+				require.Equal(t, int64(2), unread)
+			},
+		},
+		{
+			name:   "not_member",
+			chatID: 2,
+			userID: 200,
+			prepare: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery(chatssql.GetChatMemberUnread).
+					WithArgs(int64(2), int64(200)).
+					WillReturnError(pgx.ErrNoRows)
+			},
+			assert: func(t *testing.T, lastRead, unread int64, err error) {
+				require.ErrorIs(t, err, domain.ErrNotMember)
+				require.Zero(t, lastRead)
+				require.Zero(t, unread)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := newPGMock(t)
+			tt.prepare(mock)
+
+			repo := newTestChatRepository(mock)
+			lastRead, unread, err := repo.GetChatMemberUnread(ctx, tt.chatID, tt.userID)
+			tt.assert(t, lastRead, unread, err)
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
 	}

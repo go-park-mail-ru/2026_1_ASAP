@@ -58,3 +58,6 @@ var GetMemberLastReads string
 
 //go:embed update_member_last_read_message_id.sql
 var UpdateMemberLastReadMessageID string
+
+//go:embed get_chat_member_unread.sql
+var GetChatMemberUnread string

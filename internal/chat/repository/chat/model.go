@@ -14,14 +14,16 @@ const (
 )
 
 type ChatModel struct {
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Type        ChatType
-	Title       string
-	Description sql.NullString
-	AvatarUrl   sql.NullString
-	Id          int64
-	OwnerId     int64
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	Type              ChatType
+	Title             string
+	Description       sql.NullString
+	AvatarUrl         sql.NullString
+	Id                int64
+	OwnerId           int64
+	LastReadMessageID int64
+	UnreadCount       int64
 }
 
 type MessageModel struct {

@@ -17,6 +17,7 @@ import (
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=chat.go -destination=mock/chat_mock.go -package=mock
 type ChatRepositoryInterface interface {
 	GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error)
+	GetChatMemberUnread(ctx context.Context, chatID, userID int64) (lastRead, unread int64, err error)
 	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
 	CreateChat(ctx context.Context, newChat *domain.Chat) (*domain.Chat, error)
 	GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error)
@@ -129,6 +130,15 @@ func (s *ChatService) getDialogAvatar(ctx context.Context, chatID int64, userID 
 	return user.Avatar, nil
 }
 
+func (s *ChatService) fillReadState(ctx context.Context, chatID, userID int64, out *dto.ChatInformationDTO) {
+	lastRead, unread, err := s.chatRepo.GetChatMemberUnread(ctx, chatID, userID)
+	if err != nil {
+		return
+	}
+	out.LastReadMessageID = lastRead
+	out.UnreadCount = unread
+}
+
 func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInformationDTO, error) {
 	chats, err := s.chatRepo.GetAllChatsByUserID(ctx, id)
 	if err != nil {
@@ -170,13 +180,15 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 		}
 
 		result = append(result, dto.ChatInformationDTO{
-			ID:          chat.Id,
-			Title:       sanitize.Text(displayTitle),
-			ChatType:    dto.ChatType(chat.Type),
-			LastMessage: messageDTO,
-			Avatar:      displayAvatar,
-			OwnerID:     chat.OwnerId,
-			Description: sanitize.TextPtr(chat.Description),
+			ID:                chat.Id,
+			Title:             sanitize.Text(displayTitle),
+			ChatType:          dto.ChatType(chat.Type),
+			LastMessage:       messageDTO,
+			Avatar:            displayAvatar,
+			OwnerID:           chat.OwnerId,
+			Description:       sanitize.TextPtr(chat.Description),
+			UnreadCount:       chat.UnreadCount,
+			LastReadMessageID: chat.LastReadMessageID,
 		})
 	}
 
@@ -277,6 +289,7 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 		}
 	}
 
+	s.fillReadState(ctx, created.Id, ownerID, out)
 	return out, nil
 }
 
@@ -315,7 +328,7 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 		}
 	}
 
-	return &dto.ChatInformationDTO{
+	out := &dto.ChatInformationDTO{
 		ID:          chat.Id,
 		ChatType:    dto.ChatType(chat.Type),
 		Title:       sanitize.Text(displayTitle),
@@ -323,7 +336,9 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 		Avatar:      displayAvatar,
 		OwnerID:     chat.OwnerId,
 		Description: sanitize.TextPtr(chat.Description),
-	}, nil
+	}
+	s.fillReadState(ctx, chatID, userID, out)
+	return out, nil
 }
 
 func (s *ChatService) DeleteChat(ctx context.Context, userID, chatID int64) error {
@@ -442,6 +457,7 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 		}
 	}
 
+	s.fillReadState(ctx, chatID, userID, out)
 	return out, nil
 }
 
@@ -501,6 +517,7 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 		}
 	}
 
+	s.fillReadState(ctx, chatID, userID, out)
 	return out, nil
 }
 
@@ -563,6 +580,7 @@ func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID 
 		}
 	}
 
+	s.fillReadState(ctx, chatID, userID, out)
 	return out, nil
 }
 
