@@ -1,0 +1,79 @@
+name: Pulse Workflow
+
+on:
+  push:
+    branches: [main, microservices]
+  pull_request:
+    branches: [main, microservices]
+
+concurrency:
+  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install tools
+        run: |
+          go install github.com/golang/mock/mockgen@v1.6.0
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+      - name: Run tests
+        run: make test
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+      - name: Run linter
+        run: make lint
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    if: github.event_name == 'push'
+    timeout-minutes: 30
+    steps:
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          command_timeout: 30m
+          envs: DEPLOY_DIR,BRANCH
+          script: |
+            set -euo pipefail
+            DEPLOY_DIR="${DEPLOY_DIR:-/home/ubuntu/pulseapp/backend/2026_1_ASAP}"
+            BRANCH="${BRANCH:-main}"
+            cd "$DEPLOY_DIR"
+            git fetch origin "$BRANCH"
+            git checkout "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+            export APPLICATION_CONFIG=prod
+            docker compose up -d --build --remove-orphans
+            echo "deploy finished: branch=$BRANCH commit=$(git rev-parse --short HEAD)"
+        env:
+          DEPLOY_DIR: ${{ secrets.DEPLOY_PATH }}
+          BRANCH: ${{ github.ref_name }}
