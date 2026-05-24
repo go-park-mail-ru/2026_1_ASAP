@@ -1,0 +1,13 @@
+{
+    "name": "heartik",
+    "title": "HEARTIK",
+    "thumbnail": "03_fire.png",
+    "stickers": [
+        { "file": "01_privet.png", "slug": "", "emoji": "" },
+        { "file": "02_love.png", "slug": "", "emoji": "" },
+        { "file": "03_fire.png", "slug": "", "emoji": "" },
+        { "file": "04_chill.png", "slug": "", "emoji": "" },
+        { "file": "05_think.png", "slug": "", "emoji": "" },
+        { "file": "06_laugh.png", "slug": "", "emoji": "" }
+    ]
+}
