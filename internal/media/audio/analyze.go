@@ -68,6 +68,26 @@ func AnalyzeVoice(content []byte, contentType string) (durationMs int, waveform 
 }
 
 func probeDuration(path string) (float64, error) {
+	duration, err := probeFormatDuration(path)
+	if err != nil {
+		return 0, err
+	}
+	if duration > 0 {
+		return duration, nil
+	}
+
+	duration, err = probeStreamDuration(path)
+	if err != nil {
+		return 0, err
+	}
+	if duration > 0 {
+		return duration, nil
+	}
+
+	return probePacketDuration(path)
+}
+
+func probeFormatDuration(path string) (float64, error) {
 	out, err := exec.Command(
 		"ffprobe",
 		"-v", "error",
@@ -79,16 +99,94 @@ func probeDuration(path string) (float64, error) {
 		return 0, fmt.Errorf("%w: %v", ErrInvalidVoiceAudio, err)
 	}
 
-	raw := strings.TrimSpace(string(out))
-	if raw == "" || raw == "N/A" {
+	return parseProbeDurationOutput(string(out))
+}
+
+func probeStreamDuration(path string) (float64, error) {
+	out, err := exec.Command(
+		"ffprobe",
+		"-v", "error",
+		"-count_packets",
+		"-select_streams", "a:0",
+		"-show_entries", "stream=duration",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		path,
+	).Output()
+	if err != nil {
+		return 0, fmt.Errorf("%w: %v", ErrInvalidVoiceAudio, err)
+	}
+
+	return parseProbeDurationOutput(string(out))
+}
+
+func probePacketDuration(path string) (float64, error) {
+	out, err := exec.Command(
+		"ffprobe",
+		"-v", "error",
+		"-select_streams", "a:0",
+		"-show_entries", "packet=pts_time,duration_time",
+		"-of", "csv=p=0",
+		path,
+	).Output()
+	if err != nil {
+		return 0, fmt.Errorf("%w: %v", ErrInvalidVoiceAudio, err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	if len(lines) == 0 || lines[0] == "" {
 		return 0, ErrInvalidVoiceAudio
 	}
 
-	duration, err := strconv.ParseFloat(raw, 64)
+	lastLine := strings.Trim(lines[len(lines)-1], ", \t")
+	parts := strings.Split(lastLine, ",")
+	if len(parts) == 0 {
+		return 0, ErrInvalidVoiceAudio
+	}
+
+	pts, err := parseProbeFloat(parts[0])
+	if err != nil {
+		return 0, err
+	}
+
+	end := pts
+	if len(parts) > 1 {
+		if packetDuration, err := parseProbeFloat(parts[1]); err == nil {
+			end += packetDuration
+		}
+	}
+	if end <= 0 {
+		return 0, ErrInvalidVoiceAudio
+	}
+	return end, nil
+}
+
+func parseProbeDurationOutput(out string) (float64, error) {
+	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+		raw := strings.TrimSpace(line)
+		if raw == "" || raw == "N/A" {
+			continue
+		}
+		duration, err := strconv.ParseFloat(raw, 64)
+		if err != nil {
+			continue
+		}
+		if duration > 0 {
+			return duration, nil
+		}
+	}
+	return 0, nil
+}
+
+func parseProbeFloat(raw string) (float64, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "N/A" {
+		return 0, ErrInvalidVoiceAudio
+	}
+	value, err := strconv.ParseFloat(raw, 64)
 	if err != nil {
 		return 0, fmt.Errorf("%w: parse duration: %v", ErrInvalidVoiceAudio, err)
 	}
-	return duration, nil
+	return value, nil
 }
 
 func buildWaveform(path string) ([]uint8, error) {
