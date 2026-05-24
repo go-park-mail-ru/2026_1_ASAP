@@ -8,6 +8,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rvinnie/yookassa-sdk-go/yookassa"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	paymentv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1"
@@ -17,11 +24,6 @@ import (
 	paygrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/payment/transport/grpc"
 	paysub "github.com/go-park-mail-ru/2026_1_ASAP/internal/payment/transport/subscription"
 	payuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/payment/usecase"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rvinnie/yookassa-sdk-go/yookassa"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -70,8 +72,9 @@ func main() {
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("payment")))
 	paymentv1.RegisterPaymentServer(grpcServer, srv)
 	metricsServer := &http.Server{
-		Addr:    ":9112",
-		Handler: promhttp.Handler(),
+		Addr:              ":9112",
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)

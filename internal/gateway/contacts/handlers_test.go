@@ -17,9 +17,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
-	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/contacts/mock"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
+	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 )
 
 func strPtr(s string) *string {
@@ -51,20 +51,20 @@ func TestPositiveGatewayContactsHandler_GetContacts(t *testing.T) {
 				}).Return(&profilev1.ResponseListContacts{
 					Contacts: []*profilev1.ContactItem{
 						{
-							UserId:        100,
-							ContactUserId: 101,
-							FirstName:     "John",
-							LastName:      strPtr("Doe"),
+							UserId:           100,
+							ContactUserId:    101,
+							FirstName:        "John",
+							LastName:         strPtr("Doe"),
 							ContactAvatarUrl: strPtr("avatar.jpg"),
-							CreatedAt:     timestamppb.Now(),
+							CreatedAt:        timestamppb.Now(),
 						},
 						{
-							UserId:        100,
-							ContactUserId: 102,
-							FirstName:     "Jane",
-							LastName:      nil,
+							UserId:           100,
+							ContactUserId:    102,
+							FirstName:        "Jane",
+							LastName:         nil,
 							ContactAvatarUrl: nil,
-							CreatedAt:     timestamppb.Now(),
+							CreatedAt:        timestamppb.Now(),
 						},
 					},
 				}, nil)
@@ -218,12 +218,12 @@ func TestPositiveGatewayContactsHandler_CreateContact(t *testing.T) {
 					LastName:      strPtr("Doe"),
 				}).Return(&profilev1.ResponseAddContact{
 					Contact: &profilev1.ContactItem{
-						UserId:        100,
-						ContactUserId: 101,
-						FirstName:     "John",
-						LastName:      strPtr("Doe"),
+						UserId:           100,
+						ContactUserId:    101,
+						FirstName:        "John",
+						LastName:         strPtr("Doe"),
 						ContactAvatarUrl: strPtr("avatar.jpg"),
-						CreatedAt:     timestamppb.Now(),
+						CreatedAt:        timestamppb.Now(),
 					},
 				}, nil)
 			},
@@ -514,11 +514,11 @@ func TestNegativeGatewayContactsHandler_DeleteContact(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		prepare        func(*fields)
-		want           int
-		contactUserID  string
-		userID         interface{}
+		name          string
+		prepare       func(*fields)
+		want          int
+		contactUserID string
+		userID        interface{}
 	}{
 		{
 			name:          "Invalid contact_user_id",

@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 
-	paymentv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/payment/domain"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/payment/dto"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	paymentv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/payment/domain"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/payment/dto"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 )
 
 type PaymentUseCase interface {

@@ -9,14 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/audio"
-	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/s3log"
 	"github.com/google/uuid"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"go.uber.org/zap"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/audio"
+	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/s3log"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 )
@@ -179,7 +180,7 @@ func (m *MediaRepository) UploadMessageAttachment(
 		waveform    []uint8
 		userMeta    map[string]string
 		contentType = input.ContentType
-		size        = input.Size
+		size        int64
 	)
 
 	if kind == mediadto.MessageAttachmentKindVoice {

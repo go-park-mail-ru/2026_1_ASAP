@@ -37,7 +37,7 @@ func LoadSubscriptionConfig() (*SubscriptionConfig, error) {
 		return nil, err
 	}
 	var raw subscriptionFile
-	if err := cleanenv.ReadConfig(path, &raw); err != nil {
+	if err = cleanenv.ReadConfig(path, &raw); err != nil {
 		return nil, fmt.Errorf("load subscription config %q: %w", path, err)
 	}
 

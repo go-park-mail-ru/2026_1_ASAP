@@ -1,9 +1,10 @@
 package grpc
 
 import (
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	complaintv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/complaint/v1"
 	dtoComplaint "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/dto/complaint"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func mapComplaintTypeToString(t complaintv1.ComplaintType) string {

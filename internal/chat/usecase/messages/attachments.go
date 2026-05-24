@@ -132,7 +132,7 @@ func (m MessageService) SendMessageWithAttachments(
 		return nil, domain.ErrOnlyOwnerCanSendMessaage
 	}
 
-	if err := validateVoiceAttachments(req.Attachments); err != nil {
+	if err = validateVoiceAttachments(req.Attachments); err != nil {
 		return nil, err
 	}
 

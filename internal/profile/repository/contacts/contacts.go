@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 
 	"github.com/jackc/pgx/v5/pgconn"
 

@@ -21,10 +21,6 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 )
 
-func strPtr(s string) *string {
-	return &s
-}
-
 func ptrInt64(i int64) *int64 {
 	return &i
 }

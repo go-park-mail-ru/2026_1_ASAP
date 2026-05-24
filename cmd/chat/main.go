@@ -8,6 +8,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	_ "google.golang.org/grpc/encoding/gzip"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
@@ -25,11 +32,6 @@ import (
 	messagesuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages"
 	stickersuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/stickers"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 const grpcMaxMessageBytes = 64 << 20
@@ -108,8 +110,9 @@ func main() {
 	)
 	chatv1.RegisterChatServer(grpcServer, grpcSrv)
 	metricsServer := &http.Server{
-		Addr:    ":9104",
-		Handler: promhttp.Handler(),
+		Addr:              ":9104",
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	onlineRepo := onlinerepo.NewRedisRepository(cfg.RedisConfig, logger.Named("presence"))
@@ -132,8 +135,9 @@ func main() {
 		wsAddr = ":8005"
 	}
 	httpServer := &http.Server{
-		Addr:    wsAddr,
-		Handler: mux,
+		Addr:              wsAddr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)

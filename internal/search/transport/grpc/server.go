@@ -3,10 +3,11 @@ package grpc
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	searchv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/search/v1"
 	searchdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/dto/search"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"go.uber.org/zap"
 )
 
 type SearchUsecase interface {

@@ -64,7 +64,7 @@ func LoadAuthConfig() (*AuthConfig, error) {
 	}
 
 	var raw authFile
-	if err := cleanenv.ReadConfig(path, &raw); err != nil {
+	if err = cleanenv.ReadConfig(path, &raw); err != nil {
 		return nil, fmt.Errorf("load auth config %q: %w", path, err)
 	}
 

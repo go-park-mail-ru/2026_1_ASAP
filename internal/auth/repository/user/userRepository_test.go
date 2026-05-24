@@ -6,13 +6,14 @@ import (
 	"testing"
 	"time"
 
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/user"
-	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/repository/user/sql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/user"
+	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/repository/user/sql"
 )
 
 func newTestUserRepository(mock pgxmock.PgxPoolIface) *UserRepository {
@@ -529,8 +530,8 @@ func TestUserRepository_CreateUserByVKID_Positive(t *testing.T) {
 	}{
 		{
 			name: "success",
-			vkID:  12345,
-			user:  newBaseUserForCreate,
+			vkID: 12345,
+			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *domain.User) {
 				expectUserCreateBeginTx(m)
 				m.ExpectQuery(usersql.ExistsLogin).WithArgs("newuser").WillReturnRows(
@@ -555,8 +556,8 @@ func TestUserRepository_CreateUserByVKID_Positive(t *testing.T) {
 		},
 		{
 			name: "email exists drops email before linking",
-			vkID:  12346,
-			user:  newBaseUserForCreate,
+			vkID: 12346,
+			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *domain.User) {
 				expectUserCreateBeginTx(m)
 				m.ExpectQuery(usersql.ExistsLogin).WithArgs("newuser").WillReturnRows(
@@ -607,8 +608,8 @@ func TestUserRepository_CreateUserByVKID_Negative(t *testing.T) {
 	}{
 		{
 			name: "login_exists",
-			vkID:  1,
-			user:  newBaseUserForCreate,
+			vkID: 1,
+			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *domain.User) {
 				_ = u
 				expectUserCreateBeginTx(m)
@@ -625,8 +626,8 @@ func TestUserRepository_CreateUserByVKID_Negative(t *testing.T) {
 		},
 		{
 			name: "insert_vk_link_error",
-			vkID:  2,
-			user:  newBaseUserForCreate,
+			vkID: 2,
+			user: newBaseUserForCreate,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface, u *domain.User) {
 				created := time.Date(2024, 6, 1, 12, 0, 0, 0, time.UTC)
 				updated := time.Date(2024, 6, 2, 12, 0, 0, 0, time.UTC)

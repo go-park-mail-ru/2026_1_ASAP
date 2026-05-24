@@ -184,14 +184,14 @@ func (h *GatewaySearchHandler) SearchChats(w http.ResponseWriter, r *http.Reques
 	limit, _ := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 32)
 
 	if isOnlyChannelKindFilter(kinds) {
-		gResp, err := h.Search.SearchGlobalChannels(ctx, &searchv1.SearchGlobalChannelsRequest{
+		gResp, searchErr := h.Search.SearchGlobalChannels(ctx, &searchv1.SearchGlobalChannelsRequest{
 			UserId:   uid,
 			Query:    q,
 			Limit:    int32(limit),
 			BeforeId: beforeID,
 		})
-		if err != nil {
-			sendSearchError(w, err)
+		if searchErr != nil {
+			sendSearchError(w, searchErr)
 			return
 		}
 		items := make([]searchChatItemJSON, 0, len(gResp.GetChannels()))

@@ -66,8 +66,8 @@ func (s *ChatServer) publishPresenceOnline(ctx context.Context, userID int64) {
 	if err != nil {
 		log.Warn("presence is online check", zap.Int64("user_id", userID), zap.Error(err))
 	}
-	if err := s.onlineRepo.SetOnline(ctx, userID); err != nil {
-		log.Warn("presence set online", zap.Int64("user_id", userID), zap.Error(err))
+	if setErr := s.onlineRepo.SetOnline(ctx, userID); setErr != nil {
+		log.Warn("presence set online", zap.Int64("user_id", userID), zap.Error(setErr))
 		return
 	}
 	if wasOnline {

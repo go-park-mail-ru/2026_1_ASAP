@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
 	messagessql "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/messages/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/null"
-	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 )
 
 func ptr[T any](v T) *T {
@@ -396,10 +396,10 @@ func TestMessageRepository_UpdateMessage_Positive(t *testing.T) {
 	updated := time.Date(2024, 7, 2, 11, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		message         func() *domain.Message
-		prepare         func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message)
+		message          func() *domain.Message
+		prepare          func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message)
 		assertLastEdited func(t *testing.T, lastEdited bool)
-		name            string
+		name             string
 	}{
 		{
 			name: "update_message_success",
@@ -552,10 +552,10 @@ func TestMessageRepository_DeleteMessage_Positive(t *testing.T) {
 	updated := time.Date(2024, 7, 3, 12, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		message         func() *domain.Message
-		prepare         func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message)
+		message          func() *domain.Message
+		prepare          func(t *testing.T, m pgxmock.PgxPoolIface, msg *domain.Message)
 		assertLastEdited func(t *testing.T, lastEdited bool)
-		name            string
+		name             string
 	}{
 		{
 			name: "delete_message_success_affects_last_message",
@@ -772,8 +772,8 @@ func TestMessageRepository_Close(t *testing.T) {
 
 func TestMessageRepository_Log(t *testing.T) {
 	tests := []struct {
-		name        string
-		logger      *zap.Logger
+		name         string
+		logger       *zap.Logger
 		expectNotNop bool
 	}{
 		{
@@ -888,9 +888,9 @@ func TestToDomainModel_NullValues(t *testing.T) {
 func TestToModel_NullValues(t *testing.T) {
 	now := time.Now()
 	tests := []struct {
-		name  string
-		msg   *domain.Message
-		want  *MessageModel
+		name string
+		msg  *domain.Message
+		want *MessageModel
 	}{
 		{
 			name: "with_sticker_and_deleted_at",

@@ -6,13 +6,14 @@ import (
 	"errors"
 	"net/http"
 
+	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/repository"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
 )
 
 type MediaRepositoryInterface interface {

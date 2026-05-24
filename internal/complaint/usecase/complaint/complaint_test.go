@@ -7,19 +7,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/domain/complaint"
 	dtoComplaint "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/dto/complaint"
 	dtoMedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/dto/media"
-	"github.com/stretchr/testify/require"
 )
 
 type complaintRepoStub struct {
-	createFn               func(ctx context.Context, complaint domain.Complaint) (domain.Complaint, error)
-	uploadAttachmentURLFn  func(ctx context.Context, complaintID int64, attachmentURL string) (domain.Complaint, error)
+	createFn                func(ctx context.Context, complaint domain.Complaint) (domain.Complaint, error)
+	uploadAttachmentURLFn   func(ctx context.Context, complaintID int64, attachmentURL string) (domain.Complaint, error)
 	getComplaintsByUserIDFn func(ctx context.Context, userID int64) ([]domain.Complaint, error)
-	getComplaintByIDFn     func(ctx context.Context, id int64) (domain.Complaint, error)
-	updateComplaintFn      func(ctx context.Context, complaintID int64, status domain.ComplaintStatus) (domain.Complaint, error)
-	getAllComplaintsFn     func(ctx context.Context) ([]domain.Complaint, error)
+	getComplaintByIDFn      func(ctx context.Context, id int64) (domain.Complaint, error)
+	updateComplaintFn       func(ctx context.Context, complaintID int64, status domain.ComplaintStatus) (domain.Complaint, error)
+	getAllComplaintsFn      func(ctx context.Context) ([]domain.Complaint, error)
 }
 
 func (s complaintRepoStub) Create(ctx context.Context, complaint domain.Complaint) (domain.Complaint, error) {

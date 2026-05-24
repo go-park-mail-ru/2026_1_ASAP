@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	sessionDTO "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/session"
 	"github.com/google/uuid"
+
+	sessionDTO "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/session"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/session"
 	utils "github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/csrf"

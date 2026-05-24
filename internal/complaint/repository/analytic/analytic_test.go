@@ -124,10 +124,10 @@ func TestNegativeAnalyticRepository_GetUserAnalytic(t *testing.T) {
 	}
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		name     string
-		args     args
-		wantErr  string
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		args    args
+		wantErr string
 	}{
 		{
 			name: "Query error",

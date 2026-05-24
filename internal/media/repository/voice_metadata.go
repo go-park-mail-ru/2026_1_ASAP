@@ -62,10 +62,7 @@ func parseVoiceUserMetadata(meta map[string]string, contentType string, size int
 func userMetadataFromStat(meta map[string]string) map[string]string {
 	out := make(map[string]string, len(meta))
 	for k, v := range meta {
-		key := strings.ToLower(k)
-		if strings.HasPrefix(key, "x-amz-meta-") {
-			key = strings.TrimPrefix(key, "x-amz-meta-")
-		}
+		key := strings.TrimPrefix(strings.ToLower(k), "x-amz-meta-")
 		out[key] = v
 	}
 	return out

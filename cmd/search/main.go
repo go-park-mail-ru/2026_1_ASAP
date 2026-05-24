@@ -8,6 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	searchv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/search/v1"
@@ -16,9 +21,6 @@ import (
 	searchpg "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/repository/postgres"
 	searchgrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/transport/grpc"
 	searchuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/usecase/search"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 func main() {
@@ -52,8 +54,9 @@ func main() {
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("search")))
 	searchv1.RegisterSearchServer(grpcServer, srv)
 	metricsServer := &http.Server{
-		Addr:    ":9110",
-		Handler: promhttp.Handler(),
+		Addr:              ":9110",
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)

@@ -367,7 +367,6 @@ func TestNegativeMediaServer_UploadChatAvatar(t *testing.T) {
 	}
 }
 
-
 func TestPositiveMediaServer_DeleteUserAvatar(t *testing.T) {
 	type fields struct {
 		mediaRepo *mock.MockMediaRepositoryInterface
