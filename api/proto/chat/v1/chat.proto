@@ -23,6 +23,7 @@ service Chat {
   rpc UpdateChatDescription(RequestUpdateDescription) returns (ChatInformation);
   rpc UploadMessageAttachment(RequestUploadMessageAttachment) returns (ResponseUploadMessageAttachment);
   rpc AuthorizeMessageAttachment(RequestAuthorizeMessageAttachment) returns (ResponseAuthorizeMessageAttachment);
+  rpc GetStickerPacks(google.protobuf.Empty) returns (ResponseGetStickerPacks);
 }
 
 enum ChatErrorCode {
@@ -70,6 +71,8 @@ enum ChatErrorCode {
   CHAT_ERROR_ATTACHMENT_NOT_OWNED = 32;
   CHAT_ERROR_CONTACT_NOT_FOUND = 33;
   CHAT_ERROR_TOO_MANY_ATTACHMENTS = 34;
+  CHAT_ERROR_INVALID_STICKER = 35;
+  CHAT_ERROR_STICKER_NOT_FOUND = 36;
 }
 
 message RequestQuitChat {
@@ -204,4 +207,27 @@ message ResponseAuthorizeMessageAttachment {
   string content_type = 1;
   int64 size = 2;
   optional string file_name = 3;
+}
+
+message Sticker {
+  int64 id = 1;
+  int64 pack_id = 2;
+  string file_url = 3;
+  optional string slug = 4;
+  optional string emoji = 5;
+  optional int32 width = 6;
+  optional int32 height = 7;
+}
+
+message StickerPack {
+  int64 id = 1;
+  string name = 2;
+  string title = 3;
+  optional string slug = 4;
+  optional string thumbnail_url = 5;
+  repeated Sticker stickers = 6;
+}
+
+message ResponseGetStickerPacks {
+  repeated StickerPack packs = 1;
 }

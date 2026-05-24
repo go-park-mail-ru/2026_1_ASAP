@@ -25,6 +25,11 @@ type MessageRepositoryInterface interface {
 	DeleteMessage(ctx context.Context, message *domain.Message) (*domain.Message, bool, error)
 }
 
+type StickerRepositoryInterface interface {
+	GetStickerByID(ctx context.Context, stickerID int64) (*domain.Sticker, error)
+	GetStickersByIDs(ctx context.Context, stickerIDs []int64) (map[int64]domain.Sticker, error)
+}
+
 type ChatRepositoryInterface interface {
 	IsMember(ctx context.Context, chatId int64, userId int64) (bool, error)
 	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
@@ -38,6 +43,7 @@ type MessageService struct {
 	chatRepo            ChatRepositoryInterface
 	mediaRepo           MessageMediaRepositoryInterface
 	profileRepo         ProfileContactsInterface
+	stickerRepo         StickerRepositoryInterface
 	attachmentProxyBase string
 }
 
@@ -47,12 +53,18 @@ func NewMessageService(
 	mediaRepo MessageMediaRepositoryInterface,
 	profileRepo ProfileContactsInterface,
 	attachmentProxyBase string,
+	stickerRepo ...StickerRepositoryInterface,
 ) *MessageService {
+	var stickers StickerRepositoryInterface
+	if len(stickerRepo) > 0 {
+		stickers = stickerRepo[0]
+	}
 	return &MessageService{
 		messageRepo:         messageRepo,
 		chatRepo:            chatRepo,
 		mediaRepo:           mediaRepo,
 		profileRepo:         profileRepo,
+		stickerRepo:         stickers,
 		attachmentProxyBase: strings.TrimRight(attachmentProxyBase, "/"),
 	}
 }
@@ -107,6 +119,10 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 	if err != nil {
 		return nil, fmt.Errorf("messageRepo get attachments: %w", err)
 	}
+	stickersByID, err := m.stickersByMessage(ctx, raw)
+	if err != nil {
+		return nil, err
+	}
 
 	items := make([]dto.MessageDTO, 0, len(raw))
 	for _, msg := range raw {
@@ -119,6 +135,7 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 			Edited:      msg.Edited,
 			Read:        outgoingReadByPeers(msg.Id, msg.SenderId, userID, lastReads),
 			Attachments: mapAttachmentsToDTO(attachmentsByMessage[msg.Id]),
+			Sticker:     stickerDTOFromMessage(msg, stickersByID),
 		})
 	}
 
