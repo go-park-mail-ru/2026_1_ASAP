@@ -1534,12 +1534,14 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 		{
 			name: "Full chat info",
 			c: &chatv1.ChatInformation{
-				Id:          1,
-				Type:        chatv1.ChatType_GROUP,
-				Title:       "Group Chat",
-				OwnerId:     100,
-				Avatar:      strPtr("avatar.jpg"),
-				Description: strPtr("Description"),
+				Id:                1,
+				Type:              chatv1.ChatType_GROUP,
+				Title:             "Group Chat",
+				OwnerId:           100,
+				Avatar:            strPtr("avatar.jpg"),
+				Description:       strPtr("Description"),
+				UnreadCount:       3,
+				LastReadMessageId: 10,
 				LastMessage: &chatv1.MessageInformation{
 					SenderId:  101,
 					Text:      "Hello!",
@@ -1547,12 +1549,14 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 				},
 			},
 			want: ChatInfoResponse{
-				ID:          1,
-				Type:        "group",
-				Title:       "Group Chat",
-				OwnerID:     100,
-				Avatar:      strPtr("avatar.jpg"),
-				Description: strPtr("Description"),
+				ID:                1,
+				Type:              "group",
+				Title:             "Group Chat",
+				OwnerID:           100,
+				Avatar:            strPtr("avatar.jpg"),
+				Description:       strPtr("Description"),
+				UnreadCount:       3,
+				LastReadMessageID: 10,
 				LastMessage: MessageInfoResponse{
 					SenderID:  101,
 					Text:      "Hello!",
@@ -1585,6 +1589,8 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 			require.Equal(t, tt.want.Type, got.Type)
 			require.Equal(t, tt.want.Title, got.Title)
 			require.Equal(t, tt.want.OwnerID, got.OwnerID)
+			require.Equal(t, tt.want.UnreadCount, got.UnreadCount)
+			require.Equal(t, tt.want.LastReadMessageID, got.LastReadMessageID)
 			if tt.want.Avatar != nil {
 				require.Equal(t, *tt.want.Avatar, *got.Avatar)
 			}

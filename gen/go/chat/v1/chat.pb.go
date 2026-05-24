@@ -1107,16 +1107,18 @@ func (x *MessageInformation) GetCreatedAt() *timestamppb.Timestamp {
 }
 
 type ChatInformation struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Type          ChatType               `protobuf:"varint,2,opt,name=type,proto3,enum=chat.v1.ChatType" json:"type,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	LastMessage   *MessageInformation    `protobuf:"bytes,4,opt,name=last_message,json=lastMessage,proto3" json:"last_message,omitempty"`
-	Avatar        *string                `protobuf:"bytes,5,opt,name=avatar,proto3,oneof" json:"avatar,omitempty"`
-	OwnerId       int64                  `protobuf:"varint,6,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	Description   *string                `protobuf:"bytes,7,opt,name=description,proto3,oneof" json:"description,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Type              ChatType               `protobuf:"varint,2,opt,name=type,proto3,enum=chat.v1.ChatType" json:"type,omitempty"`
+	Title             string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	LastMessage       *MessageInformation    `protobuf:"bytes,4,opt,name=last_message,json=lastMessage,proto3" json:"last_message,omitempty"`
+	Avatar            *string                `protobuf:"bytes,5,opt,name=avatar,proto3,oneof" json:"avatar,omitempty"`
+	OwnerId           int64                  `protobuf:"varint,6,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	Description       *string                `protobuf:"bytes,7,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	UnreadCount       int64                  `protobuf:"varint,8,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`
+	LastReadMessageId int64                  `protobuf:"varint,9,opt,name=last_read_message_id,json=lastReadMessageId,proto3" json:"last_read_message_id,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ChatInformation) Reset() {
@@ -1196,6 +1198,20 @@ func (x *ChatInformation) GetDescription() string {
 		return *x.Description
 	}
 	return ""
+}
+
+func (x *ChatInformation) GetUnreadCount() int64 {
+	if x != nil {
+		return x.UnreadCount
+	}
+	return 0
+}
+
+func (x *ChatInformation) GetLastReadMessageId() int64 {
+	if x != nil {
+		return x.LastReadMessageId
+	}
+	return 0
 }
 
 type RequestUploadMessageAttachment struct {
@@ -1757,7 +1773,7 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\tsender_id\x18\x01 \x01(\x03R\bsenderId\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x129\n" +
 	"\n" +
-	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x98\x02\n" +
+	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xec\x02\n" +
 	"\x0fChatInformation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12%\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x11.chat.v1.ChatTypeR\x04type\x12\x14\n" +
@@ -1765,7 +1781,9 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\flast_message\x18\x04 \x01(\v2\x1b.chat.v1.MessageInformationR\vlastMessage\x12\x1b\n" +
 	"\x06avatar\x18\x05 \x01(\tH\x00R\x06avatar\x88\x01\x01\x12\x19\n" +
 	"\bowner_id\x18\x06 \x01(\x03R\aownerId\x12%\n" +
-	"\vdescription\x18\a \x01(\tH\x01R\vdescription\x88\x01\x01B\t\n" +
+	"\vdescription\x18\a \x01(\tH\x01R\vdescription\x88\x01\x01\x12!\n" +
+	"\funread_count\x18\b \x01(\x03R\vunreadCount\x12/\n" +
+	"\x14last_read_message_id\x18\t \x01(\x03R\x11lastReadMessageIdB\t\n" +
 	"\a_avatarB\x0e\n" +
 	"\f_description\"\xcb\x01\n" +
 	"\x1eRequestUploadMessageAttachment\x12\x17\n" +

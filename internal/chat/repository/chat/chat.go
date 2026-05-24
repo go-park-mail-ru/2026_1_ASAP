@@ -66,6 +66,8 @@ func (r *ChatRepository) GetAllChatsByUserID(ctx context.Context, id int64) ([]*
 			&chatModel.AvatarUrl,
 			&chatModel.CreatedAt,
 			&chatModel.UpdatedAt,
+			&chatModel.LastReadMessageID,
+			&chatModel.UnreadCount,
 		)
 		if scanErr != nil {
 			return nil, fmt.Errorf("failed to scan rows: %w", scanErr)
@@ -421,6 +423,21 @@ func (r *ChatRepository) DeleteMember(ctx context.Context, chatID, userID int64)
 	}
 
 	return nil
+}
+
+func (r *ChatRepository) GetChatMemberUnread(ctx context.Context, chatID, userID int64) (lastRead, unread int64, err error) {
+	q := chatssql.GetChatMemberUnread
+	start := time.Now()
+	row := r.db.QueryRow(ctx, q, chatID, userID)
+	err = row.Scan(&lastRead, &unread)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetChatMemberUnread", q, start, err, []any{chatID, userID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, 0, domain.ErrNotMember
+		}
+		return 0, 0, fmt.Errorf("get chat member unread: %w", err)
+	}
+	return lastRead, unread, nil
 }
 
 // GetMemberLastReads returns last_read_message_id per member (nil pointer = never set in DB).

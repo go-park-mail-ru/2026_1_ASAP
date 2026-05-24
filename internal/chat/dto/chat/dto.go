@@ -21,13 +21,15 @@ type MessageDTO struct {
 }
 
 type ChatInformationDTO struct {
-	Avatar      *string    `json:"avatar"`
-	Description *string    `json:"description"`
-	Title       string     `json:"title" example:"Chat Title"`
-	ChatType    ChatType   `json:"chat_type" example:"dialog"`
-	LastMessage MessageDTO `json:"last_message"`
-	ID          int64      `json:"id"`
-	OwnerID     int64      `json:"owner_id"`
+	Avatar            *string    `json:"avatar"`
+	Description       *string    `json:"description"`
+	Title             string     `json:"title" example:"Chat Title"`
+	ChatType          ChatType   `json:"chat_type" example:"dialog"`
+	LastMessage       MessageDTO `json:"last_message"`
+	ID                int64      `json:"id"`
+	OwnerID           int64      `json:"owner_id"`
+	UnreadCount       int64      `json:"unread_count"`
+	LastReadMessageID int64      `json:"last_read_message_id"`
 }
 
 type ChatCreate struct {
