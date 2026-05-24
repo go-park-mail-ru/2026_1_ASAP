@@ -8,7 +8,7 @@ PROTO_DIR := api/proto
 GEN_DIR := gen/go
 PROTO_FILES := $(shell rg --files $(PROTO_DIR) -g '*.proto')
 
-test: generate mocks
+test: generate
 	go test ./...
 
 generate: $(MOCKGEN)
