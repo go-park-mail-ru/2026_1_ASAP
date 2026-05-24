@@ -65,6 +65,8 @@ func (m *MediaAdapter) UploadMessageAttachment(
 		maxBytes = int64(chatmedia.MaxMessageVideoBytes)
 	case mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE:
 		maxBytes = int64(chatmedia.MaxMessageFileBytes)
+	case mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VOICE:
+		maxBytes = int64(chatmedia.MaxMessageVoiceBytes)
 	}
 	data, err := io.ReadAll(io.LimitReader(input.Body, maxBytes+1))
 	if err != nil {
@@ -95,9 +97,17 @@ func (m *MediaAdapter) UploadMessageAttachment(
 	}
 	if key := resp.GetObjectKey(); key != "" {
 		result := &chatmedia.UploadMessageAttachmentResult{
-			ObjectKey: key,
-			MimeType:  resp.GetMimeType(),
-			FileSize:  resp.GetFileSize(),
+			ObjectKey:  key,
+			MimeType:   resp.GetMimeType(),
+			FileSize:   resp.GetFileSize(),
+			DurationMs: resp.GetDurationMs(),
+		}
+		if len(resp.GetWaveform()) > 0 {
+			wf := make([]uint8, len(resp.GetWaveform()))
+			for i, v := range resp.GetWaveform() {
+				wf[i] = uint8(v)
+			}
+			result.Waveform = wf
 		}
 		if name := resp.GetFileName(); name != "" {
 			result.FileName = &name
@@ -107,4 +117,26 @@ func (m *MediaAdapter) UploadMessageAttachment(
 		return result, nil
 	}
 	return nil, errors.New("empty object_key in response")
+}
+
+func (m *MediaAdapter) GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*chatmedia.VoiceMetadataResult, error) {
+	resp, err := m.client.GetMessageVoiceMetadata(ctx, &mediav1.RequestGetMessageVoiceMetadata{
+		ObjectKey: objectKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := &chatmedia.VoiceMetadataResult{
+		DurationMs: resp.GetDurationMs(),
+		MimeType:   resp.GetMimeType(),
+		FileSize:   resp.GetFileSize(),
+	}
+	if len(resp.GetWaveform()) > 0 {
+		wf := make([]uint8, len(resp.GetWaveform()))
+		for i, v := range resp.GetWaveform() {
+			wf[i] = uint8(v)
+		}
+		result.Waveform = wf
+	}
+	return result, nil
 }

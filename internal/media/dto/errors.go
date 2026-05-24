@@ -6,4 +6,5 @@ var (
 	ErrEmptyFile       = errors.New("file is empty")
 	ErrFileTooLarge    = errors.New("file is too large")
 	ErrInvalidFileType = errors.New("file is invalid")
+	ErrVoiceTooLong    = errors.New("voice message too long")
 )

@@ -21,6 +21,7 @@ type MediaRepositoryInterface interface {
 	UploadComplaint(ctx context.Context, complaintID int64, input *mediadto.FileInput) (string, error)
 	UploadMessageAttachment(ctx context.Context, userID int64, kind mediadto.MessageAttachmentKind, input *mediadto.FileInput) (*repository.MessageAttachmentObject, error)
 	GetMessageAttachment(ctx context.Context, objectKey string) ([]byte, string, error)
+	GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*repository.VoiceMetadata, error)
 	DeleteAvatar(ctx context.Context, userID int64) error
 }
 
@@ -64,6 +65,8 @@ func statusFromFileError(err error) error {
 		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_INVALID_TYPE), "invalid file type")
 	case errors.Is(err, mediadto.ErrEmptyFile):
 		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_EMPTY), "file is empty")
+	case errors.Is(err, mediadto.ErrVoiceTooLong):
+		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_VOICE_TOO_LONG), "voice message too long")
 	default:
 		return grpcerr.New(codes.Internal, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INTERNAL), "internal server error")
 	}
@@ -103,6 +106,8 @@ func protoKindToDTO(kind mediav1.MessageAttachmentKind) (mediadto.MessageAttachm
 		return mediadto.MessageAttachmentKindVideo, nil
 	case mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE:
 		return mediadto.MessageAttachmentKindFile, nil
+	case mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VOICE:
+		return mediadto.MessageAttachmentKindVoice, nil
 	default:
 		return 0, mediadto.ErrInvalidFileType
 	}
@@ -186,10 +191,41 @@ func (m MediaServer) UploadMessageAttachment(ctx context.Context, req *mediav1.R
 		FileSize:  obj.Size,
 		ObjectKey: obj.ObjectKey,
 	}
+	if obj.DurationMs > 0 {
+		resp.DurationMs = int32(obj.DurationMs)
+	}
+	if len(obj.Waveform) > 0 {
+		wf := make([]uint32, len(obj.Waveform))
+		for i, v := range obj.Waveform {
+			wf[i] = uint32(v)
+		}
+		resp.Waveform = wf
+	}
 	if name := req.GetFileName(); name != "" {
 		resp.FileName = &name
 	}
 	return resp, nil
+}
+
+func (m MediaServer) GetMessageVoiceMetadata(ctx context.Context, req *mediav1.RequestGetMessageVoiceMetadata) (*mediav1.ResponseGetMessageVoiceMetadata, error) {
+	if req == nil || req.GetObjectKey() == "" {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "object_key is required")
+	}
+	meta, err := m.MediaRepository.GetMessageVoiceMetadata(ctx, req.GetObjectKey())
+	if err != nil {
+		m.Log(ctx).Error("failed to get voice metadata", zap.String("object_key", req.GetObjectKey()), zap.Error(err))
+		return nil, statusFromFileError(err)
+	}
+	wf := make([]uint32, len(meta.Waveform))
+	for i, v := range meta.Waveform {
+		wf[i] = uint32(v)
+	}
+	return &mediav1.ResponseGetMessageVoiceMetadata{
+		DurationMs: int32(meta.DurationMs),
+		Waveform:   wf,
+		MimeType:   meta.MimeType,
+		FileSize:   meta.FileSize,
+	}, nil
 }
 
 func (m MediaServer) GetMessageAttachment(ctx context.Context, req *mediav1.RequestGetMessageAttachment) (*mediav1.ResponseGetMessageAttachment, error) {

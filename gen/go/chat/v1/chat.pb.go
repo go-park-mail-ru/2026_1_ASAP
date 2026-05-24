@@ -230,6 +230,7 @@ const (
 	MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_PHOTO       MessageAttachmentKind = 1
 	MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VIDEO       MessageAttachmentKind = 2
 	MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE        MessageAttachmentKind = 3
+	MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VOICE       MessageAttachmentKind = 4
 )
 
 // Enum value maps for MessageAttachmentKind.
@@ -239,12 +240,14 @@ var (
 		1: "MESSAGE_ATTACHMENT_KIND_PHOTO",
 		2: "MESSAGE_ATTACHMENT_KIND_VIDEO",
 		3: "MESSAGE_ATTACHMENT_KIND_FILE",
+		4: "MESSAGE_ATTACHMENT_KIND_VOICE",
 	}
 	MessageAttachmentKind_value = map[string]int32{
 		"MESSAGE_ATTACHMENT_KIND_UNSPECIFIED": 0,
 		"MESSAGE_ATTACHMENT_KIND_PHOTO":       1,
 		"MESSAGE_ATTACHMENT_KIND_VIDEO":       2,
 		"MESSAGE_ATTACHMENT_KIND_FILE":        3,
+		"MESSAGE_ATTACHMENT_KIND_VOICE":       4,
 	}
 )
 
@@ -1278,6 +1281,8 @@ type ResponseUploadMessageAttachment struct {
 	FileSize      int64                  `protobuf:"varint,3,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
 	FileName      *string                `protobuf:"bytes,4,opt,name=file_name,json=fileName,proto3,oneof" json:"file_name,omitempty"`
 	ObjectKey     string                 `protobuf:"bytes,5,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
+	DurationMs    int32                  `protobuf:"varint,6,opt,name=duration_ms,json=durationMs,proto3" json:"duration_ms,omitempty"`
+	Waveform      []uint32               `protobuf:"varint,7,rep,packed,name=waveform,proto3" json:"waveform,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1345,6 +1350,20 @@ func (x *ResponseUploadMessageAttachment) GetObjectKey() string {
 		return x.ObjectKey
 	}
 	return ""
+}
+
+func (x *ResponseUploadMessageAttachment) GetDurationMs() int32 {
+	if x != nil {
+		return x.DurationMs
+	}
+	return 0
+}
+
+func (x *ResponseUploadMessageAttachment) GetWaveform() []uint32 {
+	if x != nil {
+		return x.Waveform
+	}
+	return nil
 }
 
 type RequestAuthorizeMessageAttachment struct {
@@ -1756,14 +1775,17 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12 \n" +
 	"\tfile_name\x18\x05 \x01(\tH\x00R\bfileName\x88\x01\x01B\f\n" +
 	"\n" +
-	"_file_name\"\xd1\x01\n" +
+	"_file_name\"\x8e\x02\n" +
 	"\x1fResponseUploadMessageAttachment\x12%\n" +
 	"\x0eattachment_url\x18\x01 \x01(\tR\rattachmentUrl\x12\x1b\n" +
 	"\tmime_type\x18\x02 \x01(\tR\bmimeType\x12\x1b\n" +
 	"\tfile_size\x18\x03 \x01(\x03R\bfileSize\x12 \n" +
 	"\tfile_name\x18\x04 \x01(\tH\x00R\bfileName\x88\x01\x01\x12\x1d\n" +
 	"\n" +
-	"object_key\x18\x05 \x01(\tR\tobjectKeyB\f\n" +
+	"object_key\x18\x05 \x01(\tR\tobjectKey\x12\x1f\n" +
+	"\vduration_ms\x18\x06 \x01(\x05R\n" +
+	"durationMs\x12\x1a\n" +
+	"\bwaveform\x18\a \x03(\rR\bwaveformB\f\n" +
 	"\n" +
 	"_file_name\"[\n" +
 	"!RequestAuthorizeMessageAttachment\x12\x17\n" +
@@ -1843,11 +1865,13 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\n" +
 	"\x06DIALOG\x10\x00\x12\t\n" +
 	"\x05GROUP\x10\x01\x12\v\n" +
-	"\aCHANNEL\x10\x02*\xa8\x01\n" +
+	"\aCHANNEL\x10\x02*\xcb\x01\n" +
 	"\x15MessageAttachmentKind\x12'\n" +
 	"#MESSAGE_ATTACHMENT_KIND_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dMESSAGE_ATTACHMENT_KIND_PHOTO\x10\x01\x12!\n" +
 	"\x1dMESSAGE_ATTACHMENT_KIND_VIDEO\x10\x02\x12 \n" +
+	"\x1cMESSAGE_ATTACHMENT_KIND_FILE\x10\x03\x12!\n" +
+	"\x1dMESSAGE_ATTACHMENT_KIND_VOICE\x10\x042\xde\b\n" +
 	"\x1cMESSAGE_ATTACHMENT_KIND_FILE\x10\x032\xab\t\n" +
 	"\x04Chat\x12G\n" +
 	"\bGetChats\x12\x1c.chat.v1.RequestGetUserChats\x1a\x1d.chat.v1.ResponseGetUserChats\x12>\n" +

@@ -3,6 +3,7 @@ package messages
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -27,6 +28,7 @@ type MessageMediaRepositoryInterface interface {
 		input *chatmedia.FileInput,
 		fileName string,
 	) (*chatmedia.UploadMessageAttachmentResult, error)
+	GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*chatmedia.VoiceMetadataResult, error)
 }
 
 type ProfileContactsInterface interface {
@@ -40,6 +42,8 @@ func chatKindToMedia(kind chatv1.MessageAttachmentKind) mediav1.MessageAttachmen
 		return mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VIDEO
 	case chatv1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE:
 		return mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE
+	case chatv1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VOICE:
+		return mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VOICE
 	default:
 		return mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_PHOTO
 	}
@@ -66,6 +70,8 @@ func (m MessageService) UploadMessageAttachment(
 		MimeType:      result.MimeType,
 		FileSize:      result.FileSize,
 		FileName:      result.FileName,
+		DurationMs:    result.DurationMs,
+		Waveform:      result.Waveform,
 	}, nil
 }
 
@@ -124,6 +130,10 @@ func (m MessageService) SendMessageWithAttachments(
 	}
 	if chat.Type == domain.ChatTypeChannel && userID != chat.OwnerId {
 		return nil, domain.ErrOnlyOwnerCanSendMessaage
+	}
+
+	if err := validateVoiceAttachments(req.Attachments); err != nil {
+		return nil, err
 	}
 
 	domainAttachments, err := m.buildDomainAttachments(ctx, userID, req.Attachments)
@@ -194,6 +204,40 @@ func (m MessageService) buildSingleAttachment(
 			att.FileName = &name
 		}
 		return att, nil
+	case string(domain.AttachmentTypeVoice):
+		if in.URL == "" {
+			return domain.MessageAttachment{}, domain.ErrInvalidAttachment
+		}
+		if !IsAttachmentOwnedByUser(in.URL, userID) {
+			return domain.MessageAttachment{}, domain.ErrAttachmentNotOwned
+		}
+		objectKey, _, ok := ObjectKeyFromAttachmentURL(in.URL)
+		if !ok {
+			return domain.MessageAttachment{}, domain.ErrInvalidAttachment
+		}
+		if m.mediaRepo == nil {
+			return domain.MessageAttachment{}, fmt.Errorf("media repository is nil")
+		}
+		meta, err := m.mediaRepo.GetMessageVoiceMetadata(ctx, objectKey)
+		if err != nil {
+			return domain.MessageAttachment{}, domain.ErrInvalidAttachment
+		}
+		url := in.URL
+		if m.attachmentProxyBase != "" {
+			url = BuildAttachmentProxyURL(m.attachmentProxyBase, objectKey)
+		}
+		mime := meta.MimeType
+		size := meta.FileSize
+		duration := meta.DurationMs
+		att := domain.MessageAttachment{
+			Type:       domain.AttachmentTypeVoice,
+			FileURL:    &url,
+			MimeType:   &mime,
+			FileSize:   &size,
+			DurationMs: &duration,
+			Waveform:   meta.Waveform,
+		}
+		return att, nil
 	case string(domain.AttachmentTypeContact):
 		if in.ContactUserID <= 0 {
 			return domain.MessageAttachment{}, domain.ErrInvalidAttachment
@@ -248,6 +292,8 @@ func buildAttachmentPreview(attachments []domain.MessageAttachment) string {
 			labels = append(labels, "[Файл]")
 		case domain.AttachmentTypeContact:
 			labels = append(labels, "[Контакт]")
+		case domain.AttachmentTypeVoice:
+			labels = append(labels, formatVoicePreview(a.DurationMs))
 		}
 	}
 	if len(labels) == 0 {
@@ -287,7 +333,41 @@ func mapAttachmentsToDTO(attachments []domain.MessageAttachment) []dto.MessageAt
 		item.ContactFirstName = a.ContactFirstName
 		item.ContactLastName = a.ContactLastName
 		item.ContactAvatarURL = a.ContactAvatarURL
+		item.DurationMs = a.DurationMs
+		if len(a.Waveform) > 0 {
+			item.Waveform = a.Waveform
+		}
 		out = append(out, item)
 	}
 	return out
+}
+
+func validateVoiceAttachments(inputs []dto.AttachmentInput) error {
+	hasVoice := false
+	for _, in := range inputs {
+		if strings.ToLower(in.Type) == string(domain.AttachmentTypeVoice) {
+			hasVoice = true
+			break
+		}
+	}
+	if !hasVoice {
+		return nil
+	}
+	if len(inputs) != 1 {
+		return domain.ErrInvalidAttachment
+	}
+	if strings.ToLower(inputs[0].Type) != string(domain.AttachmentTypeVoice) {
+		return domain.ErrInvalidAttachment
+	}
+	return nil
+}
+
+func formatVoicePreview(durationMs *int32) string {
+	if durationMs == nil || *durationMs <= 0 {
+		return "[Голосовое]"
+	}
+	totalSec := int(*durationMs) / 1000
+	minutes := totalSec / 60
+	seconds := totalSec % 60
+	return "[Голосовое · " + strconv.Itoa(minutes) + ":" + fmt.Sprintf("%02d", seconds) + "]"
 }

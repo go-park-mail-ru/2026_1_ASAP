@@ -2,6 +2,7 @@ package messages
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
@@ -15,11 +16,13 @@ type AttachmentModel struct {
 	ContactAvatarURL sql.NullString
 	ContactFirstName sql.NullString
 	ContactLastName  sql.NullString
+	Waveform         []byte
 	Type             string
 	Id               int64
 	MessageId        int64
 	ContactUserID    sql.NullInt64
 	FileSize         sql.NullInt64
+	DurationMs       sql.NullInt32
 	SortOrder        int
 }
 
@@ -49,6 +52,16 @@ func attachmentToDomain(m *AttachmentModel) domain.MessageAttachment {
 	if m.FileSize.Valid {
 		v := m.FileSize.Int64
 		out.FileSize = &v
+	}
+	if m.DurationMs.Valid {
+		v := m.DurationMs.Int32
+		out.DurationMs = &v
+	}
+	if len(m.Waveform) > 0 {
+		var wf []uint8
+		if err := json.Unmarshal(m.Waveform, &wf); err == nil {
+			out.Waveform = wf
+		}
 	}
 	if m.ContactUserID.Valid {
 		v := m.ContactUserID.Int64
@@ -87,6 +100,14 @@ func attachmentFromDomain(a domain.MessageAttachment) AttachmentModel {
 	if a.FileSize != nil {
 		m.FileSize = sql.NullInt64{Int64: *a.FileSize, Valid: true}
 	}
+	if a.DurationMs != nil {
+		m.DurationMs = sql.NullInt32{Int32: *a.DurationMs, Valid: true}
+	}
+	if len(a.Waveform) > 0 {
+		if b, err := json.Marshal(a.Waveform); err == nil {
+			m.Waveform = b
+		}
+	}
 	if a.ContactUserID != nil {
 		m.ContactUserID = sql.NullInt64{Int64: *a.ContactUserID, Valid: true}
 	}
@@ -100,4 +121,18 @@ func attachmentFromDomain(a domain.MessageAttachment) AttachmentModel {
 		m.ContactAvatarURL = sql.NullString{String: *a.ContactAvatarURL, Valid: true}
 	}
 	return m
+}
+
+func waveformArg(wf []byte) any {
+	if len(wf) == 0 {
+		return nil
+	}
+	return wf
+}
+
+func durationArg(v sql.NullInt32) any {
+	if !v.Valid {
+		return nil
+	}
+	return v.Int32
 }

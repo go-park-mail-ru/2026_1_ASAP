@@ -350,6 +350,14 @@ func (s *ChatServer) UploadMessageAttachment(ctx context.Context, req *chatv1.Re
 		MimeType:      resp.MimeType,
 		FileSize:      resp.FileSize,
 		ObjectKey:     resp.ObjectKey,
+		DurationMs:    resp.DurationMs,
+	}
+	if len(resp.Waveform) > 0 {
+		wf := make([]uint32, len(resp.Waveform))
+		for i, v := range resp.Waveform {
+			wf[i] = uint32(v)
+		}
+		out.Waveform = wf
 	}
 	if resp.FileName != nil {
 		out.FileName = resp.FileName

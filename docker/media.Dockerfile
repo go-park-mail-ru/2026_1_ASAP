@@ -17,7 +17,7 @@ RUN --mount=type=cache,id=go-mod,target=/go/pkg/mod \
 
 FROM alpine:3.21 AS run_stage
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates ffmpeg
 
 WORKDIR /app
 
