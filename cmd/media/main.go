@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 func main() {
@@ -45,7 +46,11 @@ func main() {
 		logger.Fatal("listen", zap.Error(err))
 	}
 
-	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("media")))
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("media")),
+		grpc.MaxRecvMsgSize(64<<20),
+		grpc.MaxSendMsgSize(64<<20),
+	)
 	mediav1.RegisterMediaServer(grpcServer, mediaSrv)
 	metricsServer := &http.Server{
 		Addr:    ":9103",

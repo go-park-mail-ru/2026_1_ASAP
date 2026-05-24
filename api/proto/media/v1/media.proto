@@ -9,7 +9,16 @@ service Media {
   rpc UpdateUserAvatar(RequestUpdateUserAvatar) returns (ResponseUpdateUserAvatar);
   rpc UploadChatAvatar(RequestUpdateChatAvatar) returns (ResponseUpdateChatAvatar);
   rpc UploadComplaintAttachment(RequestUpdateComplaintAttachment) returns (ResponseUpdateComplaintAttachment);
+  rpc UploadMessageAttachment(RequestUploadMessageAttachment) returns (ResponseUploadMessageAttachment);
+  rpc GetMessageAttachment(RequestGetMessageAttachment) returns (ResponseGetMessageAttachment);
   rpc DeleteUserAvatar(RequestDeleteUserAvatar) returns (ResponseDeleteUserAvatar);
+}
+
+enum MessageAttachmentKind {
+  MESSAGE_ATTACHMENT_KIND_UNSPECIFIED = 0;
+  MESSAGE_ATTACHMENT_KIND_PHOTO = 1;
+  MESSAGE_ATTACHMENT_KIND_VIDEO = 2;
+  MESSAGE_ATTACHMENT_KIND_FILE = 3;
 }
 
 enum MediaErrorCode {
@@ -52,6 +61,31 @@ message RequestUpdateComplaintAttachment {
 
 message ResponseUpdateComplaintAttachment {
   string attachment_url = 1;
+}
+
+message RequestUploadMessageAttachment {
+  int64 user_id = 1;
+  MessageAttachmentKind kind = 2;
+  File file = 3;
+  optional string file_name = 4;
+}
+
+message ResponseUploadMessageAttachment {
+  string attachment_url = 1;
+  string mime_type = 2;
+  int64 file_size = 3;
+  optional string file_name = 4;
+  string object_key = 5;
+}
+
+message RequestGetMessageAttachment {
+  string object_key = 1;
+}
+
+message ResponseGetMessageAttachment {
+  bytes content = 1;
+  string content_type = 2;
+  int64 size = 3;
 }
 
 message RequestDeleteUserAvatar {

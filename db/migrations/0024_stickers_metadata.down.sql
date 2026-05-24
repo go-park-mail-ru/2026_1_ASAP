@@ -1,0 +1,15 @@
+DROP INDEX IF EXISTS uq_stickers_pack_slug;
+DROP INDEX IF EXISTS uq_sticker_packs_slug;
+
+ALTER TABLE stickers
+DROP COLUMN IF EXISTS sort_order,
+DROP COLUMN IF EXISTS height,
+DROP COLUMN IF EXISTS width,
+DROP COLUMN IF EXISTS emoji,
+DROP COLUMN IF EXISTS slug;
+
+ALTER TABLE sticker_packs
+DROP COLUMN IF EXISTS sort_order,
+DROP COLUMN IF EXISTS thumbnail_url,
+DROP COLUMN IF EXISTS title,
+DROP COLUMN IF EXISTS slug;

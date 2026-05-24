@@ -57,6 +57,12 @@ const (
 	ChatErrorCode_CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED          ChatErrorCode = 28
 	ChatErrorCode_CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION ChatErrorCode = 29
 	ChatErrorCode_CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION   ChatErrorCode = 30
+	ChatErrorCode_CHAT_ERROR_INVALID_ATTACHMENT                  ChatErrorCode = 31
+	ChatErrorCode_CHAT_ERROR_ATTACHMENT_NOT_OWNED                ChatErrorCode = 32
+	ChatErrorCode_CHAT_ERROR_CONTACT_NOT_FOUND                   ChatErrorCode = 33
+	ChatErrorCode_CHAT_ERROR_TOO_MANY_ATTACHMENTS                ChatErrorCode = 34
+	ChatErrorCode_CHAT_ERROR_INVALID_STICKER                     ChatErrorCode = 35
+	ChatErrorCode_CHAT_ERROR_STICKER_NOT_FOUND                   ChatErrorCode = 36
 )
 
 // Enum value maps for ChatErrorCode.
@@ -93,6 +99,12 @@ var (
 		28: "CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED",
 		29: "CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION",
 		30: "CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION",
+		31: "CHAT_ERROR_INVALID_ATTACHMENT",
+		32: "CHAT_ERROR_ATTACHMENT_NOT_OWNED",
+		33: "CHAT_ERROR_CONTACT_NOT_FOUND",
+		34: "CHAT_ERROR_TOO_MANY_ATTACHMENTS",
+		35: "CHAT_ERROR_INVALID_STICKER",
+		36: "CHAT_ERROR_STICKER_NOT_FOUND",
 	}
 	ChatErrorCode_value = map[string]int32{
 		"CHAT_ERROR_UNSPECIFIED":                         0,
@@ -126,6 +138,12 @@ var (
 		"CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED":          28,
 		"CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION": 29,
 		"CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION":   30,
+		"CHAT_ERROR_INVALID_ATTACHMENT":                  31,
+		"CHAT_ERROR_ATTACHMENT_NOT_OWNED":                32,
+		"CHAT_ERROR_CONTACT_NOT_FOUND":                   33,
+		"CHAT_ERROR_TOO_MANY_ATTACHMENTS":                34,
+		"CHAT_ERROR_INVALID_STICKER":                     35,
+		"CHAT_ERROR_STICKER_NOT_FOUND":                   36,
 	}
 )
 
@@ -203,6 +221,58 @@ func (x ChatType) Number() protoreflect.EnumNumber {
 // Deprecated: Use ChatType.Descriptor instead.
 func (ChatType) EnumDescriptor() ([]byte, []int) {
 	return file_chat_v1_chat_proto_rawDescGZIP(), []int{1}
+}
+
+type MessageAttachmentKind int32
+
+const (
+	MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_UNSPECIFIED MessageAttachmentKind = 0
+	MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_PHOTO       MessageAttachmentKind = 1
+	MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VIDEO       MessageAttachmentKind = 2
+	MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE        MessageAttachmentKind = 3
+)
+
+// Enum value maps for MessageAttachmentKind.
+var (
+	MessageAttachmentKind_name = map[int32]string{
+		0: "MESSAGE_ATTACHMENT_KIND_UNSPECIFIED",
+		1: "MESSAGE_ATTACHMENT_KIND_PHOTO",
+		2: "MESSAGE_ATTACHMENT_KIND_VIDEO",
+		3: "MESSAGE_ATTACHMENT_KIND_FILE",
+	}
+	MessageAttachmentKind_value = map[string]int32{
+		"MESSAGE_ATTACHMENT_KIND_UNSPECIFIED": 0,
+		"MESSAGE_ATTACHMENT_KIND_PHOTO":       1,
+		"MESSAGE_ATTACHMENT_KIND_VIDEO":       2,
+		"MESSAGE_ATTACHMENT_KIND_FILE":        3,
+	}
+)
+
+func (x MessageAttachmentKind) Enum() *MessageAttachmentKind {
+	p := new(MessageAttachmentKind)
+	*p = x
+	return p
+}
+
+func (x MessageAttachmentKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MessageAttachmentKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_chat_v1_chat_proto_enumTypes[2].Descriptor()
+}
+
+func (MessageAttachmentKind) Type() protoreflect.EnumType {
+	return &file_chat_v1_chat_proto_enumTypes[2]
+}
+
+func (x MessageAttachmentKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MessageAttachmentKind.Descriptor instead.
+func (MessageAttachmentKind) EnumDescriptor() ([]byte, []int) {
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{2}
 }
 
 type RequestQuitChat struct {
@@ -1125,6 +1195,490 @@ func (x *ChatInformation) GetDescription() string {
 	return ""
 }
 
+type RequestUploadMessageAttachment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Kind          MessageAttachmentKind  `protobuf:"varint,2,opt,name=kind,proto3,enum=chat.v1.MessageAttachmentKind" json:"kind,omitempty"`
+	Content       []byte                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	FileName      *string                `protobuf:"bytes,5,opt,name=file_name,json=fileName,proto3,oneof" json:"file_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestUploadMessageAttachment) Reset() {
+	*x = RequestUploadMessageAttachment{}
+	mi := &file_chat_v1_chat_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestUploadMessageAttachment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestUploadMessageAttachment) ProtoMessage() {}
+
+func (x *RequestUploadMessageAttachment) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_v1_chat_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestUploadMessageAttachment.ProtoReflect.Descriptor instead.
+func (*RequestUploadMessageAttachment) Descriptor() ([]byte, []int) {
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *RequestUploadMessageAttachment) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *RequestUploadMessageAttachment) GetKind() MessageAttachmentKind {
+	if x != nil {
+		return x.Kind
+	}
+	return MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_UNSPECIFIED
+}
+
+func (x *RequestUploadMessageAttachment) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *RequestUploadMessageAttachment) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *RequestUploadMessageAttachment) GetFileName() string {
+	if x != nil && x.FileName != nil {
+		return *x.FileName
+	}
+	return ""
+}
+
+type ResponseUploadMessageAttachment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AttachmentUrl string                 `protobuf:"bytes,1,opt,name=attachment_url,json=attachmentUrl,proto3" json:"attachment_url,omitempty"`
+	MimeType      string                 `protobuf:"bytes,2,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	FileSize      int64                  `protobuf:"varint,3,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	FileName      *string                `protobuf:"bytes,4,opt,name=file_name,json=fileName,proto3,oneof" json:"file_name,omitempty"`
+	ObjectKey     string                 `protobuf:"bytes,5,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResponseUploadMessageAttachment) Reset() {
+	*x = ResponseUploadMessageAttachment{}
+	mi := &file_chat_v1_chat_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResponseUploadMessageAttachment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResponseUploadMessageAttachment) ProtoMessage() {}
+
+func (x *ResponseUploadMessageAttachment) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_v1_chat_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResponseUploadMessageAttachment.ProtoReflect.Descriptor instead.
+func (*ResponseUploadMessageAttachment) Descriptor() ([]byte, []int) {
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ResponseUploadMessageAttachment) GetAttachmentUrl() string {
+	if x != nil {
+		return x.AttachmentUrl
+	}
+	return ""
+}
+
+func (x *ResponseUploadMessageAttachment) GetMimeType() string {
+	if x != nil {
+		return x.MimeType
+	}
+	return ""
+}
+
+func (x *ResponseUploadMessageAttachment) GetFileSize() int64 {
+	if x != nil {
+		return x.FileSize
+	}
+	return 0
+}
+
+func (x *ResponseUploadMessageAttachment) GetFileName() string {
+	if x != nil && x.FileName != nil {
+		return *x.FileName
+	}
+	return ""
+}
+
+func (x *ResponseUploadMessageAttachment) GetObjectKey() string {
+	if x != nil {
+		return x.ObjectKey
+	}
+	return ""
+}
+
+type RequestAuthorizeMessageAttachment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestAuthorizeMessageAttachment) Reset() {
+	*x = RequestAuthorizeMessageAttachment{}
+	mi := &file_chat_v1_chat_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestAuthorizeMessageAttachment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestAuthorizeMessageAttachment) ProtoMessage() {}
+
+func (x *RequestAuthorizeMessageAttachment) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_v1_chat_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestAuthorizeMessageAttachment.ProtoReflect.Descriptor instead.
+func (*RequestAuthorizeMessageAttachment) Descriptor() ([]byte, []int) {
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RequestAuthorizeMessageAttachment) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *RequestAuthorizeMessageAttachment) GetObjectKey() string {
+	if x != nil {
+		return x.ObjectKey
+	}
+	return ""
+}
+
+type ResponseAuthorizeMessageAttachment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ContentType   string                 `protobuf:"bytes,1,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	Size          int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	FileName      *string                `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3,oneof" json:"file_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResponseAuthorizeMessageAttachment) Reset() {
+	*x = ResponseAuthorizeMessageAttachment{}
+	mi := &file_chat_v1_chat_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResponseAuthorizeMessageAttachment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResponseAuthorizeMessageAttachment) ProtoMessage() {}
+
+func (x *ResponseAuthorizeMessageAttachment) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_v1_chat_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResponseAuthorizeMessageAttachment.ProtoReflect.Descriptor instead.
+func (*ResponseAuthorizeMessageAttachment) Descriptor() ([]byte, []int) {
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ResponseAuthorizeMessageAttachment) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+func (x *ResponseAuthorizeMessageAttachment) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *ResponseAuthorizeMessageAttachment) GetFileName() string {
+	if x != nil && x.FileName != nil {
+		return *x.FileName
+	}
+	return ""
+}
+
+type Sticker struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	PackId        int64                  `protobuf:"varint,2,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	FileUrl       string                 `protobuf:"bytes,3,opt,name=file_url,json=fileUrl,proto3" json:"file_url,omitempty"`
+	Slug          *string                `protobuf:"bytes,4,opt,name=slug,proto3,oneof" json:"slug,omitempty"`
+	Emoji         *string                `protobuf:"bytes,5,opt,name=emoji,proto3,oneof" json:"emoji,omitempty"`
+	Width         *int32                 `protobuf:"varint,6,opt,name=width,proto3,oneof" json:"width,omitempty"`
+	Height        *int32                 `protobuf:"varint,7,opt,name=height,proto3,oneof" json:"height,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Sticker) Reset() {
+	*x = Sticker{}
+	mi := &file_chat_v1_chat_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Sticker) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Sticker) ProtoMessage() {}
+
+func (x *Sticker) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_v1_chat_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Sticker.ProtoReflect.Descriptor instead.
+func (*Sticker) Descriptor() ([]byte, []int) {
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *Sticker) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Sticker) GetPackId() int64 {
+	if x != nil {
+		return x.PackId
+	}
+	return 0
+}
+
+func (x *Sticker) GetFileUrl() string {
+	if x != nil {
+		return x.FileUrl
+	}
+	return ""
+}
+
+func (x *Sticker) GetSlug() string {
+	if x != nil && x.Slug != nil {
+		return *x.Slug
+	}
+	return ""
+}
+
+func (x *Sticker) GetEmoji() string {
+	if x != nil && x.Emoji != nil {
+		return *x.Emoji
+	}
+	return ""
+}
+
+func (x *Sticker) GetWidth() int32 {
+	if x != nil && x.Width != nil {
+		return *x.Width
+	}
+	return 0
+}
+
+func (x *Sticker) GetHeight() int32 {
+	if x != nil && x.Height != nil {
+		return *x.Height
+	}
+	return 0
+}
+
+type StickerPack struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Slug          *string                `protobuf:"bytes,4,opt,name=slug,proto3,oneof" json:"slug,omitempty"`
+	ThumbnailUrl  *string                `protobuf:"bytes,5,opt,name=thumbnail_url,json=thumbnailUrl,proto3,oneof" json:"thumbnail_url,omitempty"`
+	Stickers      []*Sticker             `protobuf:"bytes,6,rep,name=stickers,proto3" json:"stickers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StickerPack) Reset() {
+	*x = StickerPack{}
+	mi := &file_chat_v1_chat_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StickerPack) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StickerPack) ProtoMessage() {}
+
+func (x *StickerPack) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_v1_chat_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StickerPack.ProtoReflect.Descriptor instead.
+func (*StickerPack) Descriptor() ([]byte, []int) {
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *StickerPack) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *StickerPack) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *StickerPack) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *StickerPack) GetSlug() string {
+	if x != nil && x.Slug != nil {
+		return *x.Slug
+	}
+	return ""
+}
+
+func (x *StickerPack) GetThumbnailUrl() string {
+	if x != nil && x.ThumbnailUrl != nil {
+		return *x.ThumbnailUrl
+	}
+	return ""
+}
+
+func (x *StickerPack) GetStickers() []*Sticker {
+	if x != nil {
+		return x.Stickers
+	}
+	return nil
+}
+
+type ResponseGetStickerPacks struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Packs         []*StickerPack         `protobuf:"bytes,1,rep,name=packs,proto3" json:"packs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResponseGetStickerPacks) Reset() {
+	*x = ResponseGetStickerPacks{}
+	mi := &file_chat_v1_chat_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResponseGetStickerPacks) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResponseGetStickerPacks) ProtoMessage() {}
+
+func (x *ResponseGetStickerPacks) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_v1_chat_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResponseGetStickerPacks.ProtoReflect.Descriptor instead.
+func (*ResponseGetStickerPacks) Descriptor() ([]byte, []int) {
+	return file_chat_v1_chat_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *ResponseGetStickerPacks) GetPacks() []*StickerPack {
+	if x != nil {
+		return x.Packs
+	}
+	return nil
+}
+
 var File_chat_v1_chat_proto protoreflect.FileDescriptor
 
 const file_chat_v1_chat_proto_rawDesc = "" +
@@ -1194,7 +1748,58 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\bowner_id\x18\x06 \x01(\x03R\aownerId\x12%\n" +
 	"\vdescription\x18\a \x01(\tH\x01R\vdescription\x88\x01\x01B\t\n" +
 	"\a_avatarB\x0e\n" +
-	"\f_description*\x90\t\n" +
+	"\f_description\"\xcb\x01\n" +
+	"\x1eRequestUploadMessageAttachment\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x122\n" +
+	"\x04kind\x18\x02 \x01(\x0e2\x1e.chat.v1.MessageAttachmentKindR\x04kind\x12\x18\n" +
+	"\acontent\x18\x03 \x01(\fR\acontent\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12 \n" +
+	"\tfile_name\x18\x05 \x01(\tH\x00R\bfileName\x88\x01\x01B\f\n" +
+	"\n" +
+	"_file_name\"\xd1\x01\n" +
+	"\x1fResponseUploadMessageAttachment\x12%\n" +
+	"\x0eattachment_url\x18\x01 \x01(\tR\rattachmentUrl\x12\x1b\n" +
+	"\tmime_type\x18\x02 \x01(\tR\bmimeType\x12\x1b\n" +
+	"\tfile_size\x18\x03 \x01(\x03R\bfileSize\x12 \n" +
+	"\tfile_name\x18\x04 \x01(\tH\x00R\bfileName\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"object_key\x18\x05 \x01(\tR\tobjectKeyB\f\n" +
+	"\n" +
+	"_file_name\"[\n" +
+	"!RequestAuthorizeMessageAttachment\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1d\n" +
+	"\n" +
+	"object_key\x18\x02 \x01(\tR\tobjectKey\"\x8b\x01\n" +
+	"\"ResponseAuthorizeMessageAttachment\x12!\n" +
+	"\fcontent_type\x18\x01 \x01(\tR\vcontentType\x12\x12\n" +
+	"\x04size\x18\x02 \x01(\x03R\x04size\x12 \n" +
+	"\tfile_name\x18\x03 \x01(\tH\x00R\bfileName\x88\x01\x01B\f\n" +
+	"\n" +
+	"_file_name\"\xe1\x01\n" +
+	"\aSticker\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\apack_id\x18\x02 \x01(\x03R\x06packId\x12\x19\n" +
+	"\bfile_url\x18\x03 \x01(\tR\afileUrl\x12\x17\n" +
+	"\x04slug\x18\x04 \x01(\tH\x00R\x04slug\x88\x01\x01\x12\x19\n" +
+	"\x05emoji\x18\x05 \x01(\tH\x01R\x05emoji\x88\x01\x01\x12\x19\n" +
+	"\x05width\x18\x06 \x01(\x05H\x02R\x05width\x88\x01\x01\x12\x1b\n" +
+	"\x06height\x18\a \x01(\x05H\x03R\x06height\x88\x01\x01B\a\n" +
+	"\x05_slugB\b\n" +
+	"\x06_emojiB\b\n" +
+	"\x06_widthB\t\n" +
+	"\a_height\"\xd3\x01\n" +
+	"\vStickerPack\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x17\n" +
+	"\x04slug\x18\x04 \x01(\tH\x00R\x04slug\x88\x01\x01\x12(\n" +
+	"\rthumbnail_url\x18\x05 \x01(\tH\x01R\fthumbnailUrl\x88\x01\x01\x12,\n" +
+	"\bstickers\x18\x06 \x03(\v2\x10.chat.v1.StickerR\bstickersB\a\n" +
+	"\x05_slugB\x10\n" +
+	"\x0e_thumbnail_url\"E\n" +
+	"\x17ResponseGetStickerPacks\x12*\n" +
+	"\x05packs\x18\x01 \x03(\v2\x14.chat.v1.StickerPackR\x05packs*\xe1\n" +
+	"\n" +
 	"\rChatErrorCode\x12\x1a\n" +
 	"\x16CHAT_ERROR_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18CHAT_ERROR_INVALID_INPUT\x10\x01\x12\x18\n" +
@@ -1227,12 +1832,23 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	" CHAT_ERROR_OWNER_CANT_QUIT_GROUP\x10\x1b\x12)\n" +
 	"%CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED\x10\x1c\x122\n" +
 	".CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION\x10\x1d\x120\n" +
-	",CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION\x10\x1e*.\n" +
+	",CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION\x10\x1e\x12!\n" +
+	"\x1dCHAT_ERROR_INVALID_ATTACHMENT\x10\x1f\x12#\n" +
+	"\x1fCHAT_ERROR_ATTACHMENT_NOT_OWNED\x10 \x12 \n" +
+	"\x1cCHAT_ERROR_CONTACT_NOT_FOUND\x10!\x12#\n" +
+	"\x1fCHAT_ERROR_TOO_MANY_ATTACHMENTS\x10\"\x12\x1e\n" +
+	"\x1aCHAT_ERROR_INVALID_STICKER\x10#\x12 \n" +
+	"\x1cCHAT_ERROR_STICKER_NOT_FOUND\x10$*.\n" +
 	"\bChatType\x12\n" +
 	"\n" +
 	"\x06DIALOG\x10\x00\x12\t\n" +
 	"\x05GROUP\x10\x01\x12\v\n" +
-	"\aCHANNEL\x10\x022\xf9\x06\n" +
+	"\aCHANNEL\x10\x02*\xa8\x01\n" +
+	"\x15MessageAttachmentKind\x12'\n" +
+	"#MESSAGE_ATTACHMENT_KIND_UNSPECIFIED\x10\x00\x12!\n" +
+	"\x1dMESSAGE_ATTACHMENT_KIND_PHOTO\x10\x01\x12!\n" +
+	"\x1dMESSAGE_ATTACHMENT_KIND_VIDEO\x10\x02\x12 \n" +
+	"\x1cMESSAGE_ATTACHMENT_KIND_FILE\x10\x032\xab\t\n" +
 	"\x04Chat\x12G\n" +
 	"\bGetChats\x12\x1c.chat.v1.RequestGetUserChats\x1a\x1d.chat.v1.ResponseGetUserChats\x12>\n" +
 	"\x06Create\x12\x1a.chat.v1.RequestChatCreate\x1a\x18.chat.v1.ChatInformation\x12D\n" +
@@ -1246,7 +1862,10 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\x0eGetChatMembers\x12\x1b.chat.v1.RequestChatMembers\x1a\x1f.chat.v1.ResponseGetChatMembers\x12<\n" +
 	"\bQuitChat\x12\x18.chat.v1.RequestQuitChat\x1a\x16.google.protobuf.Empty\x12B\n" +
 	"\vJoinChannel\x12\x1b.chat.v1.RequestJoinChannel\x1a\x16.google.protobuf.Empty\x12T\n" +
-	"\x15UpdateChatDescription\x12!.chat.v1.RequestUpdateDescription\x1a\x18.chat.v1.ChatInformationB>Z<github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1;chatv1b\x06proto3"
+	"\x15UpdateChatDescription\x12!.chat.v1.RequestUpdateDescription\x1a\x18.chat.v1.ChatInformation\x12l\n" +
+	"\x17UploadMessageAttachment\x12'.chat.v1.RequestUploadMessageAttachment\x1a(.chat.v1.ResponseUploadMessageAttachment\x12u\n" +
+	"\x1aAuthorizeMessageAttachment\x12*.chat.v1.RequestAuthorizeMessageAttachment\x1a+.chat.v1.ResponseAuthorizeMessageAttachment\x12K\n" +
+	"\x0fGetStickerPacks\x12\x16.google.protobuf.Empty\x1a .chat.v1.ResponseGetStickerPacksB>Z<github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1;chatv1b\x06proto3"
 
 var (
 	file_chat_v1_chat_proto_rawDescOnce sync.Once
@@ -1260,65 +1879,82 @@ func file_chat_v1_chat_proto_rawDescGZIP() []byte {
 	return file_chat_v1_chat_proto_rawDescData
 }
 
-var file_chat_v1_chat_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_chat_v1_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_chat_v1_chat_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_chat_v1_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_chat_v1_chat_proto_goTypes = []any{
-	(ChatErrorCode)(0),                  // 0: chat.v1.ChatErrorCode
-	(ChatType)(0),                       // 1: chat.v1.ChatType
-	(*RequestQuitChat)(nil),             // 2: chat.v1.RequestQuitChat
-	(*RequestChatMembers)(nil),          // 3: chat.v1.RequestChatMembers
-	(*ResponseGetChatMembers)(nil),      // 4: chat.v1.ResponseGetChatMembers
-	(*RequestDeleteMemberFromChat)(nil), // 5: chat.v1.RequestDeleteMemberFromChat
-	(*RequestAddMembersToChat)(nil),     // 6: chat.v1.RequestAddMembersToChat
-	(*RequestJoinChannel)(nil),          // 7: chat.v1.RequestJoinChannel
-	(*RequestUpdateTitle)(nil),          // 8: chat.v1.RequestUpdateTitle
-	(*RequestUpdateDescription)(nil),    // 9: chat.v1.RequestUpdateDescription
-	(*RequestUpdateAvatar)(nil),         // 10: chat.v1.RequestUpdateAvatar
-	(*RequestDeleteChat)(nil),           // 11: chat.v1.RequestDeleteChat
-	(*RequestGetChatByID)(nil),          // 12: chat.v1.RequestGetChatByID
-	(*RequestChatCreate)(nil),           // 13: chat.v1.RequestChatCreate
-	(*RequestGetUserChats)(nil),         // 14: chat.v1.RequestGetUserChats
-	(*ResponseGetUserChats)(nil),        // 15: chat.v1.ResponseGetUserChats
-	(*MessageInformation)(nil),          // 16: chat.v1.MessageInformation
-	(*ChatInformation)(nil),             // 17: chat.v1.ChatInformation
-	(*timestamppb.Timestamp)(nil),       // 18: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),               // 19: google.protobuf.Empty
+	(ChatErrorCode)(0),                         // 0: chat.v1.ChatErrorCode
+	(ChatType)(0),                              // 1: chat.v1.ChatType
+	(MessageAttachmentKind)(0),                 // 2: chat.v1.MessageAttachmentKind
+	(*RequestQuitChat)(nil),                    // 3: chat.v1.RequestQuitChat
+	(*RequestChatMembers)(nil),                 // 4: chat.v1.RequestChatMembers
+	(*ResponseGetChatMembers)(nil),             // 5: chat.v1.ResponseGetChatMembers
+	(*RequestDeleteMemberFromChat)(nil),        // 6: chat.v1.RequestDeleteMemberFromChat
+	(*RequestAddMembersToChat)(nil),            // 7: chat.v1.RequestAddMembersToChat
+	(*RequestJoinChannel)(nil),                 // 8: chat.v1.RequestJoinChannel
+	(*RequestUpdateTitle)(nil),                 // 9: chat.v1.RequestUpdateTitle
+	(*RequestUpdateDescription)(nil),           // 10: chat.v1.RequestUpdateDescription
+	(*RequestUpdateAvatar)(nil),                // 11: chat.v1.RequestUpdateAvatar
+	(*RequestDeleteChat)(nil),                  // 12: chat.v1.RequestDeleteChat
+	(*RequestGetChatByID)(nil),                 // 13: chat.v1.RequestGetChatByID
+	(*RequestChatCreate)(nil),                  // 14: chat.v1.RequestChatCreate
+	(*RequestGetUserChats)(nil),                // 15: chat.v1.RequestGetUserChats
+	(*ResponseGetUserChats)(nil),               // 16: chat.v1.ResponseGetUserChats
+	(*MessageInformation)(nil),                 // 17: chat.v1.MessageInformation
+	(*ChatInformation)(nil),                    // 18: chat.v1.ChatInformation
+	(*RequestUploadMessageAttachment)(nil),     // 19: chat.v1.RequestUploadMessageAttachment
+	(*ResponseUploadMessageAttachment)(nil),    // 20: chat.v1.ResponseUploadMessageAttachment
+	(*RequestAuthorizeMessageAttachment)(nil),  // 21: chat.v1.RequestAuthorizeMessageAttachment
+	(*ResponseAuthorizeMessageAttachment)(nil), // 22: chat.v1.ResponseAuthorizeMessageAttachment
+	(*Sticker)(nil),                            // 23: chat.v1.Sticker
+	(*StickerPack)(nil),                        // 24: chat.v1.StickerPack
+	(*ResponseGetStickerPacks)(nil),            // 25: chat.v1.ResponseGetStickerPacks
+	(*timestamppb.Timestamp)(nil),              // 26: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                      // 27: google.protobuf.Empty
 }
 var file_chat_v1_chat_proto_depIdxs = []int32{
 	1,  // 0: chat.v1.RequestChatCreate.type:type_name -> chat.v1.ChatType
-	17, // 1: chat.v1.ResponseGetUserChats.chats:type_name -> chat.v1.ChatInformation
-	18, // 2: chat.v1.MessageInformation.created_at:type_name -> google.protobuf.Timestamp
+	18, // 1: chat.v1.ResponseGetUserChats.chats:type_name -> chat.v1.ChatInformation
+	26, // 2: chat.v1.MessageInformation.created_at:type_name -> google.protobuf.Timestamp
 	1,  // 3: chat.v1.ChatInformation.type:type_name -> chat.v1.ChatType
-	16, // 4: chat.v1.ChatInformation.last_message:type_name -> chat.v1.MessageInformation
-	14, // 5: chat.v1.Chat.GetChats:input_type -> chat.v1.RequestGetUserChats
-	13, // 6: chat.v1.Chat.Create:input_type -> chat.v1.RequestChatCreate
-	12, // 7: chat.v1.Chat.GetChatByID:input_type -> chat.v1.RequestGetChatByID
-	11, // 8: chat.v1.Chat.DeleteChat:input_type -> chat.v1.RequestDeleteChat
-	10, // 9: chat.v1.Chat.UpdateChatAvatar:input_type -> chat.v1.RequestUpdateAvatar
-	8,  // 10: chat.v1.Chat.UpdateChatTitle:input_type -> chat.v1.RequestUpdateTitle
-	6,  // 11: chat.v1.Chat.AddMembersToChat:input_type -> chat.v1.RequestAddMembersToChat
-	5,  // 12: chat.v1.Chat.DeleteMemberFromChat:input_type -> chat.v1.RequestDeleteMemberFromChat
-	3,  // 13: chat.v1.Chat.GetChatMembers:input_type -> chat.v1.RequestChatMembers
-	2,  // 14: chat.v1.Chat.QuitChat:input_type -> chat.v1.RequestQuitChat
-	7,  // 15: chat.v1.Chat.JoinChannel:input_type -> chat.v1.RequestJoinChannel
-	9,  // 16: chat.v1.Chat.UpdateChatDescription:input_type -> chat.v1.RequestUpdateDescription
-	15, // 17: chat.v1.Chat.GetChats:output_type -> chat.v1.ResponseGetUserChats
-	17, // 18: chat.v1.Chat.Create:output_type -> chat.v1.ChatInformation
-	17, // 19: chat.v1.Chat.GetChatByID:output_type -> chat.v1.ChatInformation
-	19, // 20: chat.v1.Chat.DeleteChat:output_type -> google.protobuf.Empty
-	17, // 21: chat.v1.Chat.UpdateChatAvatar:output_type -> chat.v1.ChatInformation
-	17, // 22: chat.v1.Chat.UpdateChatTitle:output_type -> chat.v1.ChatInformation
-	19, // 23: chat.v1.Chat.AddMembersToChat:output_type -> google.protobuf.Empty
-	19, // 24: chat.v1.Chat.DeleteMemberFromChat:output_type -> google.protobuf.Empty
-	4,  // 25: chat.v1.Chat.GetChatMembers:output_type -> chat.v1.ResponseGetChatMembers
-	19, // 26: chat.v1.Chat.QuitChat:output_type -> google.protobuf.Empty
-	19, // 27: chat.v1.Chat.JoinChannel:output_type -> google.protobuf.Empty
-	17, // 28: chat.v1.Chat.UpdateChatDescription:output_type -> chat.v1.ChatInformation
-	17, // [17:29] is the sub-list for method output_type
-	5,  // [5:17] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	17, // 4: chat.v1.ChatInformation.last_message:type_name -> chat.v1.MessageInformation
+	2,  // 5: chat.v1.RequestUploadMessageAttachment.kind:type_name -> chat.v1.MessageAttachmentKind
+	23, // 6: chat.v1.StickerPack.stickers:type_name -> chat.v1.Sticker
+	24, // 7: chat.v1.ResponseGetStickerPacks.packs:type_name -> chat.v1.StickerPack
+	15, // 8: chat.v1.Chat.GetChats:input_type -> chat.v1.RequestGetUserChats
+	14, // 9: chat.v1.Chat.Create:input_type -> chat.v1.RequestChatCreate
+	13, // 10: chat.v1.Chat.GetChatByID:input_type -> chat.v1.RequestGetChatByID
+	12, // 11: chat.v1.Chat.DeleteChat:input_type -> chat.v1.RequestDeleteChat
+	11, // 12: chat.v1.Chat.UpdateChatAvatar:input_type -> chat.v1.RequestUpdateAvatar
+	9,  // 13: chat.v1.Chat.UpdateChatTitle:input_type -> chat.v1.RequestUpdateTitle
+	7,  // 14: chat.v1.Chat.AddMembersToChat:input_type -> chat.v1.RequestAddMembersToChat
+	6,  // 15: chat.v1.Chat.DeleteMemberFromChat:input_type -> chat.v1.RequestDeleteMemberFromChat
+	4,  // 16: chat.v1.Chat.GetChatMembers:input_type -> chat.v1.RequestChatMembers
+	3,  // 17: chat.v1.Chat.QuitChat:input_type -> chat.v1.RequestQuitChat
+	8,  // 18: chat.v1.Chat.JoinChannel:input_type -> chat.v1.RequestJoinChannel
+	10, // 19: chat.v1.Chat.UpdateChatDescription:input_type -> chat.v1.RequestUpdateDescription
+	19, // 20: chat.v1.Chat.UploadMessageAttachment:input_type -> chat.v1.RequestUploadMessageAttachment
+	21, // 21: chat.v1.Chat.AuthorizeMessageAttachment:input_type -> chat.v1.RequestAuthorizeMessageAttachment
+	27, // 22: chat.v1.Chat.GetStickerPacks:input_type -> google.protobuf.Empty
+	16, // 23: chat.v1.Chat.GetChats:output_type -> chat.v1.ResponseGetUserChats
+	18, // 24: chat.v1.Chat.Create:output_type -> chat.v1.ChatInformation
+	18, // 25: chat.v1.Chat.GetChatByID:output_type -> chat.v1.ChatInformation
+	27, // 26: chat.v1.Chat.DeleteChat:output_type -> google.protobuf.Empty
+	18, // 27: chat.v1.Chat.UpdateChatAvatar:output_type -> chat.v1.ChatInformation
+	18, // 28: chat.v1.Chat.UpdateChatTitle:output_type -> chat.v1.ChatInformation
+	27, // 29: chat.v1.Chat.AddMembersToChat:output_type -> google.protobuf.Empty
+	27, // 30: chat.v1.Chat.DeleteMemberFromChat:output_type -> google.protobuf.Empty
+	5,  // 31: chat.v1.Chat.GetChatMembers:output_type -> chat.v1.ResponseGetChatMembers
+	27, // 32: chat.v1.Chat.QuitChat:output_type -> google.protobuf.Empty
+	27, // 33: chat.v1.Chat.JoinChannel:output_type -> google.protobuf.Empty
+	18, // 34: chat.v1.Chat.UpdateChatDescription:output_type -> chat.v1.ChatInformation
+	20, // 35: chat.v1.Chat.UploadMessageAttachment:output_type -> chat.v1.ResponseUploadMessageAttachment
+	22, // 36: chat.v1.Chat.AuthorizeMessageAttachment:output_type -> chat.v1.ResponseAuthorizeMessageAttachment
+	25, // 37: chat.v1.Chat.GetStickerPacks:output_type -> chat.v1.ResponseGetStickerPacks
+	23, // [23:38] is the sub-list for method output_type
+	8,  // [8:23] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_chat_v1_chat_proto_init() }
@@ -1327,13 +1963,18 @@ func file_chat_v1_chat_proto_init() {
 		return
 	}
 	file_chat_v1_chat_proto_msgTypes[15].OneofWrappers = []any{}
+	file_chat_v1_chat_proto_msgTypes[16].OneofWrappers = []any{}
+	file_chat_v1_chat_proto_msgTypes[17].OneofWrappers = []any{}
+	file_chat_v1_chat_proto_msgTypes[19].OneofWrappers = []any{}
+	file_chat_v1_chat_proto_msgTypes[20].OneofWrappers = []any{}
+	file_chat_v1_chat_proto_msgTypes[21].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chat_v1_chat_proto_rawDesc), len(file_chat_v1_chat_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   16,
+			NumEnums:      3,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -14,6 +14,7 @@ type ChatConfig struct {
 	RedisConfig       RedisConfig
 	ChatMediaConfig   ChatMediaConfig
 	ChatProfileConfig ChatProfileConfig
+	GatewayPublicURL  string `yaml:"gateway_public_url" env-default:"http://localhost:8088"`
 	AppConfig         AppConfig
 }
 
@@ -41,9 +42,10 @@ type chatFile struct {
 		DB       string `yaml:"db"`
 		Password string `yaml:"password" env:"POSTGRES_PASSWORD" env-default:""`
 	} `yaml:"postgres"`
-	Media   ChatMediaConfig   `yaml:"media"`
-	Profile ChatProfileConfig `yaml:"profile"`
-	Redis   struct {
+	Media            ChatMediaConfig   `yaml:"media"`
+	Profile          ChatProfileConfig `yaml:"profile"`
+	GatewayPublicURL string            `yaml:"gateway_public_url"`
+	Redis            struct {
 		Host     string `yaml:"host"`
 		Port     string `yaml:"port"`
 		Password string `yaml:"password" env:"REDIS_PASSWORD" env-default:""`
@@ -86,6 +88,7 @@ func LoadChatConfigFromPath(path string) (*ChatConfig, error) {
 		},
 		ChatMediaConfig:   ChatMediaConfig{GRPCAddr: raw.Media.GRPCAddr},
 		ChatProfileConfig: ChatProfileConfig{GRPCAddr: raw.Profile.GRPCAddr},
+		GatewayPublicURL:  raw.GatewayPublicURL,
 		RedisConfig: RedisConfig{
 			Host:     raw.Redis.Host,
 			Port:     raw.Redis.Port,

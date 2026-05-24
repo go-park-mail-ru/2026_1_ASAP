@@ -71,6 +71,36 @@ func (p ProfileServer) DeleteContact(ctx context.Context, req *profilev1.Request
 	return &profilev1.ResponseDeleteContact{}, nil
 }
 
+func (p ProfileServer) HasContact(ctx context.Context, req *profilev1.RequestHasContact) (*profilev1.ResponseHasContact, error) {
+	if req == nil || req.GetUserId() <= 0 || req.GetContactUserId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INVALID_INPUT), "user_id and contact_user_id are required")
+	}
+	if p.contactService == nil {
+		return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "contacts not configured")
+	}
+	exists, err := p.contactService.HasContact(ctx, req.GetUserId(), req.GetContactUserId())
+	if err != nil {
+		p.Log(ctx).Error("failed to check contact", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+		return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "contacts internal error")
+	}
+	return &profilev1.ResponseHasContact{Exists: exists}, nil
+}
+
+func (p ProfileServer) GetContact(ctx context.Context, req *profilev1.RequestGetContact) (*profilev1.ResponseGetContact, error) {
+	if req == nil || req.GetUserId() <= 0 || req.GetContactUserId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INVALID_INPUT), "user_id and contact_user_id are required")
+	}
+	if p.contactService == nil {
+		return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "contacts not configured")
+	}
+	contact, err := p.contactService.GetContact(ctx, req.GetUserId(), req.GetContactUserId())
+	if err != nil {
+		p.Log(ctx).Info("failed to get contact", zap.Int64("user_id", req.GetUserId()), zap.Int64("contact_user_id", req.GetContactUserId()), zap.Error(err))
+		return nil, mapContactError(err)
+	}
+	return &profilev1.ResponseGetContact{Contact: contactResponseToProto(contact)}, nil
+}
+
 func mapContactError(err error) error {
 	switch {
 	case errors.Is(err, contactdomain.ErrCantCreateContactWithYourself):

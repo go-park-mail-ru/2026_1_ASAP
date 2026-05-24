@@ -8,6 +8,7 @@ import (
 
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/repository"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 	"go.uber.org/zap"
@@ -18,6 +19,8 @@ type MediaRepositoryInterface interface {
 	UploadAvatar(ctx context.Context, userId int64, input *mediadto.FileInput) (string, error)
 	UploadChatAvatar(ctx context.Context, chatID int64, input *mediadto.FileInput) (string, error)
 	UploadComplaint(ctx context.Context, complaintID int64, input *mediadto.FileInput) (string, error)
+	UploadMessageAttachment(ctx context.Context, userID int64, kind mediadto.MessageAttachmentKind, input *mediadto.FileInput) (*repository.MessageAttachmentObject, error)
+	GetMessageAttachment(ctx context.Context, objectKey string) ([]byte, string, error)
 	DeleteAvatar(ctx context.Context, userID int64) error
 }
 
@@ -53,14 +56,55 @@ func protoFileToValidatedInput(f *mediav1.File) (*mediadto.FileInput, error) {
 	return in, nil
 }
 
-func statusFromAvatarFileError(err error) error {
+func statusFromFileError(err error) error {
 	switch {
 	case errors.Is(err, mediadto.ErrFileTooLarge):
 		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_TOO_LARGE), "file too large")
+	case errors.Is(err, mediadto.ErrInvalidFileType):
+		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_INVALID_TYPE), "invalid file type")
 	case errors.Is(err, mediadto.ErrEmptyFile):
 		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_EMPTY), "file is empty")
 	default:
 		return grpcerr.New(codes.Internal, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INTERNAL), "internal server error")
+	}
+}
+
+func statusFromAvatarFileError(err error) error {
+	return statusFromFileError(err)
+}
+
+func protoFileToMessageInput(f *mediav1.File) (*mediadto.FileInput, error) {
+	if f == nil || len(f.GetContent()) == 0 {
+		return nil, mediadto.ErrEmptyFile
+	}
+	content := f.GetContent()
+	ct := f.GetType()
+	if ct == "" || ct == "application/octet-stream" {
+		n := 512
+		if len(content) < n {
+			n = len(content)
+		}
+		if n > 0 {
+			ct = http.DetectContentType(content[:n])
+		}
+	}
+	return &mediadto.FileInput{
+		Body:        bytes.NewReader(content),
+		ContentType: ct,
+		Size:        int64(len(content)),
+	}, nil
+}
+
+func protoKindToDTO(kind mediav1.MessageAttachmentKind) (mediadto.MessageAttachmentKind, error) {
+	switch kind {
+	case mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_PHOTO:
+		return mediadto.MessageAttachmentKindPhoto, nil
+	case mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VIDEO:
+		return mediadto.MessageAttachmentKindVideo, nil
+	case mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE:
+		return mediadto.MessageAttachmentKindFile, nil
+	default:
+		return 0, mediadto.ErrInvalidFileType
 	}
 }
 
@@ -113,6 +157,55 @@ func (m MediaServer) UploadComplaintAttachment(ctx context.Context, req *mediav1
 		return nil, statusFromAvatarFileError(err)
 	}
 	return &mediav1.ResponseUpdateComplaintAttachment{AttachmentUrl: url}, nil
+}
+
+func (m MediaServer) UploadMessageAttachment(ctx context.Context, req *mediav1.RequestUploadMessageAttachment) (*mediav1.ResponseUploadMessageAttachment, error) {
+	if req == nil || req.GetUserId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "user_id is required")
+	}
+	kind, err := protoKindToDTO(req.GetKind())
+	if err != nil {
+		return nil, statusFromFileError(err)
+	}
+	in, err := protoFileToMessageInput(req.GetFile())
+	if err != nil {
+		m.Log(ctx).Info("invalid message attachment file", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+		return nil, statusFromFileError(err)
+	}
+	if err = in.ValidateMessageAttachment(kind); err != nil {
+		m.Log(ctx).Info("message attachment validation failed", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+		return nil, statusFromFileError(err)
+	}
+	obj, err := m.MediaRepository.UploadMessageAttachment(ctx, req.GetUserId(), kind, in)
+	if err != nil {
+		m.Log(ctx).Error("failed to upload message attachment", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+		return nil, statusFromFileError(err)
+	}
+	resp := &mediav1.ResponseUploadMessageAttachment{
+		MimeType:  obj.ContentType,
+		FileSize:  obj.Size,
+		ObjectKey: obj.ObjectKey,
+	}
+	if name := req.GetFileName(); name != "" {
+		resp.FileName = &name
+	}
+	return resp, nil
+}
+
+func (m MediaServer) GetMessageAttachment(ctx context.Context, req *mediav1.RequestGetMessageAttachment) (*mediav1.ResponseGetMessageAttachment, error) {
+	if req == nil || req.GetObjectKey() == "" {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "object_key is required")
+	}
+	data, ct, err := m.MediaRepository.GetMessageAttachment(ctx, req.GetObjectKey())
+	if err != nil {
+		m.Log(ctx).Error("failed to get message attachment", zap.String("object_key", req.GetObjectKey()), zap.Error(err))
+		return nil, statusFromFileError(err)
+	}
+	return &mediav1.ResponseGetMessageAttachment{
+		Content:     data,
+		ContentType: ct,
+		Size:        int64(len(data)),
+	}, nil
 }
 
 func (m MediaServer) DeleteUserAvatar(ctx context.Context, req *mediav1.RequestDeleteUserAvatar) (*mediav1.ResponseDeleteUserAvatar, error) {

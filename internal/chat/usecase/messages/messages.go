@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"unicode/utf8"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
@@ -16,9 +17,17 @@ const maxMessageRunes = 2000
 //go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=messages.go -destination=mock/messages_mock.go -package=mock
 type MessageRepositoryInterface interface {
 	CreateMessage(ctx context.Context, message *domain.Message) (*domain.Message, error)
+	CreateMessageWithAttachments(ctx context.Context, message *domain.Message, attachments []domain.MessageAttachment) (*domain.Message, error)
 	GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error)
+	GetAttachmentsByMessageIDs(ctx context.Context, messageIDs []int64) (map[int64][]domain.MessageAttachment, error)
+	CanUserAccessAttachment(ctx context.Context, userID int64, objectKey, attachmentRef string) (bool, error)
 	UpdateMessage(ctx context.Context, message *domain.Message) (*domain.Message, bool, error)
 	DeleteMessage(ctx context.Context, message *domain.Message) (*domain.Message, bool, error)
+}
+
+type StickerRepositoryInterface interface {
+	GetStickerByID(ctx context.Context, stickerID int64) (*domain.Sticker, error)
+	GetStickersByIDs(ctx context.Context, stickerIDs []int64) (map[int64]domain.Sticker, error)
 }
 
 type ChatRepositoryInterface interface {
@@ -30,8 +39,34 @@ type ChatRepositoryInterface interface {
 }
 
 type MessageService struct {
-	messageRepo MessageRepositoryInterface
-	chatRepo    ChatRepositoryInterface
+	messageRepo         MessageRepositoryInterface
+	chatRepo            ChatRepositoryInterface
+	mediaRepo           MessageMediaRepositoryInterface
+	profileRepo         ProfileContactsInterface
+	stickerRepo         StickerRepositoryInterface
+	attachmentProxyBase string
+}
+
+func NewMessageService(
+	messageRepo MessageRepositoryInterface,
+	chatRepo ChatRepositoryInterface,
+	mediaRepo MessageMediaRepositoryInterface,
+	profileRepo ProfileContactsInterface,
+	attachmentProxyBase string,
+	stickerRepo ...StickerRepositoryInterface,
+) *MessageService {
+	var stickers StickerRepositoryInterface
+	if len(stickerRepo) > 0 {
+		stickers = stickerRepo[0]
+	}
+	return &MessageService{
+		messageRepo:         messageRepo,
+		chatRepo:            chatRepo,
+		mediaRepo:           mediaRepo,
+		profileRepo:         profileRepo,
+		stickerRepo:         stickers,
+		attachmentProxyBase: strings.TrimRight(attachmentProxyBase, "/"),
+	}
 }
 
 func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, chatID int64, req *dto.RequestGetMessages) (*dto.ResponseGetMessages, error) {
@@ -76,16 +111,31 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 		return nil, fmt.Errorf("chatrepo member last reads: %w", err)
 	}
 
+	messageIDs := make([]int64, 0, len(raw))
+	for _, msg := range raw {
+		messageIDs = append(messageIDs, msg.Id)
+	}
+	attachmentsByMessage, err := m.messageRepo.GetAttachmentsByMessageIDs(ctx, messageIDs)
+	if err != nil {
+		return nil, fmt.Errorf("messageRepo get attachments: %w", err)
+	}
+	stickersByID, err := m.stickersByMessage(ctx, raw)
+	if err != nil {
+		return nil, err
+	}
+
 	items := make([]dto.MessageDTO, 0, len(raw))
 	for _, msg := range raw {
 		items = append(items, dto.MessageDTO{
-			ID:        msg.Id,
-			ChatID:    msg.ChatId,
-			SenderID:  msg.SenderId,
-			Text:      sanitize.Text(msg.Content),
-			CreatedAt: msg.CreatedAt,
-			Edited:    msg.Edited,
-			Read:      outgoingReadByPeers(msg.Id, msg.SenderId, userID, lastReads),
+			ID:          msg.Id,
+			ChatID:      msg.ChatId,
+			SenderID:    msg.SenderId,
+			Text:        sanitize.Text(msg.Content),
+			CreatedAt:   msg.CreatedAt,
+			Edited:      msg.Edited,
+			Read:        outgoingReadByPeers(msg.Id, msg.SenderId, userID, lastReads),
+			Attachments: mapAttachmentsToDTO(attachmentsByMessage[msg.Id]),
+			Sticker:     stickerDTOFromMessage(msg, stickersByID),
 		})
 	}
 
@@ -310,11 +360,4 @@ func outgoingReadByPeers(messageID, messageSenderID, viewerID int64, lastReads m
 		}
 	}
 	return true
-}
-
-func NewMessageService(messageRepo MessageRepositoryInterface, chatRepo ChatRepositoryInterface) *MessageService {
-	return &MessageService{
-		messageRepo: messageRepo,
-		chatRepo:    chatRepo,
-	}
 }

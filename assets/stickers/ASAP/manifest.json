@@ -1,0 +1,13 @@
+{
+    "name": "ASAP",
+    "title": "ASAP",
+    "thumbnail": "06_recovery.png",
+    "stickers": [
+        { "file": "01_buyus.png", "slug": "", "emoji": "" },
+        { "file": "02_zaryazhen.png", "slug": "", "emoji": "" },
+        { "file": "03_flatline.png", "slug": "", "emoji": "" },
+        { "file": "04_norma.png", "slug": "", "emoji": "" },
+        { "file": "05_overload.png", "slug": "", "emoji": "" },
+        { "file": "06_recovery.png", "slug": "", "emoji": "" }
+    ]
+}

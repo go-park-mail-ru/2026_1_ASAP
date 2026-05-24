@@ -5,6 +5,11 @@ type RequestSendMessage struct {
 	ChatID int64  `json:"chat_id"`
 }
 
+type RequestSendSticker struct {
+	ChatID    int64 `json:"chat_id"`
+	StickerID int64 `json:"sticker_id"`
+}
+
 type RequestEditMessage struct {
 	Text      string `json:"text"`
 	MessageID int64  `json:"message_id"`

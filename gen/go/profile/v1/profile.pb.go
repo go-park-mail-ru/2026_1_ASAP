@@ -994,6 +994,198 @@ func (*ResponseDeleteContact) Descriptor() ([]byte, []int) {
 	return file_profile_v1_profile_proto_rawDescGZIP(), []int{16}
 }
 
+type RequestHasContact struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ContactUserId int64                  `protobuf:"varint,2,opt,name=contact_user_id,json=contactUserId,proto3" json:"contact_user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestHasContact) Reset() {
+	*x = RequestHasContact{}
+	mi := &file_profile_v1_profile_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestHasContact) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestHasContact) ProtoMessage() {}
+
+func (x *RequestHasContact) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestHasContact.ProtoReflect.Descriptor instead.
+func (*RequestHasContact) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *RequestHasContact) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *RequestHasContact) GetContactUserId() int64 {
+	if x != nil {
+		return x.ContactUserId
+	}
+	return 0
+}
+
+type ResponseHasContact struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Exists        bool                   `protobuf:"varint,1,opt,name=exists,proto3" json:"exists,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResponseHasContact) Reset() {
+	*x = ResponseHasContact{}
+	mi := &file_profile_v1_profile_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResponseHasContact) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResponseHasContact) ProtoMessage() {}
+
+func (x *ResponseHasContact) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResponseHasContact.ProtoReflect.Descriptor instead.
+func (*ResponseHasContact) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ResponseHasContact) GetExists() bool {
+	if x != nil {
+		return x.Exists
+	}
+	return false
+}
+
+type RequestGetContact struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ContactUserId int64                  `protobuf:"varint,2,opt,name=contact_user_id,json=contactUserId,proto3" json:"contact_user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestGetContact) Reset() {
+	*x = RequestGetContact{}
+	mi := &file_profile_v1_profile_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestGetContact) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestGetContact) ProtoMessage() {}
+
+func (x *RequestGetContact) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestGetContact.ProtoReflect.Descriptor instead.
+func (*RequestGetContact) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *RequestGetContact) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *RequestGetContact) GetContactUserId() int64 {
+	if x != nil {
+		return x.ContactUserId
+	}
+	return 0
+}
+
+type ResponseGetContact struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Contact       *ContactItem           `protobuf:"bytes,1,opt,name=contact,proto3" json:"contact,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResponseGetContact) Reset() {
+	*x = ResponseGetContact{}
+	mi := &file_profile_v1_profile_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResponseGetContact) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResponseGetContact) ProtoMessage() {}
+
+func (x *ResponseGetContact) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResponseGetContact.ProtoReflect.Descriptor instead.
+func (*ResponseGetContact) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ResponseGetContact) GetContact() *ContactItem {
+	if x != nil {
+		return x.Contact
+	}
+	return nil
+}
+
 type ResponseGetProfile struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -1010,7 +1202,7 @@ type ResponseGetProfile struct {
 
 func (x *ResponseGetProfile) Reset() {
 	*x = ResponseGetProfile{}
-	mi := &file_profile_v1_profile_proto_msgTypes[17]
+	mi := &file_profile_v1_profile_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1022,7 +1214,7 @@ func (x *ResponseGetProfile) String() string {
 func (*ResponseGetProfile) ProtoMessage() {}
 
 func (x *ResponseGetProfile) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[17]
+	mi := &file_profile_v1_profile_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1035,7 +1227,7 @@ func (x *ResponseGetProfile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResponseGetProfile.ProtoReflect.Descriptor instead.
 func (*ResponseGetProfile) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{17}
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ResponseGetProfile) GetUserId() int64 {
@@ -1168,7 +1360,17 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\x14RequestDeleteContact\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12&\n" +
 	"\x0fcontact_user_id\x18\x02 \x01(\x03R\rcontactUserId\"\x17\n" +
-	"\x15ResponseDeleteContact\"\xae\x02\n" +
+	"\x15ResponseDeleteContact\"T\n" +
+	"\x11RequestHasContact\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12&\n" +
+	"\x0fcontact_user_id\x18\x02 \x01(\x03R\rcontactUserId\",\n" +
+	"\x12ResponseHasContact\x12\x16\n" +
+	"\x06exists\x18\x01 \x01(\bR\x06exists\"T\n" +
+	"\x11RequestGetContact\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12&\n" +
+	"\x0fcontact_user_id\x18\x02 \x01(\x03R\rcontactUserId\"G\n" +
+	"\x12ResponseGetContact\x121\n" +
+	"\acontact\x18\x01 \x01(\v2\x17.profile.v1.ContactItemR\acontact\"\xae\x02\n" +
 	"\x12ResponseGetProfile\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1d\n" +
 	"\n" +
@@ -1198,7 +1400,7 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\x1aPROFILE_ERROR_CONTACT_SELF\x10\n" +
 	"\x12(\n" +
 	"$PROFILE_ERROR_CONTACT_ALREADY_EXISTS\x10\v\x12#\n" +
-	"\x1fPROFILE_ERROR_CONTACT_NOT_FOUND\x10\f2\xfa\a\n" +
+	"\x1fPROFILE_ERROR_CONTACT_NOT_FOUND\x10\f2\x94\t\n" +
 	"\aProfile\x12I\n" +
 	"\rCreateProfile\x12 .profile.v1.RequestCreateProfile\x1a\x16.google.protobuf.Empty\x12K\n" +
 	"\n" +
@@ -1213,6 +1415,10 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
 	"AddContact\x12\x1d.profile.v1.RequestAddContact\x1a\x1e.profile.v1.ResponseAddContact\x12T\n" +
 	"\rDeleteContact\x12 .profile.v1.RequestDeleteContact\x1a!.profile.v1.ResponseDeleteContact\x12K\n" +
+	"\n" +
+	"HasContact\x12\x1d.profile.v1.RequestHasContact\x1a\x1e.profile.v1.ResponseHasContact\x12K\n" +
+	"\n" +
+	"GetContact\x12\x1d.profile.v1.RequestGetContact\x1a\x1e.profile.v1.ResponseGetContact\x12K\n" +
 	"\x0eUpdateLastSeen\x12!.profile.v1.RequestUpdateLastSeen\x1a\x16.google.protobuf.EmptyBDZBgithub.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1;profilev1b\x06proto3"
 
 var (
@@ -1228,7 +1434,7 @@ func file_profile_v1_profile_proto_rawDescGZIP() []byte {
 }
 
 var file_profile_v1_profile_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_profile_v1_profile_proto_goTypes = []any{
 	(ProfileErrorCode)(0),           // 0: profile.v1.ProfileErrorCode
 	(*RequestCreateProfile)(nil),    // 1: profile.v1.RequestCreateProfile
@@ -1248,44 +1454,53 @@ var file_profile_v1_profile_proto_goTypes = []any{
 	(*ResponseAddContact)(nil),      // 15: profile.v1.ResponseAddContact
 	(*RequestDeleteContact)(nil),    // 16: profile.v1.RequestDeleteContact
 	(*ResponseDeleteContact)(nil),   // 17: profile.v1.ResponseDeleteContact
-	(*ResponseGetProfile)(nil),      // 18: profile.v1.ResponseGetProfile
-	(*timestamppb.Timestamp)(nil),   // 19: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),           // 20: google.protobuf.Empty
+	(*RequestHasContact)(nil),       // 18: profile.v1.RequestHasContact
+	(*ResponseHasContact)(nil),      // 19: profile.v1.ResponseHasContact
+	(*RequestGetContact)(nil),       // 20: profile.v1.RequestGetContact
+	(*ResponseGetContact)(nil),      // 21: profile.v1.ResponseGetContact
+	(*ResponseGetProfile)(nil),      // 22: profile.v1.ResponseGetProfile
+	(*timestamppb.Timestamp)(nil),   // 23: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),           // 24: google.protobuf.Empty
 }
 var file_profile_v1_profile_proto_depIdxs = []int32{
-	19, // 0: profile.v1.ContactItem.created_at:type_name -> google.protobuf.Timestamp
+	23, // 0: profile.v1.ContactItem.created_at:type_name -> google.protobuf.Timestamp
 	12, // 1: profile.v1.ResponseListContacts.contacts:type_name -> profile.v1.ContactItem
 	12, // 2: profile.v1.ResponseAddContact.contact:type_name -> profile.v1.ContactItem
-	19, // 3: profile.v1.ResponseGetProfile.last_seen:type_name -> google.protobuf.Timestamp
-	1,  // 4: profile.v1.Profile.CreateProfile:input_type -> profile.v1.RequestCreateProfile
-	7,  // 5: profile.v1.Profile.GetProfile:input_type -> profile.v1.RequestGetProfile
-	5,  // 6: profile.v1.Profile.UpdateProfileAvatar:input_type -> profile.v1.RequestUpdateAvatar
-	6,  // 7: profile.v1.Profile.UpdateProfileAvatarURL:input_type -> profile.v1.RequestUpdateAvatarURL
-	4,  // 8: profile.v1.Profile.UpdateProfileBio:input_type -> profile.v1.RequestUpdateBio
-	3,  // 9: profile.v1.Profile.UpdateProfileBirthDate:input_type -> profile.v1.RequestUpdateBirthDate
-	2,  // 10: profile.v1.Profile.UpdateProfileName:input_type -> profile.v1.RequestUpdateName
-	9,  // 11: profile.v1.Profile.SearchIdByLogin:input_type -> profile.v1.RequestSearchIdByLogin
-	11, // 12: profile.v1.Profile.ListContacts:input_type -> profile.v1.RequestListContacts
-	14, // 13: profile.v1.Profile.AddContact:input_type -> profile.v1.RequestAddContact
-	16, // 14: profile.v1.Profile.DeleteContact:input_type -> profile.v1.RequestDeleteContact
-	8,  // 15: profile.v1.Profile.UpdateLastSeen:input_type -> profile.v1.RequestUpdateLastSeen
-	20, // 16: profile.v1.Profile.CreateProfile:output_type -> google.protobuf.Empty
-	18, // 17: profile.v1.Profile.GetProfile:output_type -> profile.v1.ResponseGetProfile
-	18, // 18: profile.v1.Profile.UpdateProfileAvatar:output_type -> profile.v1.ResponseGetProfile
-	18, // 19: profile.v1.Profile.UpdateProfileAvatarURL:output_type -> profile.v1.ResponseGetProfile
-	18, // 20: profile.v1.Profile.UpdateProfileBio:output_type -> profile.v1.ResponseGetProfile
-	18, // 21: profile.v1.Profile.UpdateProfileBirthDate:output_type -> profile.v1.ResponseGetProfile
-	18, // 22: profile.v1.Profile.UpdateProfileName:output_type -> profile.v1.ResponseGetProfile
-	10, // 23: profile.v1.Profile.SearchIdByLogin:output_type -> profile.v1.ResponseSearchIdByLogin
-	13, // 24: profile.v1.Profile.ListContacts:output_type -> profile.v1.ResponseListContacts
-	15, // 25: profile.v1.Profile.AddContact:output_type -> profile.v1.ResponseAddContact
-	17, // 26: profile.v1.Profile.DeleteContact:output_type -> profile.v1.ResponseDeleteContact
-	20, // 27: profile.v1.Profile.UpdateLastSeen:output_type -> google.protobuf.Empty
-	16, // [16:28] is the sub-list for method output_type
-	4,  // [4:16] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	12, // 3: profile.v1.ResponseGetContact.contact:type_name -> profile.v1.ContactItem
+	23, // 4: profile.v1.ResponseGetProfile.last_seen:type_name -> google.protobuf.Timestamp
+	1,  // 5: profile.v1.Profile.CreateProfile:input_type -> profile.v1.RequestCreateProfile
+	7,  // 6: profile.v1.Profile.GetProfile:input_type -> profile.v1.RequestGetProfile
+	5,  // 7: profile.v1.Profile.UpdateProfileAvatar:input_type -> profile.v1.RequestUpdateAvatar
+	6,  // 8: profile.v1.Profile.UpdateProfileAvatarURL:input_type -> profile.v1.RequestUpdateAvatarURL
+	4,  // 9: profile.v1.Profile.UpdateProfileBio:input_type -> profile.v1.RequestUpdateBio
+	3,  // 10: profile.v1.Profile.UpdateProfileBirthDate:input_type -> profile.v1.RequestUpdateBirthDate
+	2,  // 11: profile.v1.Profile.UpdateProfileName:input_type -> profile.v1.RequestUpdateName
+	9,  // 12: profile.v1.Profile.SearchIdByLogin:input_type -> profile.v1.RequestSearchIdByLogin
+	11, // 13: profile.v1.Profile.ListContacts:input_type -> profile.v1.RequestListContacts
+	14, // 14: profile.v1.Profile.AddContact:input_type -> profile.v1.RequestAddContact
+	16, // 15: profile.v1.Profile.DeleteContact:input_type -> profile.v1.RequestDeleteContact
+	18, // 16: profile.v1.Profile.HasContact:input_type -> profile.v1.RequestHasContact
+	20, // 17: profile.v1.Profile.GetContact:input_type -> profile.v1.RequestGetContact
+	8,  // 18: profile.v1.Profile.UpdateLastSeen:input_type -> profile.v1.RequestUpdateLastSeen
+	24, // 19: profile.v1.Profile.CreateProfile:output_type -> google.protobuf.Empty
+	22, // 20: profile.v1.Profile.GetProfile:output_type -> profile.v1.ResponseGetProfile
+	22, // 21: profile.v1.Profile.UpdateProfileAvatar:output_type -> profile.v1.ResponseGetProfile
+	22, // 22: profile.v1.Profile.UpdateProfileAvatarURL:output_type -> profile.v1.ResponseGetProfile
+	22, // 23: profile.v1.Profile.UpdateProfileBio:output_type -> profile.v1.ResponseGetProfile
+	22, // 24: profile.v1.Profile.UpdateProfileBirthDate:output_type -> profile.v1.ResponseGetProfile
+	22, // 25: profile.v1.Profile.UpdateProfileName:output_type -> profile.v1.ResponseGetProfile
+	10, // 26: profile.v1.Profile.SearchIdByLogin:output_type -> profile.v1.ResponseSearchIdByLogin
+	13, // 27: profile.v1.Profile.ListContacts:output_type -> profile.v1.ResponseListContacts
+	15, // 28: profile.v1.Profile.AddContact:output_type -> profile.v1.ResponseAddContact
+	17, // 29: profile.v1.Profile.DeleteContact:output_type -> profile.v1.ResponseDeleteContact
+	19, // 30: profile.v1.Profile.HasContact:output_type -> profile.v1.ResponseHasContact
+	21, // 31: profile.v1.Profile.GetContact:output_type -> profile.v1.ResponseGetContact
+	24, // 32: profile.v1.Profile.UpdateLastSeen:output_type -> google.protobuf.Empty
+	19, // [19:33] is the sub-list for method output_type
+	5,  // [5:19] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_profile_v1_profile_proto_init() }
@@ -1298,14 +1513,14 @@ func file_profile_v1_profile_proto_init() {
 	file_profile_v1_profile_proto_msgTypes[3].OneofWrappers = []any{}
 	file_profile_v1_profile_proto_msgTypes[11].OneofWrappers = []any{}
 	file_profile_v1_profile_proto_msgTypes[13].OneofWrappers = []any{}
-	file_profile_v1_profile_proto_msgTypes[17].OneofWrappers = []any{}
+	file_profile_v1_profile_proto_msgTypes[21].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_profile_v1_profile_proto_rawDesc), len(file_profile_v1_profile_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

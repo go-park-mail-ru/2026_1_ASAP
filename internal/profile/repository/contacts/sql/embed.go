@@ -16,3 +16,6 @@ var DeleteContact string
 
 //go:embed is_contact.sql
 var IsContact string
+
+//go:embed get_contact.sql
+var GetContact string

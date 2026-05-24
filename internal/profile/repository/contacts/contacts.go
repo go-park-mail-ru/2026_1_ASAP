@@ -3,6 +3,7 @@ package contacts
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -116,6 +117,29 @@ func (r *ContactsRepository) DeleteContact(ctx context.Context, userID, contactU
 	}
 
 	return nil
+}
+
+func (r *ContactsRepository) GetContact(ctx context.Context, userID, contactUserID int64) (*contactdom.Contact, error) {
+	q := contactssql.GetContact
+	start := time.Now()
+	contact := &ContactModel{}
+	err := r.db.QueryRow(ctx, q, userID, contactUserID).Scan(
+		&contact.UserID,
+		&contact.FirstName,
+		&contact.LastName,
+		&contact.ContactUserID,
+		&contact.ContactAvatarUrl,
+		&contact.CreatedAt,
+		&contact.UpdatedAt,
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetContact", q, start, err, []any{userID, contactUserID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, contactdom.ErrContactNotFound
+		}
+		return nil, fmt.Errorf("failed to get contact: %w", err)
+	}
+	return toDomainContact(contact), nil
 }
 
 func (r *ContactsRepository) IsContact(ctx context.Context, userID, contactUserID int64) (bool, error) {
