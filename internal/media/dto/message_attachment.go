@@ -4,6 +4,7 @@ const (
 	MaxMessagePhotoBytes = 10 * 1024 * 1024
 	MaxMessageVideoBytes = 50 * 1024 * 1024
 	MaxMessageFileBytes  = 20 * 1024 * 1024
+	MaxMessageVoiceBytes = 5 * 1024 * 1024
 )
 
 type MessageAttachmentKind int
@@ -12,6 +13,7 @@ const (
 	MessageAttachmentKindPhoto MessageAttachmentKind = iota + 1
 	MessageAttachmentKindVideo
 	MessageAttachmentKindFile
+	MessageAttachmentKindVoice
 )
 
 var allowedPhotoContentTypes = map[string]bool{
@@ -39,6 +41,14 @@ var allowedFileContentTypes = map[string]bool{
 	"text/plain": true,
 }
 
+var allowedVoiceContentTypes = map[string]bool{
+	"audio/webm":  true,
+	"audio/ogg":   true,
+	"audio/mp4":   true,
+	"audio/mpeg":  true,
+	"audio/x-m4a": true,
+}
+
 func (f *FileInput) ValidateMessageAttachment(kind MessageAttachmentKind) error {
 	if f == nil || f.Body == nil {
 		return ErrEmptyFile
@@ -50,6 +60,9 @@ func (f *FileInput) ValidateMessageAttachment(kind MessageAttachmentKind) error 
 		return validateMessageFile(f.ContentType, int(f.Size), MaxMessageVideoBytes, allowedVideoContentTypes)
 	case MessageAttachmentKindFile:
 		return validateMessageFile(f.ContentType, int(f.Size), MaxMessageFileBytes, allowedFileContentTypes)
+	case MessageAttachmentKindVoice:
+		normalizeVoiceFileInput(f)
+		return validateMessageFile(f.ContentType, int(f.Size), MaxMessageVoiceBytes, allowedVoiceContentTypes)
 	default:
 		return ErrInvalidFileType
 	}

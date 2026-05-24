@@ -1,12 +1,15 @@
 package repository
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 	"time"
 
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/audio"
 	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/s3log"
@@ -135,6 +138,25 @@ type MessageAttachmentObject struct {
 	ObjectKey   string
 	ContentType string
 	Size        int64
+	DurationMs  int
+	Waveform    []uint8
+}
+
+func readInputBody(input *mediadto.FileInput, maxBytes int) ([]byte, error) {
+	if input == nil || input.Body == nil {
+		return nil, mediadto.ErrEmptyFile
+	}
+	data, err := io.ReadAll(io.LimitReader(input.Body, int64(maxBytes)+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, mediadto.ErrEmptyFile
+	}
+	if len(data) > maxBytes {
+		return nil, mediadto.ErrFileTooLarge
+	}
+	return data, nil
 }
 
 func (m *MediaRepository) UploadMessageAttachment(
@@ -150,23 +172,99 @@ func (m *MediaRepository) UploadMessageAttachment(
 		return nil, err
 	}
 
-	extension := getExtensionFromContentType(input.ContentType)
+	var (
+		data        []byte
+		err         error
+		durationMs  int
+		waveform    []uint8
+		userMeta    map[string]string
+		contentType = input.ContentType
+		size        = input.Size
+	)
+
+	if kind == mediadto.MessageAttachmentKindVoice {
+		data, err = readInputBody(input, mediadto.MaxMessageVoiceBytes)
+		if err != nil {
+			return nil, err
+		}
+		size = int64(len(data))
+		durationMs, waveform, err = audio.AnalyzeVoice(data, contentType)
+		if err != nil {
+			if errors.Is(err, audio.ErrVoiceTooLong) {
+				return nil, mediadto.ErrVoiceTooLong
+			}
+			return nil, mediadto.ErrInvalidFileType
+		}
+		userMeta, err = encodeVoiceUserMetadata(durationMs, waveform)
+		if err != nil {
+			return nil, fmt.Errorf("encode voice metadata: %w", err)
+		}
+	} else {
+		data, err = readInputBody(input, maxBytesForKind(kind))
+		if err != nil {
+			return nil, err
+		}
+		size = int64(len(data))
+	}
+
+	extension := getExtensionFromContentType(contentType)
 	objectName := fmt.Sprintf("message/%d/%s_%d%s", userID, uuid.NewString(), time.Now().UnixNano(), extension)
 
+	putOpts := minio.PutObjectOptions{ContentType: contentType}
+	if userMeta != nil {
+		putOpts.UserMetadata = userMeta
+	}
+
 	start := time.Now()
-	_, err := m.client.PutObject(ctx, m.bucket, objectName, input.Body, input.Size, minio.PutObjectOptions{
-		ContentType: input.ContentType,
-	})
-	s3log.LogOp(ctx, m.log(ctx), "UploadMessageAttachment", objectName, start, err, []any{userID, kind, input.ContentType, input.Size})
+	_, err = m.client.PutObject(ctx, m.bucket, objectName, bytes.NewReader(data), size, putOpts)
+	s3log.LogOp(ctx, m.log(ctx), "UploadMessageAttachment", objectName, start, err, []any{userID, kind, contentType, size})
 	if err != nil {
 		return nil, fmt.Errorf("upload message attachment: %w", err)
 	}
 
-	return &MessageAttachmentObject{
+	obj := &MessageAttachmentObject{
 		ObjectKey:   objectName,
-		ContentType: input.ContentType,
-		Size:        input.Size,
-	}, nil
+		ContentType: contentType,
+		Size:        size,
+	}
+	if kind == mediadto.MessageAttachmentKindVoice {
+		obj.DurationMs = durationMs
+		obj.Waveform = waveform
+	}
+	return obj, nil
+}
+
+func maxBytesForKind(kind mediadto.MessageAttachmentKind) int {
+	switch kind {
+	case mediadto.MessageAttachmentKindVideo:
+		return mediadto.MaxMessageVideoBytes
+	case mediadto.MessageAttachmentKindFile:
+		return mediadto.MaxMessageFileBytes
+	case mediadto.MessageAttachmentKindVoice:
+		return mediadto.MaxMessageVoiceBytes
+	default:
+		return mediadto.MaxMessagePhotoBytes
+	}
+}
+
+func (m *MediaRepository) GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*VoiceMetadata, error) {
+	if err := validateMessageObjectKey(objectKey); err != nil {
+		return nil, err
+	}
+
+	start := time.Now()
+	info, err := m.client.StatObject(ctx, m.bucket, objectKey, minio.StatObjectOptions{})
+	s3log.LogOp(ctx, m.log(ctx), "GetMessageVoiceMetadata", objectKey, start, err, []any{objectKey})
+	if err != nil {
+		return nil, fmt.Errorf("stat message attachment: %w", err)
+	}
+
+	ct := info.ContentType
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+
+	return parseVoiceUserMetadata(userMetadataFromStat(info.UserMetadata), ct, info.Size)
 }
 
 func (m *MediaRepository) GetMessageAttachment(ctx context.Context, objectKey string) ([]byte, string, error) {
@@ -251,7 +349,7 @@ func getExtensionFromContentType(contentType string) string {
 		return ".gif"
 	case "video/mp4":
 		return ".mp4"
-	case "video/webm":
+	case "video/webm", "audio/webm":
 		return ".webm"
 	case "video/quicktime":
 		return ".mov"
@@ -269,6 +367,12 @@ func getExtensionFromContentType(contentType string) string {
 		return ".xlsx"
 	case "text/plain":
 		return ".txt"
+	case "audio/ogg":
+		return ".ogg"
+	case "audio/mp4", "audio/x-m4a":
+		return ".m4a"
+	case "audio/mpeg":
+		return ".mp3"
 	default:
 		return ".bin"
 	}

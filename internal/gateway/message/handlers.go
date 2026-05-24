@@ -40,6 +40,8 @@ type UploadAttachmentResponse struct {
 	MimeType      string  `json:"mime_type"`
 	FileSize      int64   `json:"file_size"`
 	FileName      *string `json:"file_name,omitempty"`
+	DurationMs    int32   `json:"duration_ms,omitempty"`
+	Waveform      []uint8 `json:"waveform,omitempty"`
 }
 
 func (h *GatewayMessageHandler) UploadAttachment(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +107,14 @@ func (h *GatewayMessageHandler) UploadAttachment(w http.ResponseWriter, r *http.
 		ObjectKey:     resp.GetObjectKey(),
 		MimeType:      resp.GetMimeType(),
 		FileSize:      resp.GetFileSize(),
+		DurationMs:    resp.GetDurationMs(),
+	}
+	if len(resp.GetWaveform()) > 0 {
+		wf := make([]uint8, len(resp.GetWaveform()))
+		for i, v := range resp.GetWaveform() {
+			wf[i] = uint8(v)
+		}
+		body.Waveform = wf
 	}
 	if name := resp.GetFileName(); name != "" {
 		body.FileName = &name
@@ -175,6 +185,8 @@ func parseAttachmentKind(raw string) (chatv1.MessageAttachmentKind, error) {
 		return chatv1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VIDEO, nil
 	case "file":
 		return chatv1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE, nil
+	case "voice":
+		return chatv1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VOICE, nil
 	default:
 		return chatv1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_UNSPECIFIED, errors.New("invalid kind")
 	}
@@ -186,6 +198,8 @@ func maxBytesForKind(kind chatv1.MessageAttachmentKind) int64 {
 		return 50 * 1024 * 1024
 	case chatv1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE:
 		return 20 * 1024 * 1024
+	case chatv1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VOICE:
+		return chatmedia.MaxMessageVoiceBytes
 	default:
 		return 10 * 1024 * 1024
 	}
@@ -251,6 +265,11 @@ func sendUploadGRPCError(w http.ResponseWriter, err error) {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.EmptyFile, Message: dtoApi.EmptyFileMsg}},
+		})
+	case mediav1.MediaErrorCode_MEDIA_ERROR_VOICE_TOO_LONG:
+		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.VoiceTooLong, Message: dtoApi.VoiceTooLongMsg}},
 		})
 	default:
 		response.Send(w, http.StatusInternalServerError, dtoApi.ApiErrorResponse{

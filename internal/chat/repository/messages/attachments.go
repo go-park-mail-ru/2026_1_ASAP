@@ -66,6 +66,8 @@ func (m *MessageRepository) CreateMessageWithAttachments(
 			model.ContactFirstName,
 			model.ContactLastName,
 			model.ContactAvatarURL,
+			durationArg(model.DurationMs),
+			waveformArg(model.Waveform),
 		).Scan(
 			&scanned.Id,
 			&scanned.MessageId,
@@ -79,6 +81,8 @@ func (m *MessageRepository) CreateMessageWithAttachments(
 			&scanned.ContactFirstName,
 			&scanned.ContactLastName,
 			&scanned.ContactAvatarURL,
+			&scanned.DurationMs,
+			&scanned.Waveform,
 			&scanned.CreatedAt,
 		)
 		if err != nil {
@@ -131,6 +135,8 @@ func (m *MessageRepository) GetAttachmentsByMessageIDs(ctx context.Context, mess
 			&model.ContactFirstName,
 			&model.ContactLastName,
 			&model.ContactAvatarURL,
+			&model.DurationMs,
+			&model.Waveform,
 			&model.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan attachment: %w", err)

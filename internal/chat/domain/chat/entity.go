@@ -30,6 +30,7 @@ const (
 	AttachmentTypeVideo   AttachmentType = "video"
 	AttachmentTypeFile    AttachmentType = "file"
 	AttachmentTypeContact AttachmentType = "contact"
+	AttachmentTypeVoice   AttachmentType = "voice"
 )
 
 type Message struct {
@@ -53,10 +54,12 @@ type MessageAttachment struct {
 	ContactAvatarURL *string
 	ContactFirstName *string
 	ContactLastName  *string
+	Waveform         []uint8
 	Type             AttachmentType
 	Id               int64
 	MessageId        int64
 	ContactUserID    *int64
 	FileSize         *int64
+	DurationMs       *int32
 	SortOrder        int
 }

@@ -19,6 +19,8 @@ type MessageAttachmentDTO struct {
 	FileName         *string `json:"file_name,omitempty"`
 	MimeType         *string `json:"mime_type,omitempty"`
 	FileSize         *int64  `json:"file_size,omitempty"`
+	DurationMs       *int32  `json:"duration_ms,omitempty"`
+	Waveform         []uint8 `json:"waveform,omitempty"`
 	ContactUserID    *int64  `json:"contact_user_id,omitempty"`
 	ContactFirstName *string `json:"contact_first_name,omitempty"`
 	ContactLastName  *string `json:"contact_last_name,omitempty"`
@@ -31,4 +33,6 @@ type UploadAttachmentResponse struct {
 	MimeType      string  `json:"mime_type"`
 	FileSize      int64   `json:"file_size"`
 	FileName      *string `json:"file_name,omitempty"`
+	DurationMs    int32   `json:"duration_ms,omitempty"`
+	Waveform      []uint8 `json:"waveform,omitempty"`
 }

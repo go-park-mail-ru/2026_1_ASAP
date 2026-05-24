@@ -7,7 +7,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
+	chatmedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	grpcprofile "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc/clients/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages/mock"
@@ -133,4 +135,90 @@ func TestBuildAttachmentPreview(t *testing.T) {
 		{Type: domain.AttachmentTypeContact},
 	})
 	require.Equal(t, "[Фото] [Контакт]", preview)
+}
+
+type voiceMediaStub struct {
+	meta *chatmedia.VoiceMetadataResult
+}
+
+func (s *voiceMediaStub) UploadMessageAttachment(
+	context.Context,
+	int64,
+	mediav1.MessageAttachmentKind,
+	*chatmedia.FileInput,
+	string,
+) (*chatmedia.UploadMessageAttachmentResult, error) {
+	return nil, nil
+}
+
+func (s *voiceMediaStub) GetMessageVoiceMetadata(context.Context, string) (*chatmedia.VoiceMetadataResult, error) {
+	return s.meta, nil
+}
+
+func TestSendMessageWithAttachments_VoiceHappyPath(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	msgRepo := mock.NewMockMessageRepositoryInterface(ctrl)
+	chatRepo := mock.NewMockChatRepositoryInterface(ctrl)
+
+	duration := int32(42000)
+	mediaStub := &voiceMediaStub{meta: &chatmedia.VoiceMetadataResult{
+		DurationMs: duration,
+		Waveform:   []uint8{10, 20, 30},
+		MimeType:   "audio/webm",
+		FileSize:   1234,
+	}}
+
+	chatRepo.EXPECT().IsMember(gomock.Any(), int64(1), int64(10)).Return(true, nil)
+	chatRepo.EXPECT().GetChatByID(gomock.Any(), int64(1)).Return(&domain.Chat{Id: 1, Type: domain.ChatTypeGroup}, nil)
+	msgRepo.EXPECT().CreateMessageWithAttachments(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, msg *domain.Message, atts []domain.MessageAttachment) (*domain.Message, error) {
+			require.Equal(t, "[Голосовое · 0:42]", msg.Content)
+			require.Len(t, atts, 1)
+			require.Equal(t, domain.AttachmentTypeVoice, atts[0].Type)
+			require.Equal(t, duration, *atts[0].DurationMs)
+			msg.Id = 77
+			msg.Attachments = atts
+			return msg, nil
+		},
+	)
+
+	s := NewMessageService(msgRepo, chatRepo, mediaStub, nil, "http://localhost:8088")
+	resp, err := s.SendMessageWithAttachments(context.Background(), 10, 1, &dto.RequestSendMessageAttachments{
+		ChatID: 1,
+		Attachments: []dto.AttachmentInput{{
+			Type: "voice",
+			URL:  "http://localhost:8088/api/v1/messages/attachments/message/10/uuid_1.webm",
+		}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, int64(77), resp.ID)
+	require.Equal(t, duration, *resp.Attachments[0].DurationMs)
+}
+
+func TestSendMessageWithAttachments_RejectsVoiceMixedWithPhoto(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	msgRepo := mock.NewMockMessageRepositoryInterface(ctrl)
+	chatRepo := mock.NewMockChatRepositoryInterface(ctrl)
+
+	chatRepo.EXPECT().IsMember(gomock.Any(), int64(1), int64(10)).Return(true, nil)
+	chatRepo.EXPECT().GetChatByID(gomock.Any(), int64(1)).Return(&domain.Chat{Id: 1, Type: domain.ChatTypeGroup}, nil)
+
+	s := NewMessageService(msgRepo, chatRepo, nil, nil, "http://localhost:8088")
+	_, err := s.SendMessageWithAttachments(context.Background(), 10, 1, &dto.RequestSendMessageAttachments{
+		ChatID: 1,
+		Attachments: []dto.AttachmentInput{
+			{Type: "voice", URL: "http://localhost:8088/api/v1/messages/attachments/message/10/a.webm"},
+			{Type: "photo", URL: "http://localhost:8088/api/v1/messages/attachments/message/10/b.jpg"},
+		},
+	})
+	require.ErrorIs(t, err, domain.ErrInvalidAttachment)
+}
+
+func TestFormatVoicePreview(t *testing.T) {
+	t.Parallel()
+	d := int32(125000)
+	require.Equal(t, "[Голосовое · 2:05]", formatVoicePreview(&d))
+	require.Equal(t, "[Голосовое]", formatVoicePreview(nil))
 }

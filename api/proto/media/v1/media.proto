@@ -11,6 +11,7 @@ service Media {
   rpc UploadComplaintAttachment(RequestUpdateComplaintAttachment) returns (ResponseUpdateComplaintAttachment);
   rpc UploadMessageAttachment(RequestUploadMessageAttachment) returns (ResponseUploadMessageAttachment);
   rpc GetMessageAttachment(RequestGetMessageAttachment) returns (ResponseGetMessageAttachment);
+  rpc GetMessageVoiceMetadata(RequestGetMessageVoiceMetadata) returns (ResponseGetMessageVoiceMetadata);
   rpc DeleteUserAvatar(RequestDeleteUserAvatar) returns (ResponseDeleteUserAvatar);
 }
 
@@ -19,6 +20,7 @@ enum MessageAttachmentKind {
   MESSAGE_ATTACHMENT_KIND_PHOTO = 1;
   MESSAGE_ATTACHMENT_KIND_VIDEO = 2;
   MESSAGE_ATTACHMENT_KIND_FILE = 3;
+  MESSAGE_ATTACHMENT_KIND_VOICE = 4;
 }
 
 enum MediaErrorCode {
@@ -28,6 +30,7 @@ enum MediaErrorCode {
   MEDIA_ERROR_FILE_EMPTY       = 3;
   MEDIA_ERROR_INTERNAL         = 4;
   MEDIA_ERROR_INVALID_INPUT    = 5;
+  MEDIA_ERROR_VOICE_TOO_LONG   = 6;
 }
 
 message File {
@@ -76,6 +79,19 @@ message ResponseUploadMessageAttachment {
   int64 file_size = 3;
   optional string file_name = 4;
   string object_key = 5;
+  int32 duration_ms = 6;
+  repeated uint32 waveform = 7;
+}
+
+message RequestGetMessageVoiceMetadata {
+  string object_key = 1;
+}
+
+message ResponseGetMessageVoiceMetadata {
+  int32 duration_ms = 1;
+  repeated uint32 waveform = 2;
+  string mime_type = 3;
+  int64 file_size = 4;
 }
 
 message RequestGetMessageAttachment {
