@@ -53,6 +53,8 @@ jobs:
     needs: [test, lint]
     if: github.event_name == 'push'
     timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -62,18 +64,26 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           command_timeout: 30m
-          envs: DEPLOY_DIR,BRANCH
+          envs: DEPLOY_DIR,BRANCH,GITHUB_TOKEN,GITHUB_REPOSITORY
           script: |
             set -euo pipefail
             DEPLOY_DIR="${DEPLOY_DIR:-/home/ubuntu/pulseapp/backend/2026_1_ASAP}"
             BRANCH="${BRANCH:-main}"
             cd "$DEPLOY_DIR"
-            git fetch origin "$BRANCH"
-            git checkout "$BRANCH"
-            git reset --hard "origin/$BRANCH"
+            if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+              git fetch "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$BRANCH"
+              git checkout "$BRANCH"
+              git reset --hard "FETCH_HEAD"
+            else
+              git fetch origin "$BRANCH"
+              git checkout "$BRANCH"
+              git reset --hard "origin/$BRANCH"
+            fi
             export APPLICATION_CONFIG=prod
             docker compose up -d --build --remove-orphans
             echo "deploy finished: branch=$BRANCH commit=$(git rev-parse --short HEAD)"
         env:
           DEPLOY_DIR: ${{ secrets.DEPLOY_PATH }}
           BRANCH: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
