@@ -85,7 +85,7 @@ func TestPositiveGatewayComplaintHandler_CreateComplaintUnAuthorized(t *testing.
 			want: http.StatusOK,
 		},
 		{
-			name: "Successful create complaint with product type",
+			name: "Successful create complaint with suggestion type",
 			prepare: func(f *fields) {
 				f.complaintService.EXPECT().CreateComplaint(gomock.Any(), &complaintv1.RequestCreateComplaint{
 					Type: complaintv1.ComplaintType_COMPLAINT_TYPE_PRODUCT,
@@ -114,7 +114,7 @@ func TestPositiveGatewayComplaintHandler_CreateComplaintUnAuthorized(t *testing.
 			},
 			args: args{
 				body: map[string]interface{}{
-					"type": "product",
+					"type": "suggestion",
 					"feedback": map[string]string{
 						"feedback_name":  "Jane Smith",
 						"feedback_email": "jane@example.com",
@@ -125,7 +125,7 @@ func TestPositiveGatewayComplaintHandler_CreateComplaintUnAuthorized(t *testing.
 			want: http.StatusOK,
 		},
 		{
-			name: "Successful create complaint with upgrade type",
+			name: "Successful create complaint with complaint type",
 			prepare: func(f *fields) {
 				f.complaintService.EXPECT().CreateComplaint(gomock.Any(), &complaintv1.RequestCreateComplaint{
 					Type: complaintv1.ComplaintType_COMPLAINT_TYPE_UPGRADE,
@@ -154,7 +154,7 @@ func TestPositiveGatewayComplaintHandler_CreateComplaintUnAuthorized(t *testing.
 			},
 			args: args{
 				body: map[string]interface{}{
-					"type": "upgrade",
+					"type": "complaint",
 					"feedback": map[string]string{
 						"feedback_name":  "Bob Wilson",
 						"feedback_email": "bob@example.com",
@@ -457,10 +457,10 @@ func TestPositiveGatewayComplaintHandler_GetComplaint(t *testing.T) {
 	}
 
 	tests := []struct {
-		prepare      func(*fields)
-		want         int
-		name         string
-		complaintID  string
+		prepare     func(*fields)
+		want        int
+		name        string
+		complaintID string
 	}{
 		{
 			name: "Successful get complaint by id",
@@ -526,11 +526,11 @@ func TestNegativeGatewayComplaintHandler_GetComplaint(t *testing.T) {
 	}
 
 	tests := []struct {
-		name         string
-		prepare      func(*fields)
-		want         int
-		complaintID  string
-		userID       interface{}
+		name        string
+		prepare     func(*fields)
+		want        int
+		complaintID string
+		userID      interface{}
 	}{
 		{
 			name:        "Invalid complaint id",

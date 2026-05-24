@@ -22,7 +22,7 @@ install-linter:
 	@echo "Устанавливаем golangci-lint..."
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-lint: $(GOLANGCI_LINT)
+lint: generate $(GOLANGCI_LINT)
 	@echo "Запускаем линтеры..."
 	PATH="$(shell go env GOPATH)/bin:$${PATH}" golangci-lint run ./...
 
