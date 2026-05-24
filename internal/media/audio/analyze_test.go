@@ -42,6 +42,21 @@ func TestAnalyzeVoice_WithFFmpeg(t *testing.T) {
 	require.Len(t, waveform, WaveformBars)
 }
 
+func TestAnalyzeVoice_LiveWebMWithoutHeaderDuration(t *testing.T) {
+	if !FFmpegAvailable() {
+		t.Skip("ffmpeg/ffprobe not available")
+	}
+
+	out, err := execLiveWebM(t)
+	require.NoError(t, err)
+
+	durationMs, waveform, err := AnalyzeVoice(out, "audio/webm")
+	require.NoError(t, err)
+	require.Greater(t, durationMs, 0)
+	require.LessOrEqual(t, durationMs, MaxVoiceDurationMs)
+	require.Len(t, waveform, WaveformBars)
+}
+
 func execSilentWebM(t *testing.T) ([]byte, error) {
 	t.Helper()
 	if !FFmpegAvailable() {
@@ -49,5 +64,15 @@ func execSilentWebM(t *testing.T) ([]byte, error) {
 	}
 
 	cmd := exec.Command("ffmpeg", "-f", "lavfi", "-i", "anullsrc=r=8000:cl=mono", "-t", "0.5", "-f", "webm", "pipe:1")
+	return cmd.Output()
+}
+
+func execLiveWebM(t *testing.T) ([]byte, error) {
+	t.Helper()
+	if !FFmpegAvailable() {
+		t.Skip("ffmpeg not available")
+	}
+
+	cmd := exec.Command("ffmpeg", "-f", "lavfi", "-i", "anullsrc=r=8000:cl=mono", "-t", "0.5", "-f", "webm", "-live", "1", "pipe:1")
 	return cmd.Output()
 }
