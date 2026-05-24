@@ -1871,8 +1871,7 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\x1dMESSAGE_ATTACHMENT_KIND_PHOTO\x10\x01\x12!\n" +
 	"\x1dMESSAGE_ATTACHMENT_KIND_VIDEO\x10\x02\x12 \n" +
 	"\x1cMESSAGE_ATTACHMENT_KIND_FILE\x10\x03\x12!\n" +
-	"\x1dMESSAGE_ATTACHMENT_KIND_VOICE\x10\x042\xde\b\n" +
-	"\x1cMESSAGE_ATTACHMENT_KIND_FILE\x10\x032\xab\t\n" +
+	"\x1dMESSAGE_ATTACHMENT_KIND_VOICE\x10\x042\xab\t\n" +
 	"\x04Chat\x12G\n" +
 	"\bGetChats\x12\x1c.chat.v1.RequestGetUserChats\x1a\x1d.chat.v1.ResponseGetUserChats\x12>\n" +
 	"\x06Create\x12\x1a.chat.v1.RequestChatCreate\x1a\x18.chat.v1.ChatInformation\x12D\n" +
