@@ -8,6 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	subscriptionv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/subscription/v1"
@@ -15,9 +20,6 @@ import (
 	subrepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/subscription/repository/subscription"
 	subgrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/subscription/transport/grpc"
 	subuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/subscription/usecase"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 func main() {
@@ -50,8 +52,9 @@ func main() {
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("subscription")))
 	subscriptionv1.RegisterSubscriptionServer(grpcServer, srv)
 	metricsServer := &http.Server{
-		Addr:    ":9111",
-		Handler: promhttp.Handler(),
+		Addr:              ":9111",
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)

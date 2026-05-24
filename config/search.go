@@ -44,7 +44,7 @@ func LoadSearchConfig() (*SearchConfig, error) {
 		return nil, err
 	}
 	var raw searchFile
-	if err := cleanenv.ReadConfig(path, &raw); err != nil {
+	if err = cleanenv.ReadConfig(path, &raw); err != nil {
 		return nil, fmt.Errorf("load search config %q: %w", path, err)
 	}
 

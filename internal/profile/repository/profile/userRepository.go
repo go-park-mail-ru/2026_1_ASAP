@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	profile2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+
+	profile2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/profile/sql"

@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
-	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/session"
 	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/session"
 )
 
 type fakeRedisConn struct {
@@ -32,7 +33,7 @@ func (f *fakeRedisConn) Send(commandName string, args ...interface{}) error {
 	f.lastArgs = args
 	return nil
 }
-func (f *fakeRedisConn) Flush() error                                       { return nil }
+func (f *fakeRedisConn) Flush() error { return nil }
 func (f *fakeRedisConn) Receive() (reply interface{}, err error) {
 	if f.doFunc == nil {
 		return nil, nil
@@ -99,10 +100,10 @@ func TestSessionRepository_CreateSession_Positive(t *testing.T) {
 func TestSessionRepository_CreateSession_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		session    *domain.Session
-		prepare    func() redis.Conn
-		assert     func(t *testing.T, got string, err error)
-		name       string
+		session *domain.Session
+		prepare func() redis.Conn
+		assert  func(t *testing.T, got string, err error)
+		name    string
 	}{
 		{
 			name:    "set error",

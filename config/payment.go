@@ -55,7 +55,7 @@ func LoadPaymentConfig() (*PaymentConfig, error) {
 		return nil, err
 	}
 	var raw paymentFile
-	if err := cleanenv.ReadConfig(path, &raw); err != nil {
+	if err = cleanenv.ReadConfig(path, &raw); err != nil {
 		return nil, fmt.Errorf("load payment config %q: %w", path, err)
 	}
 

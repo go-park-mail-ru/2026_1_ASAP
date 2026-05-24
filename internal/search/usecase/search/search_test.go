@@ -120,10 +120,10 @@ func TestPositiveService_SearchChats(t *testing.T) {
 				}).Return(&searchdomain.SearchChatsResult{
 					Chats: []searchdomain.ChatHit{
 						{
-							ChatID:     3,
-							Title:      "Limited Chat",
-							Type:       searchdomain.ChatTypeGroup,
-							AvatarURL:  nil,
+							ChatID:      3,
+							Title:       "Limited Chat",
+							Type:        searchdomain.ChatTypeGroup,
+							AvatarURL:   nil,
 							UnreadCount: 0,
 						},
 					},
@@ -143,10 +143,10 @@ func TestPositiveService_SearchChats(t *testing.T) {
 			want: &searchdto.SearchChatsResponse{
 				Chats: []searchdomain.ChatHit{
 					{
-						ChatID:     3,
-						Title:      "Limited Chat",
-						Type:       searchdomain.ChatTypeGroup,
-						AvatarURL:  nil,
+						ChatID:      3,
+						Title:       "Limited Chat",
+						Type:        searchdomain.ChatTypeGroup,
+						AvatarURL:   nil,
 						UnreadCount: 0,
 					},
 				},

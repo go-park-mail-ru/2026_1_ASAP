@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
 	messagessql "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/repository/messages/sql"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
-	"github.com/jackc/pgx/v5"
 )
 
 func (m *MessageRepository) CreateMessageWithAttachments(

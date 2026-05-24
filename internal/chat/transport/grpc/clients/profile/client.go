@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
-	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 )
 
 type ProfileAdapter struct {

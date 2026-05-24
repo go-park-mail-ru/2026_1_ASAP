@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	subscriptionv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/subscription/v1"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/subscription/domain"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/subscription/dto"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type SubscriptionUseCase interface {

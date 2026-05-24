@@ -1,10 +1,11 @@
 package grpc
 
 import (
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	stickerdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/sticker"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func mapChatsInformationDTOToProtos(chats []dto.ChatInformationDTO) []*chatv1.ChatInformation {

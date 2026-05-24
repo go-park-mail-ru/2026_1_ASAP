@@ -5,6 +5,11 @@ import (
 	"context"
 	"errors"
 
+	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
 	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
@@ -13,11 +18,6 @@ import (
 	msgdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	stickerdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/sticker"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type ChatUsecaseInterface interface {
@@ -209,10 +209,6 @@ func NewChatServer(chatSvc ChatUsecaseInterface, messageSvc MessageUsecaseInterf
 		stickerUsecase: stickers,
 		logger:         logger,
 	}
-}
-
-func (s *ChatServer) log(ctx context.Context) *zap.Logger {
-	return loggerctx.EnrichLoggerFromContext(ctx, s.logger)
 }
 
 func (s *ChatServer) GetChats(ctx context.Context, chats *chatv1.RequestGetUserChats) (*chatv1.ResponseGetUserChats, error) {

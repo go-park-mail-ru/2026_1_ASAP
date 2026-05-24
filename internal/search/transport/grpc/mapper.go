@@ -3,13 +3,14 @@ package grpc
 import (
 	"errors"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	searchv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/search/v1"
 	searchdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/domain/search"
 	searchdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/search/dto/search"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func mapDomainErrToProtoErr(err error) error {

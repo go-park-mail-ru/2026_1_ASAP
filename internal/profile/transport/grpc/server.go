@@ -6,6 +6,10 @@ import (
 	"errors"
 	"strings"
 
+	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
@@ -13,9 +17,6 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type ContactServiceInterface interface {

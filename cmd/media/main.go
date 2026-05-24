@@ -8,16 +8,18 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/encoding/gzip"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	mediarepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/repository"
 	mediagrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/transport/grpc"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 func main() {
@@ -53,8 +55,9 @@ func main() {
 	)
 	mediav1.RegisterMediaServer(grpcServer, mediaSrv)
 	metricsServer := &http.Server{
-		Addr:    ":9103",
-		Handler: promhttp.Handler(),
+		Addr:              ":9103",
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)

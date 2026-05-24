@@ -86,12 +86,12 @@ func TestPositiveRepository_SearchChats(t *testing.T) {
 						LastMessageAt:      timePtr(now),
 					},
 					{
-						ChatID:              2,
-						Type:                "dialog",
-						Title:               "Dialog Chat",
-						AvatarURL:           nil,
-						LastMessagePreview:  nil,
-						LastMessageAt:       nil,
+						ChatID:             2,
+						Type:               "dialog",
+						Title:              "Dialog Chat",
+						AvatarURL:          nil,
+						LastMessagePreview: nil,
+						LastMessageAt:      nil,
 					},
 				},
 				NextBeforeID: 0,
@@ -187,10 +187,10 @@ func TestNegativeRepository_SearchChats(t *testing.T) {
 	}
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		name     string
-		args     args
-		wantErr  string
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		args    args
+		wantErr string
 	}{
 		{
 			name: "Nil params",
@@ -295,20 +295,20 @@ func TestPositiveRepository_SearchGlobalChannels(t *testing.T) {
 			want: &searchdomain.SearchGlobalChannelsResult{
 				Channels: []searchdomain.GlobalChannelHit{
 					{
-						ChatID:              1,
-						Title:               "Channel 1",
-						AvatarURL:           strPtr("avatar.jpg"),
-						LastMessagePreview:  strPtr("Last message"),
-						LastMessageAt:       timePtr(now),
-						IsMember:            true,
+						ChatID:             1,
+						Title:              "Channel 1",
+						AvatarURL:          strPtr("avatar.jpg"),
+						LastMessagePreview: strPtr("Last message"),
+						LastMessageAt:      timePtr(now),
+						IsMember:           true,
 					},
 					{
-						ChatID:              2,
-						Title:               "Channel 2",
-						AvatarURL:           nil,
-						LastMessagePreview:  nil,
-						LastMessageAt:       nil,
-						IsMember:            false,
+						ChatID:             2,
+						Title:              "Channel 2",
+						AvatarURL:          nil,
+						LastMessagePreview: nil,
+						LastMessageAt:      nil,
+						IsMember:           false,
 					},
 				},
 				NextBeforeID: 0,
@@ -338,10 +338,10 @@ func TestNegativeRepository_SearchGlobalChannels(t *testing.T) {
 	}
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		name     string
-		args     args
-		wantErr  string
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		args    args
+		wantErr string
 	}{
 		{
 			name: "Nil params",
@@ -505,10 +505,10 @@ func TestNegativeRepository_SearchContacts(t *testing.T) {
 	}
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		name     string
-		args     args
-		wantErr  string
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		args    args
+		wantErr string
 	}{
 		{
 			name: "Nil params",
@@ -743,10 +743,10 @@ func TestNegativeRepository_SearchMessagesInChat(t *testing.T) {
 	}
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		name     string
-		args     args
-		wantErr  string
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		args    args
+		wantErr string
 	}{
 		{
 			name: "Nil params",

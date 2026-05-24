@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type GatewayContactsHandler struct {

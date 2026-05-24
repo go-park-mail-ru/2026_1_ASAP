@@ -3,8 +3,9 @@ package message
 import (
 	"testing"
 
-	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	"github.com/stretchr/testify/require"
+
+	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 )
 
 func TestParseAttachmentKind_Voice(t *testing.T) {

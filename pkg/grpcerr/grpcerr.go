@@ -1,9 +1,10 @@
 package grpcerr
 
 import (
-	commonv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/common/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	commonv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/common/v1"
 )
 
 func New(grpcCode codes.Code, appCode int32, msg string) error {

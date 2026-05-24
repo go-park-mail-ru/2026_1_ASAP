@@ -3,9 +3,10 @@ package ws
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	chatdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	dtoWs "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/ws"
-	"go.uber.org/zap"
 )
 
 type RealtimeNotifier struct {

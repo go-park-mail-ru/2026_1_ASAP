@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
-	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
-	dtoVK "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/vkid"
-	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/session"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+
+	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
+	dtoSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/session"
+	dtoVK "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/vkid"
 
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/session"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/user"
@@ -154,9 +155,9 @@ func TestNegativeAuthService_Register(t *testing.T) {
 					Create(context.Background(), gomock.AssignableToTypeOf(&domain.User{})).
 					Return(&domain.User{ID: 10, Login: req.Login, Email: req.Email}, nil)
 			},
-			wantID: 10,
-			args:       args{ctx: context.Background(), request: req},
-			wantErr:    nil,
+			wantID:  10,
+			args:    args{ctx: context.Background(), request: req},
+			wantErr: nil,
 		},
 	}
 

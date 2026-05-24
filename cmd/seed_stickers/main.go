@@ -175,17 +175,17 @@ func seedPack(ctx context.Context, db *pgxpool.Pool, client *minio.Client, s3 co
 
 	stickers := make([]stickerSeed, 0, len(mf.Stickers))
 	for i, item := range mf.Stickers {
-		seed, err := prepareSticker(packDir, packSlug, item, i)
-		if err != nil {
-			return err
+		seed, prepErr := prepareSticker(packDir, packSlug, item, i)
+		if prepErr != nil {
+			return prepErr
 		}
 		stickers = append(stickers, seed)
 	}
 
 	for i := range stickers {
-		fileURL, err := uploadSticker(ctx, client, s3, stickers[i])
-		if err != nil {
-			return err
+		fileURL, uploadErr := uploadSticker(ctx, client, s3, stickers[i])
+		if uploadErr != nil {
+			return uploadErr
 		}
 		stickers[i].FileURL = fileURL
 	}
