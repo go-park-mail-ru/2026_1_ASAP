@@ -9,7 +9,6 @@ import (
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 const maxMessageRunes = 2000
@@ -140,7 +139,7 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 			ID:          msg.Id,
 			ChatID:      msg.ChatId,
 			SenderID:    msg.SenderId,
-			Text:        sanitize.Text(msg.Content),
+			Text:        formatTextForViewer(msg.Content, subscriptionActive),
 			CreatedAt:   msg.CreatedAt,
 			Edited:      msg.Edited,
 			Read:        outgoingReadByPeers(msg.Id, msg.SenderId, userID, lastReads),
@@ -206,15 +205,7 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 		return nil, fmt.Errorf("messageRepo create message: %w", err)
 	}
 
-	return &dto.ResponseSendMessage{
-		ID:        createdMessage.Id,
-		ChatID:    createdMessage.ChatId,
-		SenderID:  createdMessage.SenderId,
-		Text:      sanitize.Text(createdMessage.Content),
-		CreatedAt: createdMessage.CreatedAt,
-		Edited:    createdMessage.Edited,
-		Read:      false,
-	}, nil
+	return messageToSendResponse(createdMessage, false, false), nil
 }
 
 func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error) {
@@ -261,7 +252,7 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 		ID:                editedMessage.Id,
 		ChatID:            editedMessage.ChatId,
 		SenderID:          editedMessage.SenderId,
-		Text:              sanitize.Text(editedMessage.Content),
+		Text:              formatTextForViewer(editedMessage.Content, false),
 		CreatedAt:         editedMessage.CreatedAt,
 		Edited:            editedMessage.Edited,
 		Read:              read,
@@ -270,7 +261,7 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 	if lastMessageEdited {
 		resp.LastMessage = &dto.LastMessageDTO{
 			SenderId:  editedMessage.SenderId,
-			Text:      sanitize.Text(editedMessage.Content),
+			Text:      formatTextForViewer(editedMessage.Content, false),
 			CreatedAt: editedMessage.CreatedAt,
 		}
 	}
@@ -316,7 +307,7 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 		if err == nil && lm != nil {
 			resp.LastMessage = &dto.LastMessageDTO{
 				SenderId:  lm.SenderId,
-				Text:      sanitize.Text(lm.Content),
+				Text:      formatTextForViewer(lm.Content, false),
 				CreatedAt: lm.CreatedAt,
 			}
 		}

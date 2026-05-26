@@ -25,6 +25,7 @@ type AttachmentModel struct {
 	DurationMs       sql.NullInt32
 	Transcript       sql.NullString
 	SortOrder        int
+	IsCapybara       bool
 }
 
 func attachmentToDomain(m *AttachmentModel) domain.MessageAttachment {
@@ -84,6 +85,7 @@ func attachmentToDomain(m *AttachmentModel) domain.MessageAttachment {
 		v := m.Transcript.String
 		out.Transcript = &v
 	}
+	out.IsCapybara = m.IsCapybara
 	return out
 }
 
@@ -125,6 +127,7 @@ func attachmentFromDomain(a domain.MessageAttachment) AttachmentModel {
 	if a.ContactAvatarURL != nil {
 		m.ContactAvatarURL = sql.NullString{String: *a.ContactAvatarURL, Valid: true}
 	}
+	m.IsCapybara = a.IsCapybara
 	return m
 }
 

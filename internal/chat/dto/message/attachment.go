@@ -27,6 +27,8 @@ type MessageAttachmentDTO struct {
 	ContactFirstName *string `json:"contact_first_name,omitempty"`
 	ContactLastName  *string `json:"contact_last_name,omitempty"`
 	ContactAvatarURL *string `json:"contact_avatar_url,omitempty"`
+	IsBlur           bool    `json:"-"`
+	IsCapybara       bool    `json:"-"`
 }
 
 type RequestTranscribeVoice struct {

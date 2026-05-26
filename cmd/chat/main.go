@@ -34,6 +34,7 @@ import (
 	messagesuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages"
 	stickersuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/stickers"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/filter"
 )
 
 const grpcMaxMessageBytes = 64 << 20
@@ -42,6 +43,9 @@ func main() {
 	cfg, err := config.LoadChatConfig()
 	if err != nil {
 		log.Fatalf("load config: %v", err)
+	}
+	if err := filter.Init(cfg.ProfanityRootsPath); err != nil {
+		log.Fatalf("load profanity roots: %v", err)
 	}
 
 	logger, err := zap.NewProduction()

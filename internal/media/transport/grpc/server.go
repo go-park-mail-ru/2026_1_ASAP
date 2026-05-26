@@ -24,6 +24,7 @@ type MediaRepositoryInterface interface {
 	UploadMessageAttachment(ctx context.Context, userID int64, kind mediadto.MessageAttachmentKind, input *mediadto.FileInput) (*repository.MessageAttachmentObject, error)
 	GetMessageAttachment(ctx context.Context, objectKey string) ([]byte, string, error)
 	GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*repository.VoiceMetadata, error)
+	ClassifyMessagePhoto(ctx context.Context, objectKey string) (bool, error)
 	DeleteAvatar(ctx context.Context, userID int64) error
 }
 
@@ -213,7 +214,20 @@ func (m MediaServer) UploadMessageAttachment(ctx context.Context, req *mediav1.R
 	if name := req.GetFileName(); name != "" {
 		resp.FileName = &name
 	}
+	resp.IsCapybara = obj.IsCapybara
 	return resp, nil
+}
+
+func (m MediaServer) ClassifyMessagePhoto(ctx context.Context, req *mediav1.RequestClassifyMessagePhoto) (*mediav1.ResponseClassifyMessagePhoto, error) {
+	if req == nil || req.GetObjectKey() == "" {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "object_key is required")
+	}
+	isCapybara, err := m.MediaRepository.ClassifyMessagePhoto(ctx, req.GetObjectKey())
+	if err != nil {
+		m.Log(ctx).Error("failed to classify message photo", zap.String("object_key", req.GetObjectKey()), zap.Error(err))
+		return nil, statusFromFileError(err)
+	}
+	return &mediav1.ResponseClassifyMessagePhoto{IsCapybara: isCapybara}, nil
 }
 
 func (m MediaServer) GetMessageVoiceMetadata(ctx context.Context, req *mediav1.RequestGetMessageVoiceMetadata) (*mediav1.ResponseGetMessageVoiceMetadata, error) {

@@ -20,6 +20,7 @@ import (
 	mediarepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/repository"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/speechkit"
 	mediagrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/transport/grpc"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/vision"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
 )
 
@@ -41,6 +42,18 @@ func main() {
 		logger.Fatal("init media repository", zap.Error(err))
 	}
 	defer mRepo.Close()
+
+	capybaraDetector := vision.NewDetector(cfg.CapybaraDetectorConfig, logger.Named("capybara"))
+	if cfg.CapybaraDetectorConfig.Enabled {
+		warmCtx, warmCancel := context.WithTimeout(ctx, 2*time.Minute)
+		if err := capybaraDetector.Warmup(warmCtx); err != nil {
+			logger.Warn("capybara worker warmup failed", zap.Error(err))
+		} else {
+			logger.Info("capybara worker ready")
+		}
+		warmCancel()
+	}
+	mRepo.SetCapybaraDetector(&vision.ClassifierAdapter{Detector: capybaraDetector})
 
 	stt := speechkit.NewClient(speechkit.Config{
 		APIKey: cfg.SpeechKitConfig.APIKey,

@@ -115,9 +115,20 @@ func (m *MediaAdapter) UploadMessageAttachment(
 		} else if fileName != "" {
 			result.FileName = &fileName
 		}
+		result.IsCapybara = resp.GetIsCapybara()
 		return result, nil
 	}
 	return nil, errors.New("empty object_key in response")
+}
+
+func (m *MediaAdapter) ClassifyMessagePhoto(ctx context.Context, objectKey string) (bool, error) {
+	resp, err := m.client.ClassifyMessagePhoto(ctx, &mediav1.RequestClassifyMessagePhoto{
+		ObjectKey: objectKey,
+	})
+	if err != nil {
+		return false, err
+	}
+	return resp.GetIsCapybara(), nil
 }
 
 func (m *MediaAdapter) GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*chatmedia.VoiceMetadataResult, error) {

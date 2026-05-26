@@ -159,6 +159,10 @@ func (s *voiceMediaStub) TranscribeVoice(context.Context, string) (string, error
 	return "", nil
 }
 
+func (s *voiceMediaStub) ClassifyMessagePhoto(context.Context, string) (bool, error) {
+	return false, nil
+}
+
 func TestSendMessageWithAttachments_VoiceHappyPath(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)

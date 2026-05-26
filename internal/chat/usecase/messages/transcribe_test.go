@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
+	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages/mock"
 )
 
@@ -80,4 +81,41 @@ func TestMapAttachmentsToDTOForViewer_Subscription(t *testing.T) {
 	withoutSub := mapAttachmentsToDTOForViewer(attachments, false)
 	require.Nil(t, withoutSub[0].CanTranscribe)
 	require.Nil(t, withoutSub[0].Transcript)
+}
+
+func TestMapAttachmentsToDTOForViewer_ContentFilter(t *testing.T) {
+	t.Parallel()
+	attachments := []domain.MessageAttachment{
+		{Type: domain.AttachmentTypePhoto, IsCapybara: true},
+		{Type: domain.AttachmentTypePhoto, IsCapybara: false},
+	}
+
+	withSub := mapAttachmentsToDTOForViewer(attachments, true)
+	require.True(t, withSub[0].IsBlur)
+	require.False(t, withSub[1].IsBlur)
+
+	withoutSub := mapAttachmentsToDTOForViewer(attachments, false)
+	require.False(t, withoutSub[0].IsBlur)
+	require.False(t, withoutSub[1].IsBlur)
+}
+
+func TestFormatTextForViewer_Profanity(t *testing.T) {
+	t.Parallel()
+	raw := "блять"
+	require.Equal(t, "блять", formatTextForViewer(raw, false))
+	require.Equal(t, "***", formatTextForViewer(raw, true))
+}
+
+func TestPresentSendMessageForViewer(t *testing.T) {
+	t.Parallel()
+	resp := &dto.ResponseSendMessage{
+		ContentRaw: "блять",
+		Text:       "блять",
+		Attachments: []dto.MessageAttachmentDTO{
+			{Type: "photo", IsCapybara: true},
+		},
+	}
+	out := PresentSendMessageForViewer(resp, true)
+	require.Equal(t, "***", out.Text)
+	require.True(t, out.Attachments[0].IsBlur)
 }
