@@ -1,25 +1,11 @@
 package message
 
-import "encoding/json"
+import (
+	jlexer "github.com/mailru/easyjson/jlexer"
+	jwriter "github.com/mailru/easyjson/jwriter"
+)
 
-type messageAttachmentWire struct {
-	Type             string  `json:"type"`
-	URL              *string `json:"url,omitempty"`
-	FileName         *string `json:"file_name,omitempty"`
-	MimeType         *string `json:"mime_type,omitempty"`
-	FileSize         *int64  `json:"file_size,omitempty"`
-	DurationMs       *int32  `json:"duration_ms,omitempty"`
-	Waveform         []uint8 `json:"waveform,omitempty"`
-	Transcript       *string `json:"transcript,omitempty"`
-	CanTranscribe    *bool   `json:"can_transcribe,omitempty"`
-	ContactUserID    *int64  `json:"contact_user_id,omitempty"`
-	ContactFirstName *string `json:"contact_first_name,omitempty"`
-	ContactLastName  *string `json:"contact_last_name,omitempty"`
-	ContactAvatarURL *string `json:"contact_avatar_url,omitempty"`
-	IsBlur           *bool   `json:"is_blur,omitempty"`
-}
-
-func (a MessageAttachmentDTO) MarshalJSON() ([]byte, error) {
+func (a MessageAttachmentDTO) toWire() messageAttachmentWire {
 	wire := messageAttachmentWire{
 		Type:             a.Type,
 		URL:              a.URL,
@@ -39,5 +25,49 @@ func (a MessageAttachmentDTO) MarshalJSON() ([]byte, error) {
 		blur := a.IsBlur
 		wire.IsBlur = &blur
 	}
-	return json.Marshal(wire)
+	return wire
+}
+
+func (w messageAttachmentWire) toDTO() MessageAttachmentDTO {
+	dto := MessageAttachmentDTO{
+		Type:             w.Type,
+		URL:              w.URL,
+		FileName:         w.FileName,
+		MimeType:         w.MimeType,
+		FileSize:         w.FileSize,
+		DurationMs:       w.DurationMs,
+		Waveform:         w.Waveform,
+		Transcript:       w.Transcript,
+		CanTranscribe:    w.CanTranscribe,
+		ContactUserID:    w.ContactUserID,
+		ContactFirstName: w.ContactFirstName,
+		ContactLastName:  w.ContactLastName,
+		ContactAvatarURL: w.ContactAvatarURL,
+	}
+	if w.IsBlur != nil {
+		dto.IsBlur = *w.IsBlur
+	}
+	return dto
+}
+
+func (a MessageAttachmentDTO) MarshalEasyJSON(w *jwriter.Writer) {
+	a.toWire().MarshalEasyJSON(w)
+}
+
+func (a *MessageAttachmentDTO) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	var wire messageAttachmentWire
+	wire.UnmarshalEasyJSON(l)
+	*a = wire.toDTO()
+}
+
+func (a MessageAttachmentDTO) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	a.MarshalEasyJSON(&w)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+func (a *MessageAttachmentDTO) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	a.UnmarshalEasyJSON(&r)
+	return r.Error()
 }

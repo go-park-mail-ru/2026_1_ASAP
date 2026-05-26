@@ -157,7 +157,181 @@ func (v *UploadAttachmentResponse) UnmarshalJSON(data []byte) error {
 func (v *UploadAttachmentResponse) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage(l, v)
 }
-func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(in *jlexer.Lexer, out *RequestSendMessageAttachments) {
+func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(in *jlexer.Lexer, out *ResponseVoiceTranscript) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		switch key {
+		case "chat_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.ChatID = int64(in.Int64())
+			}
+		case "message_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.MessageID = int64(in.Int64())
+			}
+		case "attachment_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.AttachmentID = int64(in.Int64())
+			}
+		case "transcript":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Transcript = string(in.String())
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(out *jwriter.Writer, in ResponseVoiceTranscript) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"chat_id\":"
+		out.RawString(prefix[1:])
+		out.Int64(int64(in.ChatID))
+	}
+	{
+		const prefix string = ",\"message_id\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.MessageID))
+	}
+	{
+		const prefix string = ",\"attachment_id\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.AttachmentID))
+	}
+	{
+		const prefix string = ",\"transcript\":"
+		out.RawString(prefix)
+		out.String(string(in.Transcript))
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v ResponseVoiceTranscript) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v ResponseVoiceTranscript) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *ResponseVoiceTranscript) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *ResponseVoiceTranscript) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(l, v)
+}
+func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(in *jlexer.Lexer, out *RequestTranscribeVoice) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		switch key {
+		case "chat_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.ChatID = int64(in.Int64())
+			}
+		case "message_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.MessageID = int64(in.Int64())
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(out *jwriter.Writer, in RequestTranscribeVoice) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"chat_id\":"
+		out.RawString(prefix[1:])
+		out.Int64(int64(in.ChatID))
+	}
+	{
+		const prefix string = ",\"message_id\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.MessageID))
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v RequestTranscribeVoice) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v RequestTranscribeVoice) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *RequestTranscribeVoice) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *RequestTranscribeVoice) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(l, v)
+}
+func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(in *jlexer.Lexer, out *RequestSendMessageAttachments) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -220,7 +394,7 @@ func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1
 		in.Consumed()
 	}
 }
-func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(out *jwriter.Writer, in RequestSendMessageAttachments) {
+func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(out *jwriter.Writer, in RequestSendMessageAttachments) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -256,275 +430,27 @@ func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1
 // MarshalJSON supports json.Marshaler interface
 func (v RequestSendMessageAttachments) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(&w, v)
+	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v RequestSendMessageAttachments) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(w, v)
+	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *RequestSendMessageAttachments) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(&r, v)
+	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *RequestSendMessageAttachments) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1(l, v)
+	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(l, v)
 }
-func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(in *jlexer.Lexer, out *MessageAttachmentDTO) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		switch key {
-		case "type":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.Type = string(in.String())
-			}
-		case "url":
-			if in.IsNull() {
-				in.Skip()
-				out.URL = nil
-			} else {
-				if out.URL == nil {
-					out.URL = new(string)
-				}
-				if in.IsNull() {
-					in.Skip()
-				} else {
-					*out.URL = string(in.String())
-				}
-			}
-		case "file_name":
-			if in.IsNull() {
-				in.Skip()
-				out.FileName = nil
-			} else {
-				if out.FileName == nil {
-					out.FileName = new(string)
-				}
-				if in.IsNull() {
-					in.Skip()
-				} else {
-					*out.FileName = string(in.String())
-				}
-			}
-		case "mime_type":
-			if in.IsNull() {
-				in.Skip()
-				out.MimeType = nil
-			} else {
-				if out.MimeType == nil {
-					out.MimeType = new(string)
-				}
-				if in.IsNull() {
-					in.Skip()
-				} else {
-					*out.MimeType = string(in.String())
-				}
-			}
-		case "file_size":
-			if in.IsNull() {
-				in.Skip()
-				out.FileSize = nil
-			} else {
-				if out.FileSize == nil {
-					out.FileSize = new(int64)
-				}
-				if in.IsNull() {
-					in.Skip()
-				} else {
-					*out.FileSize = int64(in.Int64())
-				}
-			}
-		case "duration_ms":
-			if in.IsNull() {
-				in.Skip()
-				out.DurationMs = nil
-			} else {
-				if out.DurationMs == nil {
-					out.DurationMs = new(int32)
-				}
-				if in.IsNull() {
-					in.Skip()
-				} else {
-					*out.DurationMs = int32(in.Int32())
-				}
-			}
-		case "waveform":
-			if in.IsNull() {
-				in.Skip()
-				out.Waveform = nil
-			} else {
-				out.Waveform = in.Bytes()
-			}
-		case "contact_user_id":
-			if in.IsNull() {
-				in.Skip()
-				out.ContactUserID = nil
-			} else {
-				if out.ContactUserID == nil {
-					out.ContactUserID = new(int64)
-				}
-				if in.IsNull() {
-					in.Skip()
-				} else {
-					*out.ContactUserID = int64(in.Int64())
-				}
-			}
-		case "contact_first_name":
-			if in.IsNull() {
-				in.Skip()
-				out.ContactFirstName = nil
-			} else {
-				if out.ContactFirstName == nil {
-					out.ContactFirstName = new(string)
-				}
-				if in.IsNull() {
-					in.Skip()
-				} else {
-					*out.ContactFirstName = string(in.String())
-				}
-			}
-		case "contact_last_name":
-			if in.IsNull() {
-				in.Skip()
-				out.ContactLastName = nil
-			} else {
-				if out.ContactLastName == nil {
-					out.ContactLastName = new(string)
-				}
-				if in.IsNull() {
-					in.Skip()
-				} else {
-					*out.ContactLastName = string(in.String())
-				}
-			}
-		case "contact_avatar_url":
-			if in.IsNull() {
-				in.Skip()
-				out.ContactAvatarURL = nil
-			} else {
-				if out.ContactAvatarURL == nil {
-					out.ContactAvatarURL = new(string)
-				}
-				if in.IsNull() {
-					in.Skip()
-				} else {
-					*out.ContactAvatarURL = string(in.String())
-				}
-			}
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(out *jwriter.Writer, in MessageAttachmentDTO) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"type\":"
-		out.RawString(prefix[1:])
-		out.String(string(in.Type))
-	}
-	if in.URL != nil {
-		const prefix string = ",\"url\":"
-		out.RawString(prefix)
-		out.String(string(*in.URL))
-	}
-	if in.FileName != nil {
-		const prefix string = ",\"file_name\":"
-		out.RawString(prefix)
-		out.String(string(*in.FileName))
-	}
-	if in.MimeType != nil {
-		const prefix string = ",\"mime_type\":"
-		out.RawString(prefix)
-		out.String(string(*in.MimeType))
-	}
-	if in.FileSize != nil {
-		const prefix string = ",\"file_size\":"
-		out.RawString(prefix)
-		out.Int64(int64(*in.FileSize))
-	}
-	if in.DurationMs != nil {
-		const prefix string = ",\"duration_ms\":"
-		out.RawString(prefix)
-		out.Int32(int32(*in.DurationMs))
-	}
-	if len(in.Waveform) != 0 {
-		const prefix string = ",\"waveform\":"
-		out.RawString(prefix)
-		out.Base64Bytes(in.Waveform)
-	}
-	if in.ContactUserID != nil {
-		const prefix string = ",\"contact_user_id\":"
-		out.RawString(prefix)
-		out.Int64(int64(*in.ContactUserID))
-	}
-	if in.ContactFirstName != nil {
-		const prefix string = ",\"contact_first_name\":"
-		out.RawString(prefix)
-		out.String(string(*in.ContactFirstName))
-	}
-	if in.ContactLastName != nil {
-		const prefix string = ",\"contact_last_name\":"
-		out.RawString(prefix)
-		out.String(string(*in.ContactLastName))
-	}
-	if in.ContactAvatarURL != nil {
-		const prefix string = ",\"contact_avatar_url\":"
-		out.RawString(prefix)
-		out.String(string(*in.ContactAvatarURL))
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v MessageAttachmentDTO) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v MessageAttachmentDTO) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *MessageAttachmentDTO) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *MessageAttachmentDTO) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage2(l, v)
-}
-func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(in *jlexer.Lexer, out *AttachmentInput) {
+func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage4(in *jlexer.Lexer, out *AttachmentInput) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -572,7 +498,7 @@ func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3
 		in.Consumed()
 	}
 }
-func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(out *jwriter.Writer, in AttachmentInput) {
+func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage4(out *jwriter.Writer, in AttachmentInput) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -602,23 +528,23 @@ func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3
 // MarshalJSON supports json.Marshaler interface
 func (v AttachmentInput) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(&w, v)
+	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage4(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v AttachmentInput) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(w, v)
+	easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage4(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *AttachmentInput) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(&r, v)
+	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage4(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *AttachmentInput) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3(l, v)
+	easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage4(l, v)
 }

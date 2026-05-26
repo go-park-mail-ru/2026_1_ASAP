@@ -13,6 +13,7 @@ type RequestSendMessageAttachments struct {
 	Attachments []AttachmentInput `json:"attachments"`
 }
 
+//easyjson:skip
 type MessageAttachmentDTO struct {
 	Type             string  `json:"type"`
 	URL              *string `json:"url,omitempty"`
