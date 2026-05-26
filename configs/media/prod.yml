@@ -12,6 +12,16 @@ s3:
   public_port: ""
   public_path: /
 
+speechkit:
+  lang: ru-RU
+
+capybara:
+  enabled: true
+  score_threshold: 0.28
+  python_path: python3
+  script_path: scripts/vision/detect_capybara.py
+  timeout_seconds: 60
+
 app:
   shutdown_seconds: 20
   log_level: info

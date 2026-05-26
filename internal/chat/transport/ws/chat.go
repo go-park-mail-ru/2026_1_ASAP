@@ -17,6 +17,7 @@ import (
 	chatdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	dtoWs "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/ws"
+	messagesuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 )
 
@@ -57,6 +58,11 @@ type MessagesServiceInterface interface {
 	EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error)
 	DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseClearMessage, error)
 	MarkMessagesRead(ctx context.Context, userID, chatID int64, req *dto.RequestMarkRead) (*dto.ResponseMarkRead, error)
+	TranscribeVoiceMessage(ctx context.Context, userID, chatID, messageID int64) (*dto.ResponseVoiceTranscript, error)
+}
+
+type SubscriptionChecker interface {
+	IsActive(ctx context.Context, userID int64) (bool, error)
 }
 
 type ChatServiceInterface interface {
@@ -88,6 +94,7 @@ type ChatServer struct {
 	messageService          MessagesServiceInterface
 	chatService             ChatServiceInterface
 	presenceService         PresenceServiceInterface
+	subscription            SubscriptionChecker
 	onlineRepo              OnlineRepository
 	subscribers             map[*subscriber]struct{}
 	subscribersByUserID     map[int64]map[*subscriber]struct{}
@@ -102,6 +109,7 @@ func NewChatServer(
 	messageService MessagesServiceInterface,
 	chatService ChatServiceInterface,
 	presenceService PresenceServiceInterface,
+	subscription SubscriptionChecker,
 	onlineRepo OnlineRepository,
 ) *ChatServer {
 	if logger == nil {
@@ -114,6 +122,7 @@ func NewChatServer(
 		messageService:          messageService,
 		chatService:             chatService,
 		presenceService:         presenceService,
+		subscription:            subscription,
 		onlineRepo:              onlineRepo,
 		subscriberMessageBuffer: 16,
 	}
@@ -161,7 +170,151 @@ func (s *ChatServer) sendErr(sub *subscriber, p dtoWs.WsErrorPayload) {
 	s.enqueueToSubscriber(sub, b)
 }
 
-func (s *ChatServer) publishMessageNewToChatMembers(ctx context.Context, chatID int64, message []byte) {
+func (s *ChatServer) publishMessageNewPerViewer(ctx context.Context, chatID int64, resp *dto.ResponseSendMessage) {
+	log := loggerctx.From(ctx)
+	if resp == nil {
+		return
+	}
+	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		log.Warn("ws get chat members for publish", zap.Int64("chat_id", chatID), zap.Error(err))
+		return
+	}
+	if len(memberIDs) == 0 {
+		return
+	}
+
+	s.mu.RLock()
+	type subTarget struct {
+		sub    *subscriber
+		userID int64
+	}
+	targets := make([]subTarget, 0)
+	for _, uid := range memberIDs {
+		if userHub, ok := s.subscribersByUserID[uid]; ok {
+			for sub := range userHub {
+				targets = append(targets, subTarget{sub: sub, userID: uid})
+			}
+		}
+	}
+	s.mu.RUnlock()
+
+	for _, t := range targets {
+		active := false
+		if s.subscription != nil {
+			var subErr error
+			active, subErr = s.subscription.IsActive(ctx, t.userID)
+			if subErr != nil {
+				log.Warn("ws subscription check for message new", zap.Int64("user_id", t.userID), zap.Error(subErr))
+			}
+		}
+		presented := messagesuc.PresentSendMessageForViewer(resp, active)
+		out, encErr := dtoWs.EncodeMessageNew(presented)
+		if encErr != nil {
+			log.Error("ws encode message new", zap.Error(encErr))
+			continue
+		}
+		s.enqueueToSubscriber(t.sub, out)
+	}
+}
+
+func (s *ChatServer) publishMessageEditPerViewer(ctx context.Context, chatID int64, resp *dto.ResponseEditMessage) {
+	log := loggerctx.From(ctx)
+	if resp == nil {
+		return
+	}
+	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		log.Warn("ws get chat members for publish", zap.Int64("chat_id", chatID), zap.Error(err))
+		return
+	}
+	if len(memberIDs) == 0 {
+		return
+	}
+
+	s.mu.RLock()
+	type subTarget struct {
+		sub    *subscriber
+		userID int64
+	}
+	targets := make([]subTarget, 0)
+	for _, uid := range memberIDs {
+		if userHub, ok := s.subscribersByUserID[uid]; ok {
+			for sub := range userHub {
+				targets = append(targets, subTarget{sub: sub, userID: uid})
+			}
+		}
+	}
+	s.mu.RUnlock()
+
+	for _, t := range targets {
+		active := false
+		if s.subscription != nil {
+			var subErr error
+			active, subErr = s.subscription.IsActive(ctx, t.userID)
+			if subErr != nil {
+				log.Warn("ws subscription check for message edit", zap.Int64("user_id", t.userID), zap.Error(subErr))
+			}
+		}
+		presented := messagesuc.PresentEditMessageForViewer(resp, active)
+		out, encErr := dtoWs.EncodeMessageEdit(presented)
+		if encErr != nil {
+			log.Error("ws encode message edit", zap.Error(encErr))
+			continue
+		}
+		s.enqueueToSubscriber(t.sub, out)
+	}
+}
+
+func (s *ChatServer) publishMessageDeletePerViewer(ctx context.Context, chatID int64, resp *dto.ResponseClearMessage) {
+	log := loggerctx.From(ctx)
+	if resp == nil {
+		return
+	}
+	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		log.Warn("ws get chat members for publish", zap.Int64("chat_id", chatID), zap.Error(err))
+		return
+	}
+	if len(memberIDs) == 0 {
+		return
+	}
+
+	s.mu.RLock()
+	type subTarget struct {
+		sub    *subscriber
+		userID int64
+	}
+	targets := make([]subTarget, 0)
+	for _, uid := range memberIDs {
+		if userHub, ok := s.subscribersByUserID[uid]; ok {
+			for sub := range userHub {
+				targets = append(targets, subTarget{sub: sub, userID: uid})
+			}
+		}
+	}
+	s.mu.RUnlock()
+
+	for _, t := range targets {
+		active := false
+		if s.subscription != nil {
+			var subErr error
+			active, subErr = s.subscription.IsActive(ctx, t.userID)
+			if subErr != nil {
+				log.Warn("ws subscription check for message delete", zap.Int64("user_id", t.userID), zap.Error(subErr))
+			}
+		}
+		presented := messagesuc.PresentClearMessageForViewer(resp, active)
+		out, encErr := dtoWs.EncodeMessageDelete(presented)
+		if encErr != nil {
+			log.Error("ws encode message delete", zap.Error(encErr))
+			continue
+		}
+		s.enqueueToSubscriber(t.sub, out)
+	}
+}
+
+func (s *ChatServer) publishBytesToChatMembers(ctx context.Context, chatID int64, message []byte) {
 	log := loggerctx.From(ctx)
 	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
 	if err != nil {
@@ -186,6 +339,52 @@ func (s *ChatServer) publishMessageNewToChatMembers(ctx context.Context, chatID 
 	for _, sub := range subs {
 		payload := append([]byte(nil), message...)
 		s.enqueueToSubscriber(sub, payload)
+	}
+}
+
+func (s *ChatServer) publishVoiceTranscriptToSubscribers(ctx context.Context, chatID, requesterUserID int64, payload []byte) {
+	log := loggerctx.From(ctx)
+	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		log.Warn("ws get chat members for voice transcript", zap.Int64("chat_id", chatID), zap.Error(err))
+		return
+	}
+	if len(memberIDs) == 0 {
+		return
+	}
+
+	s.mu.RLock()
+	type subTarget struct {
+		sub    *subscriber
+		userID int64
+	}
+	targets := make([]subTarget, 0)
+	for _, uid := range memberIDs {
+		if userHub, ok := s.subscribersByUserID[uid]; ok {
+			for sub := range userHub {
+				targets = append(targets, subTarget{sub: sub, userID: uid})
+			}
+		}
+	}
+	s.mu.RUnlock()
+
+	for _, t := range targets {
+		if t.userID == requesterUserID {
+			continue
+		}
+		if s.subscription == nil {
+			continue
+		}
+		active, err := s.subscription.IsActive(ctx, t.userID)
+		if err != nil {
+			log.Warn("ws subscription check for voice transcript", zap.Int64("user_id", t.userID), zap.Error(err))
+			continue
+		}
+		if !active {
+			continue
+		}
+		msg := append([]byte(nil), payload...)
+		s.enqueueToSubscriber(t.sub, msg)
 	}
 }
 
@@ -468,17 +667,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageNew(resp)
-			if err != nil {
-				log.Error("ws encode message new", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageNewPerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.MessageSendSticker:
 			var req dto.RequestSendSticker
@@ -537,16 +726,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageNew(resp)
-			if err != nil {
-				log.Error("ws encode sticker message new", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageNewPerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.MessageSendAttachments:
 			var req dto.RequestSendMessageAttachments
@@ -625,16 +805,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageNew(resp)
-			if err != nil {
-				log.Error("ws encode message new", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageNewPerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.MessageRecv:
 			var req dto.RequestGetMessages
@@ -688,6 +859,80 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 			}
 
 			s.enqueueToSubscriber(sub, out)
+
+		case dtoWs.MessageTranscribeVoice:
+			var req dto.RequestTranscribeVoice
+			if len(env.Payload) == 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if err := json.Unmarshal(env.Payload, &req); err != nil {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if req.ChatID <= 0 || req.MessageID <= 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+
+			resp, err := s.messageService.TranscribeVoiceMessage(ctx, userID, req.ChatID, req.MessageID)
+			if err != nil {
+				log.Warn("ws transcribe voice", zap.Int64("chat_id", req.ChatID), zap.Int64("message_id", req.MessageID), zap.Error(err))
+				switch {
+				case errors.Is(err, domain.ErrSubscriptionRequired):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeSubscriptionRequired,
+						Message: dtoWs.ErrCodeSubscriptionRequiredMsg,
+					})
+				case errors.Is(err, domain.ErrMessageNotMember):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeNotMemberOfChat,
+						Message: dtoWs.ErrCodeNotMemberOfChatMsg,
+					})
+				case errors.Is(err, domain.ErrNotVoiceMessage):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeNotVoiceMessage,
+						Message: dtoWs.ErrCodeNotVoiceMessageMsg,
+					})
+				case errors.Is(err, domain.ErrTranscriptionFailed):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeTranscriptionFailed,
+						Message: dtoWs.ErrCodeTranscriptionFailedMsg,
+					})
+				case errors.Is(err, domain.ErrNoMessage):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeInvalidPayload,
+						Message: dtoWs.ErrCodeInvalidPayloadMsg,
+					})
+				default:
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeInternal,
+						Message: dtoWs.ErrCodeInternalMsg,
+					})
+				}
+				continue
+			}
+
+			out, err := dtoWs.EncodeVoiceTranscript(resp)
+			if err != nil {
+				log.Error("ws encode voice transcript", zap.Error(err))
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInternal,
+					Message: dtoWs.ErrCodeInternalMsg,
+				})
+				continue
+			}
+			s.enqueueToSubscriber(sub, out)
+			s.publishVoiceTranscriptToSubscribers(ctx, req.ChatID, userID, out)
 
 		case dtoWs.MessageMarkRead:
 			var req dto.RequestMarkRead
@@ -746,7 +991,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishBytesToChatMembers(ctx, req.ChatID, out)
 
 		case dtoWs.MessageEdit:
 			var req dto.RequestEditMessage
@@ -795,17 +1040,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageEdit(resp)
-			if err != nil {
-				log.Error("ws encode message edit", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageEditPerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.MessageDelete:
 			var req dto.RequestDeleteMessage
@@ -854,17 +1089,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageDelete(resp)
-			if err != nil {
-				log.Error("ws encode message delete", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageDeletePerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.PresenceTypingStart:
 			s.handlePresenceTyping(ctx, userID, sub, env, true)

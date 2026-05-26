@@ -28,14 +28,3 @@ func toModelContact(contactDomain *contactdom.Contact) *ContactModel {
 		UpdatedAt:        contactDomain.UpdatedAt,
 	}
 }
-
-/*func toDomainContactUserInfo(contactUserInfoModel *ContactUserInfoModel) *domain.ContactUserInfo {
-	return &domain.ContactUserInfo{
-		Contact: domain.Contact(contactUserInfoModel.ContactModel),
-		Username: contactUserInfoModel.Username,
-		Email: contactUserInfoModel.Email,
-		AvatarUrl: null.NullStringToPtrString(contactUserInfoModel.AvatarUrl),
-		Bio: null.NullStringToPtrString(contactUserInfoModel.Bio),
-		LastSeen: null.NullTimeToPtrTime(contactUserInfoModel.LastSeen),
-	}
-}*/

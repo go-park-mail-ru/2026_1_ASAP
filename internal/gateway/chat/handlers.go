@@ -262,8 +262,6 @@ func mapStickerPacks(resp *chatv1.ResponseGetStickerPacks) StickerPacksResponse 
 	return StickerPacksResponse{Packs: packs}
 }
 
-// Handlers
-
 func (h *GatewayChatHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	uid, ok := userID(r)

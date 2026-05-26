@@ -63,5 +63,7 @@ type MessageAttachment struct {
 	ContactUserID    *int64
 	FileSize         *int64
 	DurationMs       *int32
+	Transcript       *string
 	SortOrder        int
+	IsCapybara       bool
 }

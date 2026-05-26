@@ -34,7 +34,7 @@ func TestSendMessageWithAttachments_HappyPath(t *testing.T) {
 		},
 	)
 
-	s := NewMessageService(msgRepo, chatRepo, nil, nil, "http://localhost:8088")
+	s := NewMessageService(msgRepo, chatRepo, nil, nil, "http://localhost:8088", nil)
 	resp, err := s.SendMessageWithAttachments(context.Background(), 10, 1, &dto.RequestSendMessageAttachments{
 		ChatID: 1,
 		Text:   "caption",
@@ -57,7 +57,7 @@ func TestSendMessageWithAttachments_RejectsForeignURL(t *testing.T) {
 	chatRepo.EXPECT().IsMember(gomock.Any(), int64(1), int64(10)).Return(true, nil)
 	chatRepo.EXPECT().GetChatByID(gomock.Any(), int64(1)).Return(&domain.Chat{Id: 1, Type: domain.ChatTypeGroup}, nil)
 
-	s := NewMessageService(msgRepo, chatRepo, nil, nil, "http://localhost:8088")
+	s := NewMessageService(msgRepo, chatRepo, nil, nil, "http://localhost:8088", nil)
 	_, err := s.SendMessageWithAttachments(context.Background(), 10, 1, &dto.RequestSendMessageAttachments{
 		ChatID: 1,
 		Attachments: []dto.AttachmentInput{{
@@ -79,7 +79,7 @@ func TestSendMessageWithAttachments_ContactNotInBook(t *testing.T) {
 	chatRepo.EXPECT().GetChatByID(gomock.Any(), int64(1)).Return(&domain.Chat{Id: 1, Type: domain.ChatTypeGroup}, nil)
 	profile.EXPECT().HasContact(gomock.Any(), int64(10), int64(42)).Return(false, nil)
 
-	s := NewMessageService(msgRepo, chatRepo, nil, profile, "http://localhost:8088")
+	s := NewMessageService(msgRepo, chatRepo, nil, profile, "http://localhost:8088", nil)
 	_, err := s.SendMessageWithAttachments(context.Background(), 10, 1, &dto.RequestSendMessageAttachments{
 		ChatID: 1,
 		Attachments: []dto.AttachmentInput{{
@@ -116,7 +116,7 @@ func TestSendMessageWithAttachments_ContactSnapshot(t *testing.T) {
 		},
 	)
 
-	s := NewMessageService(msgRepo, chatRepo, nil, profile, "http://localhost:8088")
+	s := NewMessageService(msgRepo, chatRepo, nil, profile, "http://localhost:8088", nil)
 	resp, err := s.SendMessageWithAttachments(context.Background(), 10, 1, &dto.RequestSendMessageAttachments{
 		ChatID: 1,
 		Attachments: []dto.AttachmentInput{{
@@ -155,6 +155,14 @@ func (s *voiceMediaStub) GetMessageVoiceMetadata(context.Context, string) (*chat
 	return s.meta, nil
 }
 
+func (s *voiceMediaStub) TranscribeVoice(context.Context, string) (string, error) {
+	return "", nil
+}
+
+func (s *voiceMediaStub) ClassifyMessagePhoto(context.Context, string) (bool, error) {
+	return false, nil
+}
+
 func TestSendMessageWithAttachments_VoiceHappyPath(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
@@ -183,7 +191,7 @@ func TestSendMessageWithAttachments_VoiceHappyPath(t *testing.T) {
 		},
 	)
 
-	s := NewMessageService(msgRepo, chatRepo, mediaStub, nil, "http://localhost:8088")
+	s := NewMessageService(msgRepo, chatRepo, mediaStub, nil, "http://localhost:8088", nil)
 	resp, err := s.SendMessageWithAttachments(context.Background(), 10, 1, &dto.RequestSendMessageAttachments{
 		ChatID: 1,
 		Attachments: []dto.AttachmentInput{{
@@ -205,7 +213,7 @@ func TestSendMessageWithAttachments_RejectsVoiceMixedWithPhoto(t *testing.T) {
 	chatRepo.EXPECT().IsMember(gomock.Any(), int64(1), int64(10)).Return(true, nil)
 	chatRepo.EXPECT().GetChatByID(gomock.Any(), int64(1)).Return(&domain.Chat{Id: 1, Type: domain.ChatTypeGroup}, nil)
 
-	s := NewMessageService(msgRepo, chatRepo, nil, nil, "http://localhost:8088")
+	s := NewMessageService(msgRepo, chatRepo, nil, nil, "http://localhost:8088", nil)
 	_, err := s.SendMessageWithAttachments(context.Background(), 10, 1, &dto.RequestSendMessageAttachments{
 		ChatID: 1,
 		Attachments: []dto.AttachmentInput{

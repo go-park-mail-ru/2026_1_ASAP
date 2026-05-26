@@ -13,7 +13,6 @@ import (
 	chatmedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	grpcprofile "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc/clients/profile"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 const maxAttachmentsPerMessage = 10
@@ -29,6 +28,12 @@ type MessageMediaRepositoryInterface interface {
 		fileName string,
 	) (*chatmedia.UploadMessageAttachmentResult, error)
 	GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*chatmedia.VoiceMetadataResult, error)
+	TranscribeVoice(ctx context.Context, objectKey string) (string, error)
+	ClassifyMessagePhoto(ctx context.Context, objectKey string) (bool, error)
+}
+
+type SubscriptionChecker interface {
+	IsActive(ctx context.Context, userID int64) (bool, error)
 }
 
 type ProfileContactsInterface interface {
@@ -157,7 +162,7 @@ func (m MessageService) SendMessageWithAttachments(
 		return nil, fmt.Errorf("messageRepo create message with attachments: %w", err)
 	}
 
-	return messageToSendResponse(createdMessage, false), nil
+	return messageToSendResponse(createdMessage, false, false), nil
 }
 
 func (m MessageService) buildDomainAttachments(
@@ -202,6 +207,12 @@ func (m MessageService) buildSingleAttachment(
 		if in.FileName != "" {
 			name := in.FileName
 			att.FileName = &name
+		}
+		if att.Type == domain.AttachmentTypePhoto && m.mediaRepo != nil {
+			isCapybara, classifyErr := m.mediaRepo.ClassifyMessagePhoto(ctx, objectKey)
+			if classifyErr == nil {
+				att.IsCapybara = isCapybara
+			}
 		}
 		return att, nil
 	case string(domain.AttachmentTypeVoice):
@@ -302,7 +313,7 @@ func buildAttachmentPreview(attachments []domain.MessageAttachment) string {
 	return strings.Join(labels, " ")
 }
 
-func messageToSendResponse(msg *domain.Message, read bool) *dto.ResponseSendMessage {
+func messageToSendResponse(msg *domain.Message, read bool, subscriptionActive bool) *dto.ResponseSendMessage {
 	if msg == nil {
 		return nil
 	}
@@ -310,15 +321,16 @@ func messageToSendResponse(msg *domain.Message, read bool) *dto.ResponseSendMess
 		ID:          msg.Id,
 		ChatID:      msg.ChatId,
 		SenderID:    msg.SenderId,
-		Text:        sanitize.Text(msg.Content),
+		Text:        formatTextForViewer(msg.Content, subscriptionActive),
+		ContentRaw:  msg.Content,
 		CreatedAt:   msg.CreatedAt,
 		Edited:      msg.Edited,
 		Read:        read,
-		Attachments: mapAttachmentsToDTO(msg.Attachments),
+		Attachments: mapAttachmentsToDTOForViewer(msg.Attachments, subscriptionActive),
 	}
 }
 
-func mapAttachmentsToDTO(attachments []domain.MessageAttachment) []dto.MessageAttachmentDTO {
+func mapAttachmentsToDTOForViewer(attachments []domain.MessageAttachment, subscriptionActive bool) []dto.MessageAttachmentDTO {
 	if len(attachments) == 0 {
 		return nil
 	}
@@ -336,6 +348,28 @@ func mapAttachmentsToDTO(attachments []domain.MessageAttachment) []dto.MessageAt
 		item.DurationMs = a.DurationMs
 		if len(a.Waveform) > 0 {
 			item.Waveform = a.Waveform
+		}
+		if a.Type == domain.AttachmentTypePhoto {
+			item.IsCapybara = a.IsCapybara
+			item.IsBlur = subscriptionActive && a.IsCapybara
+		}
+		if subscriptionActive && a.Type == domain.AttachmentTypeVoice {
+			can := true
+			item.CanTranscribe = &can
+			if a.Transcript != nil && *a.Transcript != "" {
+				masked := formatTextForViewer(*a.Transcript, true)
+				item.Transcript = &masked
+			}
+		}
+		if subscriptionActive {
+			if item.ContactFirstName != nil {
+				v := formatTextForViewer(*item.ContactFirstName, true)
+				item.ContactFirstName = &v
+			}
+			if item.ContactLastName != nil {
+				v := formatTextForViewer(*item.ContactLastName, true)
+				item.ContactLastName = &v
+			}
 		}
 		out = append(out, item)
 	}

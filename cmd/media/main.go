@@ -18,7 +18,9 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	mediarepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/repository"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/speechkit"
 	mediagrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/transport/grpc"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/vision"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
 )
 
@@ -41,7 +43,23 @@ func main() {
 	}
 	defer mRepo.Close()
 
-	mediaSrv := mediagrpc.NewMediaServer(mRepo, logger.Named("media_grpc"))
+	capybaraDetector := vision.NewDetector(cfg.CapybaraDetectorConfig, logger.Named("capybara"))
+	if cfg.CapybaraDetectorConfig.Enabled {
+		warmCtx, warmCancel := context.WithTimeout(ctx, 2*time.Minute)
+		if warmErr := capybaraDetector.Warmup(warmCtx); warmErr != nil {
+			logger.Warn("capybara worker warmup failed", zap.Error(warmErr))
+		} else {
+			logger.Info("capybara worker ready")
+		}
+		warmCancel()
+	}
+	mRepo.SetCapybaraDetector(&vision.ClassifierAdapter{Detector: capybaraDetector})
+
+	stt := speechkit.NewClient(speechkit.Config{
+		APIKey: cfg.SpeechKitConfig.APIKey,
+		Lang:   cfg.SpeechKitConfig.Lang,
+	})
+	mediaSrv := mediagrpc.NewMediaServer(mRepo, stt, logger.Named("media_grpc"))
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())
 	if err != nil {

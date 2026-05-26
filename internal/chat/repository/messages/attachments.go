@@ -2,6 +2,7 @@ package messages
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -69,6 +70,7 @@ func (m *MessageRepository) CreateMessageWithAttachments(
 			model.ContactAvatarURL,
 			durationArg(model.DurationMs),
 			waveformArg(model.Waveform),
+			model.IsCapybara,
 		).Scan(
 			&scanned.Id,
 			&scanned.MessageId,
@@ -84,6 +86,7 @@ func (m *MessageRepository) CreateMessageWithAttachments(
 			&scanned.ContactAvatarURL,
 			&scanned.DurationMs,
 			&scanned.Waveform,
+			&scanned.IsCapybara,
 			&scanned.CreatedAt,
 		)
 		if err != nil {
@@ -138,6 +141,8 @@ func (m *MessageRepository) GetAttachmentsByMessageIDs(ctx context.Context, mess
 			&model.ContactAvatarURL,
 			&model.DurationMs,
 			&model.Waveform,
+			&model.Transcript,
+			&model.IsCapybara,
 			&model.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan attachment: %w", err)
@@ -148,4 +153,62 @@ func (m *MessageRepository) GetAttachmentsByMessageIDs(ctx context.Context, mess
 		return nil, fmt.Errorf("iterate attachments: %w", err)
 	}
 	return out, nil
+}
+
+func (m *MessageRepository) GetMessageByID(ctx context.Context, chatID, messageID int64) (*domain.Message, error) {
+	q := messagessql.GetMessageByID
+	start := time.Now()
+	model := &MessageModel{}
+	err := m.db.QueryRow(ctx, q, messageID, chatID).Scan(
+		&model.Id,
+		&model.ChatId,
+		&model.SenderId,
+		&model.Content,
+		&model.StickerId,
+		&model.Edited,
+		&model.CreatedAt,
+		&model.UpdatedAt,
+		&model.DeletedAt,
+	)
+	sqllog.LogQuery(ctx, m.log(ctx), "GetMessageByID", q, start, err, []any{messageID, chatID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrNoMessage
+		}
+		return nil, fmt.Errorf("get message by id: %w", err)
+	}
+	return toDomainModel(model), nil
+}
+
+func (m *MessageRepository) UpdateAttachmentTranscript(ctx context.Context, attachmentID int64, transcript string) (*domain.MessageAttachment, error) {
+	q := messagessql.UpdateMessageAttachmentTranscript
+	start := time.Now()
+	model := &AttachmentModel{}
+	err := m.db.QueryRow(ctx, q, attachmentID, transcript).Scan(
+		&model.Id,
+		&model.MessageId,
+		&model.Type,
+		&model.SortOrder,
+		&model.FileURL,
+		&model.FileName,
+		&model.MimeType,
+		&model.FileSize,
+		&model.ContactUserID,
+		&model.ContactFirstName,
+		&model.ContactLastName,
+		&model.ContactAvatarURL,
+		&model.DurationMs,
+		&model.Waveform,
+		&model.Transcript,
+		&model.CreatedAt,
+	)
+	sqllog.LogQuery(ctx, m.log(ctx), "UpdateAttachmentTranscript", q, start, err, []any{attachmentID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrInvalidAttachment
+		}
+		return nil, fmt.Errorf("update attachment transcript: %w", err)
+	}
+	out := attachmentToDomain(model)
+	return &out, nil
 }

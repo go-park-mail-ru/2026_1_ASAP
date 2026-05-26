@@ -31,7 +31,6 @@ func TestAnalyzeVoice_WithFFmpeg(t *testing.T) {
 		t.Skip("ffmpeg/ffprobe not available")
 	}
 
-	// Generate 0.5s silence via ffmpeg.
 	out, err := execSilentWebM(t)
 	require.NoError(t, err)
 

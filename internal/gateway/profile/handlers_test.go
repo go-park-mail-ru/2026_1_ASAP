@@ -35,8 +35,6 @@ func TestPositiveGatewayProfileHandler_GetMyProfile(t *testing.T) {
 		profileClient *mock.MockProfileClient
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int

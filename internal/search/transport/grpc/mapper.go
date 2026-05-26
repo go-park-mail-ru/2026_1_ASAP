@@ -47,7 +47,7 @@ func mapSearchChatKindsProtoToDomain(kinds []searchv1.SearchChatKind) []searchdo
 			out = append(out, searchdomain.ChatTypeChannel)
 		case searchv1.SearchChatKind_SEARCH_CHAT_KIND_UNSPECIFIED:
 		default:
-			// ignore unknown
+
 		}
 	}
 	return out

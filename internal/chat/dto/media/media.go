@@ -21,6 +21,7 @@ type UploadMessageAttachmentResult struct {
 	FileName   *string
 	DurationMs int32
 	Waveform   []uint8
+	IsCapybara bool
 }
 
 type VoiceMetadataResult struct {

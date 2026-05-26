@@ -524,9 +524,6 @@ func TestNegativeAuthService_Logout(t *testing.T) {
 	}
 }
 
-// internal/auth/usecase/auth/auth_test.go
-// Замените соответствующие тесты на эти
-
 func TestNegativeAuthService_GetUserPublic(t *testing.T) {
 	type fields struct {
 		userRepository *mock.MockUserRepository
@@ -661,9 +658,9 @@ func TestNegativeAuthService_AuthWithVKID(t *testing.T) {
 						user.ID = 100
 						return user, nil
 					})
-				// ProfileService.Create вызывается, нужно ожидать
+
 				f.profileService.EXPECT().Create(gomock.Any(), int64(100), "John").Return(errors.New("profile create failed"))
-				// UpdateName не должен вызываться, так как Create вернул ошибку
+
 			},
 			args: args{
 				ctx: context.Background(),
@@ -685,11 +682,11 @@ func TestNegativeAuthService_AuthWithVKID(t *testing.T) {
 						user.ID = 100
 						return user, nil
 					})
-				// ProfileService методы вызываются при создании нового пользователя
+
 				f.profileService.EXPECT().Create(gomock.Any(), int64(100), "John").Return(nil)
 				f.profileService.EXPECT().UpdateName(gomock.Any(), int64(100), "John", "Doe").Return(nil)
 				f.profileService.EXPECT().UpdateAvatarFromURL(gomock.Any(), int64(100), "https://avatar.url").Return(nil)
-				// Session creation fails
+
 				f.sessionService.EXPECT().CreateSession(gomock.Any(), int64(100)).Return(nil, errors.New("session failed"))
 			},
 			args: args{
@@ -712,11 +709,11 @@ func TestNegativeAuthService_AuthWithVKID(t *testing.T) {
 					Login: "vk_12345",
 					Email: "existing@example.com",
 				}, nil)
-				// Для существующего пользователя profile методы вызываются (ошибки игнорируются)
+
 				f.profileService.EXPECT().Create(gomock.Any(), int64(200), "John").Return(nil)
 				f.profileService.EXPECT().UpdateName(gomock.Any(), int64(200), "John", "Doe").Return(nil)
 				f.profileService.EXPECT().UpdateAvatarFromURL(gomock.Any(), int64(200), "https://avatar.url").Return(nil)
-				// Session creation fails
+
 				f.sessionService.EXPECT().CreateSession(gomock.Any(), int64(200)).Return(nil, errors.New("session failed"))
 			},
 			args: args{

@@ -75,7 +75,7 @@ const (
 	EmptyFileMsg                     = "empty file"
 	InvalidFileFormatMsg             = "Invalid file format"
 	FileTooLargeMsg                  = "File too large"
-	VoiceTooLongMsg                  = "Voice message is too long"
+	VoiceTooLongMsg                  = "Voice message is too long (max 30 seconds)"
 	EmptyBIOMsg                      = "Empty BIO"
 	NotFoundMsg                      = "Not found"
 	InvalidDateFormatMsg             = "Invalid date format"

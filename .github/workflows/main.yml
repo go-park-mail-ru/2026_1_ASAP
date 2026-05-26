@@ -57,8 +57,114 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+    env:
+      DOTENV: ${{ secrets.DOTENV }}
+      APPLICATION_CONFIG: prod
+      NGINX_PORT: ${{ secrets.NGINX_PORT }}
+      BACKEND_HOST: ${{ secrets.BACKEND_HOST }}
+      LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+      REDIS_HOST: ${{ secrets.REDIS_HOST }}
+      REDIS_PORT: ${{ secrets.REDIS_PORT }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      REDIS_DATABASE: ${{ secrets.REDIS_DATABASE }}
+      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      S3_HOST: ${{ secrets.S3_HOST }}
+      S3_PORT: ${{ secrets.S3_PORT }}
+      MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
+      MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+      S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+      S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_USE_SSL: ${{ secrets.S3_USE_SSL }}
+      S3_PUBLIC_USE_SSL: ${{ secrets.S3_PUBLIC_USE_SSL }}
+      S3_PUBLIC_HOST: ${{ secrets.S3_PUBLIC_HOST }}
+      S3_PUBLIC_PORT: ${{ secrets.S3_PUBLIC_PORT }}
+      VKID_CLIENT_ID: ${{ secrets.VKID_CLIENT_ID }}
+      VKID_REDIRECT_URI: ${{ secrets.VKID_REDIRECT_URI }}
+      VKID_AUTH_URL: ${{ secrets.VKID_AUTH_URL }}
+      VKID_PUBLIC_INFO_URL: ${{ secrets.VKID_PUBLIC_INFO_URL }}
+      PAYMENT_SECRET_KEY: ${{ secrets.PAYMENT_SECRET_KEY }}
+      PAYMENT_SHOP_ID: ${{ secrets.PAYMENT_SHOP_ID }}
+      PAYMENT_RETURN_URL: ${{ secrets.PAYMENT_RETURN_URL }}
+      SPEECHKIT_API_KEY: ${{ secrets.SPEECHKIT_API_KEY }}
     steps:
-      - name: Deploy to server via SSH
+      - name: Build .env from GitHub secrets
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p deploy
+
+          if [[ -n "${DOTENV:-}" ]]; then
+            printf '%s' "$DOTENV" > deploy/.env
+            chmod 600 deploy/.env
+            exit 0
+          fi
+
+          if [[ -z "${POSTGRES_PASSWORD:-}" || -z "${REDIS_PASSWORD:-}" || -z "${MINIO_ROOT_PASSWORD:-}" ]]; then
+            echo "::error::Add GitHub secret DOTENV (full .env) or POSTGRES_PASSWORD, REDIS_PASSWORD, MINIO_ROOT_PASSWORD"
+            exit 1
+          fi
+
+          write_env() { printf '%s=%s\n' "$1" "$2" >> deploy/.env; }
+          : > deploy/.env
+
+          write_env APPLICATION_CONFIG "${APPLICATION_CONFIG:-prod}"
+          write_env NGINX_PORT "${NGINX_PORT:-8080}"
+          write_env BACKEND_HOST "${BACKEND_HOST:-0.0.0.0}"
+          write_env LOG_LEVEL "${LOG_LEVEL:-info}"
+
+          write_env REDIS_HOST "${REDIS_HOST:-redis}"
+          write_env REDIS_PORT "${REDIS_PORT:-6379}"
+          write_env REDIS_PASSWORD "$REDIS_PASSWORD"
+          write_env REDIS_DATABASE "${REDIS_DATABASE:-0}"
+
+          write_env POSTGRES_HOST "${POSTGRES_HOST:-db}"
+          write_env POSTGRES_PORT "${POSTGRES_PORT:-5432}"
+          write_env POSTGRES_USER "${POSTGRES_USER:-postgres}"
+          write_env POSTGRES_PASSWORD "$POSTGRES_PASSWORD"
+          write_env POSTGRES_DB "${POSTGRES_DB:-asap}"
+
+          minio_user="${MINIO_ROOT_USER:-minioadmin}"
+          write_env S3_HOST "${S3_HOST:-minio}"
+          write_env S3_PORT "${S3_PORT:-9000}"
+          write_env MINIO_ROOT_USER "$minio_user"
+          write_env MINIO_ROOT_PASSWORD "$MINIO_ROOT_PASSWORD"
+          write_env S3_ACCESS_KEY "${S3_ACCESS_KEY:-$minio_user}"
+          write_env S3_SECRET_KEY "${S3_SECRET_KEY:-$MINIO_ROOT_PASSWORD}"
+          write_env S3_BUCKET "${S3_BUCKET:-media}"
+          write_env S3_USE_SSL "${S3_USE_SSL:-false}"
+          write_env S3_PUBLIC_USE_SSL "${S3_PUBLIC_USE_SSL:-true}"
+          write_env S3_PUBLIC_HOST "${S3_PUBLIC_HOST:-pulseapp.space}"
+          write_env S3_PUBLIC_PORT "${S3_PUBLIC_PORT:-443}"
+
+          [[ -n "${VKID_CLIENT_ID:-}" ]] && write_env VKID_CLIENT_ID "$VKID_CLIENT_ID"
+          [[ -n "${VKID_REDIRECT_URI:-}" ]] && write_env VKID_REDIRECT_URI "$VKID_REDIRECT_URI"
+          write_env VKID_AUTH_URL "${VKID_AUTH_URL:-https://id.vk.ru/oauth2/auth}"
+          write_env VKID_PUBLIC_INFO_URL "${VKID_PUBLIC_INFO_URL:-https://id.vk.ru/oauth2/public_info}"
+
+          [[ -n "${PAYMENT_SECRET_KEY:-}" ]] && write_env PAYMENT_SECRET_KEY "$PAYMENT_SECRET_KEY"
+          [[ -n "${PAYMENT_SHOP_ID:-}" ]] && write_env PAYMENT_SHOP_ID "$PAYMENT_SHOP_ID"
+          [[ -n "${PAYMENT_RETURN_URL:-}" ]] && write_env PAYMENT_RETURN_URL "$PAYMENT_RETURN_URL"
+          [[ -n "${SPEECHKIT_API_KEY:-}" ]] && write_env SPEECHKIT_API_KEY "$SPEECHKIT_API_KEY"
+
+          chmod 600 deploy/.env
+
+      - name: Upload .env to server
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: deploy/.env
+          target: ${{ secrets.DEPLOY_PATH }}
+          strip_components: 1
+          overwrite: true
+
+      - name: Deploy on server
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -72,6 +178,8 @@ jobs:
             DEPLOY_DIR="${DEPLOY_DIR:-/home/ubuntu/pulseapp/backend/2026_1_ASAP}"
             BRANCH="${BRANCH:-main}"
             cd "$DEPLOY_DIR"
+            chmod 600 .env
+
             if [[ -n "${GITHUB_TOKEN:-}" ]]; then
               git fetch "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$BRANCH"
               git checkout "$BRANCH"
@@ -81,6 +189,7 @@ jobs:
               git checkout "$BRANCH"
               git reset --hard "origin/$BRANCH"
             fi
+
             export APPLICATION_CONFIG=prod
             docker compose up -d --build --remove-orphans
             echo "deploy finished: branch=$BRANCH commit=$(git rev-parse --short HEAD)"

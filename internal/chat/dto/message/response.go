@@ -7,9 +7,10 @@ import (
 )
 
 type LastMessageDTO struct {
-	CreatedAt time.Time `json:"created_at"`
-	Text      string    `json:"text"`
-	SenderId  int64     `json:"sender_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	Text       string    `json:"text"`
+	SenderId   int64     `json:"sender_id"`
+	ContentRaw string    `json:"-"`
 }
 
 type ResponseSendMessage struct {
@@ -22,6 +23,7 @@ type ResponseSendMessage struct {
 	Read        bool                   `json:"read"`
 	Attachments []MessageAttachmentDTO `json:"attachments,omitempty"`
 	Sticker     *stickerdto.StickerDTO `json:"sticker,omitempty"`
+	ContentRaw  string                 `json:"-"`
 }
 
 type ResponseEditMessage struct {
@@ -34,6 +36,7 @@ type ResponseEditMessage struct {
 	Read              bool            `json:"read"`
 	LastMessageEdited bool            `json:"last_message_edited"`
 	LastMessage       *LastMessageDTO `json:"last_message,omitempty"`
+	ContentRaw        string          `json:"-"`
 }
 
 type ResponseClearMessage struct {

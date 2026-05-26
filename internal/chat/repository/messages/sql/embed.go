@@ -2,7 +2,6 @@ package messagessql
 
 import _ "embed"
 
-// CreateMessageTxDescription — подпись для лога транзакции CreateMessage (не один SQL).
 const CreateMessageTxDescription = "tx: INSERT messages; UPDATE chats last_message; COMMIT"
 
 //go:embed insert_message.sql
@@ -31,3 +30,9 @@ var GetAttachmentsByMessageIDs string
 
 //go:embed can_access_attachment.sql
 var CanAccessAttachment string
+
+//go:embed update_message_attachment_transcript.sql
+var UpdateMessageAttachmentTranscript string
+
+//go:embed get_message_by_id.sql
+var GetMessageByID string

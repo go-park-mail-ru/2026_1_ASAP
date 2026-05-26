@@ -9,7 +9,6 @@ import (
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
 const maxMessageRunes = 2000
@@ -20,6 +19,8 @@ type MessageRepositoryInterface interface {
 	CreateMessageWithAttachments(ctx context.Context, message *domain.Message, attachments []domain.MessageAttachment) (*domain.Message, error)
 	GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error)
 	GetAttachmentsByMessageIDs(ctx context.Context, messageIDs []int64) (map[int64][]domain.MessageAttachment, error)
+	GetMessageByID(ctx context.Context, chatID, messageID int64) (*domain.Message, error)
+	UpdateAttachmentTranscript(ctx context.Context, attachmentID int64, transcript string) (*domain.MessageAttachment, error)
 	CanUserAccessAttachment(ctx context.Context, userID int64, objectKey, attachmentRef string) (bool, error)
 	UpdateMessage(ctx context.Context, message *domain.Message) (*domain.Message, bool, error)
 	DeleteMessage(ctx context.Context, message *domain.Message) (*domain.Message, bool, error)
@@ -43,6 +44,7 @@ type MessageService struct {
 	chatRepo            ChatRepositoryInterface
 	mediaRepo           MessageMediaRepositoryInterface
 	profileRepo         ProfileContactsInterface
+	subscription        SubscriptionChecker
 	stickerRepo         StickerRepositoryInterface
 	attachmentProxyBase string
 }
@@ -53,6 +55,7 @@ func NewMessageService(
 	mediaRepo MessageMediaRepositoryInterface,
 	profileRepo ProfileContactsInterface,
 	attachmentProxyBase string,
+	subscription SubscriptionChecker,
 	stickerRepo ...StickerRepositoryInterface,
 ) *MessageService {
 	var stickers StickerRepositoryInterface
@@ -64,6 +67,7 @@ func NewMessageService(
 		chatRepo:            chatRepo,
 		mediaRepo:           mediaRepo,
 		profileRepo:         profileRepo,
+		subscription:        subscription,
 		stickerRepo:         stickers,
 		attachmentProxyBase: strings.TrimRight(attachmentProxyBase, "/"),
 	}
@@ -95,7 +99,6 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 		return nil, domain.ErrMessageNotMember
 	}
 
-	// Берем limit+1, чтобы понять has_more
 	raw, err := m.messageRepo.GetMessagesByChatId(ctx, chatID, req.BeforeID, limit+1)
 	if err != nil {
 		return nil, fmt.Errorf("messageRepo get messages: %w", err)
@@ -124,17 +127,22 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 		return nil, err
 	}
 
+	subscriptionActive, err := m.isSubscriptionActive(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check subscription: %w", err)
+	}
+
 	items := make([]dto.MessageDTO, 0, len(raw))
 	for _, msg := range raw {
 		items = append(items, dto.MessageDTO{
 			ID:          msg.Id,
 			ChatID:      msg.ChatId,
 			SenderID:    msg.SenderId,
-			Text:        sanitize.Text(msg.Content),
+			Text:        formatTextForViewer(msg.Content, subscriptionActive),
 			CreatedAt:   msg.CreatedAt,
 			Edited:      msg.Edited,
 			Read:        outgoingReadByPeers(msg.Id, msg.SenderId, userID, lastReads),
-			Attachments: mapAttachmentsToDTO(attachmentsByMessage[msg.Id]),
+			Attachments: mapAttachmentsToDTOForViewer(attachmentsByMessage[msg.Id], subscriptionActive),
 			Sticker:     stickerDTOFromMessage(msg, stickersByID),
 		})
 	}
@@ -196,15 +204,7 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 		return nil, fmt.Errorf("messageRepo create message: %w", err)
 	}
 
-	return &dto.ResponseSendMessage{
-		ID:        createdMessage.Id,
-		ChatID:    createdMessage.ChatId,
-		SenderID:  createdMessage.SenderId,
-		Text:      sanitize.Text(createdMessage.Content),
-		CreatedAt: createdMessage.CreatedAt,
-		Edited:    createdMessage.Edited,
-		Read:      false,
-	}, nil
+	return messageToSendResponse(createdMessage, false, false), nil
 }
 
 func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error) {
@@ -247,11 +247,17 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 	}
 	read := outgoingReadByPeers(editedMessage.Id, editedMessage.SenderId, userID, lastReads)
 
+	subscriptionActive, err := m.isSubscriptionActive(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check subscription: %w", err)
+	}
+
 	resp := &dto.ResponseEditMessage{
 		ID:                editedMessage.Id,
 		ChatID:            editedMessage.ChatId,
 		SenderID:          editedMessage.SenderId,
-		Text:              sanitize.Text(editedMessage.Content),
+		Text:              formatTextForViewer(editedMessage.Content, subscriptionActive),
+		ContentRaw:        editedMessage.Content,
 		CreatedAt:         editedMessage.CreatedAt,
 		Edited:            editedMessage.Edited,
 		Read:              read,
@@ -259,9 +265,10 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 	}
 	if lastMessageEdited {
 		resp.LastMessage = &dto.LastMessageDTO{
-			SenderId:  editedMessage.SenderId,
-			Text:      sanitize.Text(editedMessage.Content),
-			CreatedAt: editedMessage.CreatedAt,
+			SenderId:   editedMessage.SenderId,
+			Text:       formatTextForViewer(editedMessage.Content, subscriptionActive),
+			ContentRaw: editedMessage.Content,
+			CreatedAt:  editedMessage.CreatedAt,
 		}
 	}
 	return resp, nil
@@ -295,6 +302,11 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 		return nil, fmt.Errorf("messageRepo delete message: %w", err)
 	}
 
+	subscriptionActive, subErr := m.isSubscriptionActive(ctx, userID)
+	if subErr != nil {
+		return nil, fmt.Errorf("check subscription: %w", subErr)
+	}
+
 	resp := &dto.ResponseClearMessage{
 		ID:                deletedMessage.Id,
 		ChatID:            deletedMessage.ChatId,
@@ -305,9 +317,10 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 		lm, err := m.chatRepo.GetLastMessageOfChat(ctx, chatID)
 		if err == nil && lm != nil {
 			resp.LastMessage = &dto.LastMessageDTO{
-				SenderId:  lm.SenderId,
-				Text:      sanitize.Text(lm.Content),
-				CreatedAt: lm.CreatedAt,
+				SenderId:   lm.SenderId,
+				Text:       formatTextForViewer(lm.Content, subscriptionActive),
+				ContentRaw: lm.Content,
+				CreatedAt:  lm.CreatedAt,
 			}
 		}
 	}
@@ -345,8 +358,6 @@ func (m MessageService) MarkMessagesRead(ctx context.Context, userID int64, chat
 	}, nil
 }
 
-// outgoingReadByPeers reports whether every chat member except the viewer has a read cursor >= messageID
-// for messages authored by the viewer (read receipts).
 func outgoingReadByPeers(messageID, messageSenderID, viewerID int64, lastReads map[int64]*int64) bool {
 	if messageSenderID != viewerID {
 		return false

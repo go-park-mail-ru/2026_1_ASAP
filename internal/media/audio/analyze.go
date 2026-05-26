@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	MaxVoiceDurationMs = 60000
+	MaxVoiceDurationMs = 30000
 	WaveformBars       = 100
 	MaxVoiceBytes      = 5 * 1024 * 1024
 )
@@ -288,7 +288,6 @@ func FFmpegAvailable() bool {
 	return err == nil
 }
 
-// NormalizeWaveformForTest exposes normalization for unit tests without ffmpeg.
 func NormalizeWaveformForTest(pcm []byte) []uint8 {
 	if len(pcm) < 2 {
 		return zerosWaveform()
@@ -339,7 +338,6 @@ func NormalizeWaveformForTest(pcm []byte) []uint8 {
 	return out
 }
 
-// BuildPCMFixture creates little-endian s16le mono PCM for tests.
 func BuildPCMFixture(samples []int16) []byte {
 	buf := bytes.NewBuffer(make([]byte, 0, len(samples)*2))
 	for _, s := range samples {

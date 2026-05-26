@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strings"
 
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	chatmedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
@@ -114,9 +115,20 @@ func (m *MediaAdapter) UploadMessageAttachment(
 		} else if fileName != "" {
 			result.FileName = &fileName
 		}
+		result.IsCapybara = resp.GetIsCapybara()
 		return result, nil
 	}
 	return nil, errors.New("empty object_key in response")
+}
+
+func (m *MediaAdapter) ClassifyMessagePhoto(ctx context.Context, objectKey string) (bool, error) {
+	resp, err := m.client.ClassifyMessagePhoto(ctx, &mediav1.RequestClassifyMessagePhoto{
+		ObjectKey: objectKey,
+	})
+	if err != nil {
+		return false, err
+	}
+	return resp.GetIsCapybara(), nil
 }
 
 func (m *MediaAdapter) GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*chatmedia.VoiceMetadataResult, error) {
@@ -139,4 +151,18 @@ func (m *MediaAdapter) GetMessageVoiceMetadata(ctx context.Context, objectKey st
 		result.Waveform = wf
 	}
 	return result, nil
+}
+
+func (m *MediaAdapter) TranscribeVoice(ctx context.Context, objectKey string) (string, error) {
+	resp, err := m.client.TranscribeVoice(ctx, &mediav1.RequestTranscribeVoice{
+		ObjectKey: objectKey,
+	})
+	if err != nil {
+		return "", err
+	}
+	text := strings.TrimSpace(resp.GetTranscript())
+	if text == "" {
+		return "", errors.New("empty transcript")
+	}
+	return text, nil
 }

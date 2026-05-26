@@ -23,10 +23,15 @@ import (
 )
 
 type MediaRepository struct {
-	client    *minio.Client
-	logger    *zap.Logger
-	bucket    string
-	publicURL string
+	client           *minio.Client
+	logger           *zap.Logger
+	bucket           string
+	publicURL        string
+	capybaraDetector CapybaraClassifier
+}
+
+func (m *MediaRepository) SetCapybaraDetector(d CapybaraClassifier) {
+	m.capybaraDetector = d
 }
 
 func NewMediaRepository(ctx context.Context, cfg config.S3Config, logger *zap.Logger) (*MediaRepository, error) {
@@ -141,6 +146,11 @@ type MessageAttachmentObject struct {
 	Size        int64
 	DurationMs  int
 	Waveform    []uint8
+	IsCapybara  bool
+}
+
+type CapybaraClassifier interface {
+	DetectBytes(ctx context.Context, data []byte) (bool, error)
 }
 
 func readInputBody(input *mediadto.FileInput, maxBytes int) ([]byte, error) {
@@ -208,6 +218,11 @@ func (m *MediaRepository) UploadMessageAttachment(
 		size = int64(len(data))
 	}
 
+	var isCapybara bool
+	if kind == mediadto.MessageAttachmentKindPhoto && m.capybaraDetector != nil {
+		isCapybara, _ = m.capybaraDetector.DetectBytes(ctx, data)
+	}
+
 	extension := getExtensionFromContentType(contentType)
 	objectName := fmt.Sprintf("message/%d/%s_%d%s", userID, uuid.NewString(), time.Now().UnixNano(), extension)
 
@@ -227,12 +242,24 @@ func (m *MediaRepository) UploadMessageAttachment(
 		ObjectKey:   objectName,
 		ContentType: contentType,
 		Size:        size,
+		IsCapybara:  isCapybara,
 	}
 	if kind == mediadto.MessageAttachmentKindVoice {
 		obj.DurationMs = durationMs
 		obj.Waveform = waveform
 	}
 	return obj, nil
+}
+
+func (m *MediaRepository) ClassifyMessagePhoto(ctx context.Context, objectKey string) (bool, error) {
+	if m.capybaraDetector == nil {
+		return false, nil
+	}
+	data, _, err := m.GetMessageAttachment(ctx, objectKey)
+	if err != nil {
+		return false, err
+	}
+	return m.capybaraDetector.DetectBytes(ctx, data)
 }
 
 func maxBytesForKind(kind mediadto.MessageAttachmentKind) int {

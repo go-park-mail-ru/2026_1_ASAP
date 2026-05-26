@@ -12,6 +12,7 @@ import (
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/repository"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/speechkit"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 )
@@ -23,12 +24,18 @@ type MediaRepositoryInterface interface {
 	UploadMessageAttachment(ctx context.Context, userID int64, kind mediadto.MessageAttachmentKind, input *mediadto.FileInput) (*repository.MessageAttachmentObject, error)
 	GetMessageAttachment(ctx context.Context, objectKey string) ([]byte, string, error)
 	GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*repository.VoiceMetadata, error)
+	ClassifyMessagePhoto(ctx context.Context, objectKey string) (bool, error)
 	DeleteAvatar(ctx context.Context, userID int64) error
+}
+
+type VoiceTranscriber interface {
+	Transcribe(ctx context.Context, data []byte, contentType string) (string, error)
 }
 
 type MediaServer struct {
 	mediav1.UnimplementedMediaServer
 	MediaRepository MediaRepositoryInterface
+	transcriber     VoiceTranscriber
 	logger          *zap.Logger
 }
 
@@ -67,7 +74,9 @@ func statusFromFileError(err error) error {
 	case errors.Is(err, mediadto.ErrEmptyFile):
 		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_EMPTY), "file is empty")
 	case errors.Is(err, mediadto.ErrVoiceTooLong):
-		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_VOICE_TOO_LONG), "voice message too long")
+		return grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_VOICE_TOO_LONG), "voice message too long (max 30 seconds)")
+	case errors.Is(err, speechkit.ErrTranscriptionFailed), errors.Is(err, speechkit.ErrNotConfigured):
+		return grpcerr.New(codes.Internal, int32(mediav1.MediaErrorCode_MEDIA_ERROR_TRANSCRIPTION_FAILED), "transcription failed")
 	default:
 		return grpcerr.New(codes.Internal, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INTERNAL), "internal server error")
 	}
@@ -205,7 +214,20 @@ func (m MediaServer) UploadMessageAttachment(ctx context.Context, req *mediav1.R
 	if name := req.GetFileName(); name != "" {
 		resp.FileName = &name
 	}
+	resp.IsCapybara = obj.IsCapybara
 	return resp, nil
+}
+
+func (m MediaServer) ClassifyMessagePhoto(ctx context.Context, req *mediav1.RequestClassifyMessagePhoto) (*mediav1.ResponseClassifyMessagePhoto, error) {
+	if req == nil || req.GetObjectKey() == "" {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "object_key is required")
+	}
+	isCapybara, err := m.MediaRepository.ClassifyMessagePhoto(ctx, req.GetObjectKey())
+	if err != nil {
+		m.Log(ctx).Error("failed to classify message photo", zap.String("object_key", req.GetObjectKey()), zap.Error(err))
+		return nil, statusFromFileError(err)
+	}
+	return &mediav1.ResponseClassifyMessagePhoto{IsCapybara: isCapybara}, nil
 }
 
 func (m MediaServer) GetMessageVoiceMetadata(ctx context.Context, req *mediav1.RequestGetMessageVoiceMetadata) (*mediav1.ResponseGetMessageVoiceMetadata, error) {
@@ -227,6 +249,26 @@ func (m MediaServer) GetMessageVoiceMetadata(ctx context.Context, req *mediav1.R
 		MimeType:   meta.MimeType,
 		FileSize:   meta.FileSize,
 	}, nil
+}
+
+func (m MediaServer) TranscribeVoice(ctx context.Context, req *mediav1.RequestTranscribeVoice) (*mediav1.ResponseTranscribeVoice, error) {
+	if req == nil || req.GetObjectKey() == "" {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(mediav1.MediaErrorCode_MEDIA_ERROR_INVALID_INPUT), "object_key is required")
+	}
+	if m.transcriber == nil {
+		return nil, grpcerr.New(codes.Internal, int32(mediav1.MediaErrorCode_MEDIA_ERROR_TRANSCRIPTION_FAILED), "transcription not configured")
+	}
+	data, ct, err := m.MediaRepository.GetMessageAttachment(ctx, req.GetObjectKey())
+	if err != nil {
+		m.Log(ctx).Error("failed to load voice for transcription", zap.String("object_key", req.GetObjectKey()), zap.Error(err))
+		return nil, statusFromFileError(err)
+	}
+	text, err := m.transcriber.Transcribe(ctx, data, ct)
+	if err != nil {
+		m.Log(ctx).Error("voice transcription failed", zap.String("object_key", req.GetObjectKey()), zap.Error(err))
+		return nil, statusFromFileError(err)
+	}
+	return &mediav1.ResponseTranscribeVoice{Transcript: text}, nil
 }
 
 func (m MediaServer) GetMessageAttachment(ctx context.Context, req *mediav1.RequestGetMessageAttachment) (*mediav1.ResponseGetMessageAttachment, error) {
@@ -256,9 +298,10 @@ func (m MediaServer) DeleteUserAvatar(ctx context.Context, req *mediav1.RequestD
 	return &mediav1.ResponseDeleteUserAvatar{}, nil
 }
 
-func NewMediaServer(mediaRepository MediaRepositoryInterface, logger *zap.Logger) *MediaServer {
+func NewMediaServer(mediaRepository MediaRepositoryInterface, transcriber VoiceTranscriber, logger *zap.Logger) *MediaServer {
 	return &MediaServer{
 		MediaRepository: mediaRepository,
+		transcriber:     transcriber,
 		logger:          logger,
 	}
 }
