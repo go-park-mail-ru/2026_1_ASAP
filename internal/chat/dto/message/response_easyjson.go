@@ -64,6 +64,12 @@ func easyjson6ff3ac1dDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage(
 			} else {
 				out.SenderID = int64(in.Int64())
 			}
+		case "temp_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.TempID = string(in.String())
+			}
 		case "edited":
 			if in.IsNull() {
 				in.Skip()
@@ -155,6 +161,11 @@ func easyjson6ff3ac1dEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage(
 		const prefix string = ",\"sender_id\":"
 		out.RawString(prefix)
 		out.Int64(int64(in.SenderID))
+	}
+	if in.TempID != "" {
+		const prefix string = ",\"temp_id\":"
+		out.RawString(prefix)
+		out.String(string(in.TempID))
 	}
 	{
 		const prefix string = ",\"edited\":"

@@ -162,7 +162,9 @@ func (m MessageService) SendMessageWithAttachments(
 		return nil, fmt.Errorf("messageRepo create message with attachments: %w", err)
 	}
 
-	return messageToSendResponse(createdMessage, false, false), nil
+	resp := messageToSendResponse(createdMessage, false, false)
+	resp.TempID = req.TempID
+	return resp, nil
 }
 
 func (m MessageService) buildDomainAttachments(

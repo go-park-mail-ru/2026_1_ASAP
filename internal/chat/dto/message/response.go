@@ -19,6 +19,7 @@ type ResponseSendMessage struct {
 	ID          int64                  `json:"id"`
 	ChatID      int64                  `json:"chat_id"`
 	SenderID    int64                  `json:"sender_id"`
+	TempID      string                 `json:"temp_id,omitempty"`
 	Edited      bool                   `json:"edited"`
 	Read        bool                   `json:"read"`
 	Attachments []MessageAttachmentDTO `json:"attachments,omitempty"`

@@ -10,6 +10,7 @@ type AttachmentInput struct {
 type RequestSendMessageAttachments struct {
 	ChatID      int64             `json:"chat_id"`
 	Text        string            `json:"text,omitempty"`
+	TempID      string            `json:"temp_id,omitempty"`
 	Attachments []AttachmentInput `json:"attachments"`
 }
 

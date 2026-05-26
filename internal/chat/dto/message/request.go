@@ -3,11 +3,13 @@ package message
 type RequestSendMessage struct {
 	Text   string `json:"text"`
 	ChatID int64  `json:"chat_id"`
+	TempID string `json:"temp_id,omitempty"`
 }
 
 type RequestSendSticker struct {
-	ChatID    int64 `json:"chat_id"`
-	StickerID int64 `json:"sticker_id"`
+	ChatID    int64  `json:"chat_id"`
+	StickerID int64  `json:"sticker_id"`
+	TempID    string `json:"temp_id,omitempty"`
 }
 
 type RequestEditMessage struct {

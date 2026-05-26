@@ -43,6 +43,12 @@ func easyjson3c9d2b01DecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage(
 			} else {
 				out.StickerID = int64(in.Int64())
 			}
+		case "temp_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.TempID = string(in.String())
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -66,6 +72,11 @@ func easyjson3c9d2b01EncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage(
 		const prefix string = ",\"sticker_id\":"
 		out.RawString(prefix)
 		out.Int64(int64(in.StickerID))
+	}
+	if in.TempID != "" {
+		const prefix string = ",\"temp_id\":"
+		out.RawString(prefix)
+		out.String(string(in.TempID))
 	}
 	out.RawByte('}')
 }
@@ -119,6 +130,12 @@ func easyjson3c9d2b01DecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1
 			} else {
 				out.ChatID = int64(in.Int64())
 			}
+		case "temp_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.TempID = string(in.String())
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -142,6 +159,11 @@ func easyjson3c9d2b01EncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage1
 		const prefix string = ",\"chat_id\":"
 		out.RawString(prefix)
 		out.Int64(int64(in.ChatID))
+	}
+	if in.TempID != "" {
+		const prefix string = ",\"temp_id\":"
+		out.RawString(prefix)
+		out.String(string(in.TempID))
 	}
 	out.RawByte('}')
 }

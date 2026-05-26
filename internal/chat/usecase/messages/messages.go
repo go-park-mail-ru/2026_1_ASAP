@@ -204,7 +204,9 @@ func (m MessageService) SendMessage(ctx context.Context, userID int64, chatId in
 		return nil, fmt.Errorf("messageRepo create message: %w", err)
 	}
 
-	return messageToSendResponse(createdMessage, false, false), nil
+	resp := messageToSendResponse(createdMessage, false, false)
+	resp.TempID = req.TempID
+	return resp, nil
 }
 
 func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error) {

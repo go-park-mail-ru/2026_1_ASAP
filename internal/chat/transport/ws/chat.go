@@ -209,6 +209,7 @@ func (s *ChatServer) publishMessageNewPerViewer(ctx context.Context, chatID int6
 			}
 		}
 		presented := messagesuc.PresentSendMessageForViewer(resp, active)
+		stripTempIDForViewer(presented, t.userID, resp.SenderID)
 		out, encErr := dtoWs.EncodeMessageNew(presented)
 		if encErr != nil {
 			log.Error("ws encode message new", zap.Error(encErr))

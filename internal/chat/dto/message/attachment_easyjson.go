@@ -357,6 +357,12 @@ func easyjson76362c5bDecodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3
 			} else {
 				out.Text = string(in.String())
 			}
+		case "temp_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.TempID = string(in.String())
+			}
 		case "attachments":
 			if in.IsNull() {
 				in.Skip()
@@ -407,6 +413,11 @@ func easyjson76362c5bEncodeGithubComGoParkMailRu20261ASAPInternalChatDtoMessage3
 		const prefix string = ",\"text\":"
 		out.RawString(prefix)
 		out.String(string(in.Text))
+	}
+	if in.TempID != "" {
+		const prefix string = ",\"temp_id\":"
+		out.RawString(prefix)
+		out.String(string(in.TempID))
 	}
 	{
 		const prefix string = ",\"attachments\":"

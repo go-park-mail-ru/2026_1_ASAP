@@ -54,6 +54,7 @@ func (m MessageService) SendSticker(ctx context.Context, userID, chatID int64, r
 		return nil, fmt.Errorf("messageRepo create sticker message: %w", err)
 	}
 	resp := messageToSendResponse(createdMessage, false, false)
+	resp.TempID = req.TempID
 	resp.Sticker = mapStickerToDTO(*sticker)
 	return resp, nil
 }

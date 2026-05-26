@@ -123,6 +123,46 @@ func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
 	}
 }
 
+func TestPositiveMessageService_SendMessageTempIDPassthrough(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	msgRepo := mock.NewMockMessageRepositoryInterface(ctrl)
+	chatRepo := mock.NewMockChatRepositoryInterface(ctrl)
+
+	chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(10)).Return(true, nil)
+	chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+		Id:   1,
+		Type: domain.ChatTypeGroup,
+	}, nil)
+	msgRepo.EXPECT().CreateMessage(context.Background(), &domain.Message{
+		ChatId:   1,
+		SenderId: 10,
+		Content:  "hi",
+	}).DoAndReturn(func(_ context.Context, msg *domain.Message) (*domain.Message, error) {
+		require.Equal(t, int64(1), msg.ChatId)
+		require.Equal(t, int64(10), msg.SenderId)
+		require.Equal(t, "hi", msg.Content)
+		return &domain.Message{
+			Id:        42,
+			ChatId:    1,
+			SenderId:  10,
+			Content:   "hi",
+			CreatedAt: time.Unix(1700000000, 0).UTC(),
+		}, nil
+	})
+
+	s := NewMessageService(msgRepo, chatRepo, nil, nil, "http://localhost:8088", nil)
+	resp, err := s.SendMessage(context.Background(), 10, 1, &dto.RequestSendMessage{
+		ChatID: 1,
+		Text:   "hi",
+		TempID: "client-abc-123",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "client-abc-123", resp.TempID)
+	require.Equal(t, int64(42), resp.ID)
+}
+
 func TestNegativeMessageService_SendMessage(t *testing.T) {
 	type fields struct {
 		msgRepo  *mock.MockMessageRepositoryInterface
