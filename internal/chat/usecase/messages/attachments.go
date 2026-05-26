@@ -365,11 +365,11 @@ func mapAttachmentsToDTOForViewer(attachments []domain.MessageAttachment, subscr
 		}
 		if subscriptionActive {
 			if item.ContactFirstName != nil {
-				v := formatTextForViewer(*item.ContactFirstName, true)
+				v := formatPlainTextForViewer(*item.ContactFirstName, true)
 				item.ContactFirstName = &v
 			}
 			if item.ContactLastName != nil {
-				v := formatTextForViewer(*item.ContactLastName, true)
+				v := formatPlainTextForViewer(*item.ContactLastName, true)
 				item.ContactLastName = &v
 			}
 		}

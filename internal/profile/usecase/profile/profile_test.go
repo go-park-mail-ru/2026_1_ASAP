@@ -326,7 +326,7 @@ func TestNegativeProfileService_UpdateBio(t *testing.T) {
 	}
 }
 
-func TestPositiveProfileService_UpdateBioEscapesHTML(t *testing.T) {
+func TestPositiveProfileService_UpdateBioSanitizesHTML(t *testing.T) {
 	type fields struct {
 		profileRepository *mock.MockProfileRepositoryInterface
 		mediaRepository   *mock.MockMediaService
@@ -360,7 +360,7 @@ func TestPositiveProfileService_UpdateBioEscapesHTML(t *testing.T) {
 				userID:  123,
 				request: &dto.RequestUpdateBio{Bio: strPtr(`<script>alert("xss")</script>`)},
 			},
-			wantBio: `&lt;script&gt;alert(&#34;xss&#34;)&lt;/script&gt;`,
+			wantBio: ``,
 		},
 		{
 			name: "ampersand",
@@ -407,7 +407,7 @@ func TestPositiveProfileService_UpdateBioEscapesHTML(t *testing.T) {
 	}
 }
 
-func TestPositiveProfileService_UpdateNameEscapesHTML(t *testing.T) {
+func TestPositiveProfileService_UpdateNameSanitizesHTML(t *testing.T) {
 	type fields struct {
 		profileRepository *mock.MockProfileRepositoryInterface
 		mediaRepository   *mock.MockMediaService
@@ -449,8 +449,8 @@ func TestPositiveProfileService_UpdateNameEscapesHTML(t *testing.T) {
 					LastName:  strPtr(`<img src=x onerror=alert(1)>`),
 				},
 			},
-			wantFirst:   `&lt;b&gt;Ann&lt;/b&gt;`,
-			wantLast:    `&lt;img src=x onerror=alert(1)&gt;`,
+			wantFirst:   `Ann`,
+			wantLast:    ``,
 			wantNilLast: false,
 		},
 		{

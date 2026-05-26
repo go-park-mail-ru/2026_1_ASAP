@@ -14,7 +14,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages/mock"
 )
 
-func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
+func TestPositiveMessageService_SendMessageSanitizesHTML(t *testing.T) {
 	type fields struct {
 		msgRepo  *mock.MockMessageRepositoryInterface
 		chatRepo *mock.MockChatRepositoryInterface
@@ -64,7 +64,7 @@ func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
 					Text:   `<img src=x onerror=alert(1)>`,
 				},
 			},
-			wantText: `&lt;img src=x onerror=alert(1)&gt;`,
+			wantText: ``,
 		},
 		{
 			name: "ampersand",
@@ -521,7 +521,7 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 				ID:                7,
 				ChatID:            1,
 				SenderID:          10,
-				Text:              "edited &lt;b&gt;text&lt;/b&gt;",
+				Text:              "edited <b>text</b>",
 				ContentRaw:        "edited <b>text</b>",
 				CreatedAt:         now,
 				Edited:            true,
@@ -529,7 +529,7 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 				LastMessageEdited: true,
 				LastMessage: &dto.LastMessageDTO{
 					SenderId:   10,
-					Text:       "edited &lt;b&gt;text&lt;/b&gt;",
+					Text:       "edited <b>text</b>",
 					ContentRaw: "edited <b>text</b>",
 					CreatedAt:  now,
 				},
@@ -708,7 +708,7 @@ func TestPositiveMessageService_DeleteMessage(t *testing.T) {
 				LastMessageEdited: true,
 				LastMessage: &dto.LastMessageDTO{
 					SenderId:   11,
-					Text:       "prev &lt;b&gt;msg&lt;/b&gt;",
+					Text:       "prev <b>msg</b>",
 					ContentRaw: "prev <b>msg</b>",
 					CreatedAt:  now,
 				},

@@ -9,6 +9,10 @@ func formatTextForViewer(raw string, subscriptionActive bool) string {
 	return present.TextForViewer(raw, subscriptionActive)
 }
 
+func formatPlainTextForViewer(raw string, subscriptionActive bool) string {
+	return present.PlainTextForViewer(raw, subscriptionActive)
+}
+
 func PresentSendMessageForViewer(resp *dto.ResponseSendMessage, subscriptionActive bool) *dto.ResponseSendMessage {
 	if resp == nil {
 		return nil

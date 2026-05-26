@@ -87,12 +87,20 @@ func (s *ChatService) formatTextForViewer(ctx context.Context, viewerID int64, r
 	return present.TextForViewer(raw, active), nil
 }
 
-func (s *ChatService) formatTextPtrForViewer(ctx context.Context, viewerID int64, raw *string) (*string, error) {
+func (s *ChatService) formatPlainTextForViewer(ctx context.Context, viewerID int64, raw string) (string, error) {
+	active, err := s.isSubscriptionActive(ctx, viewerID)
+	if err != nil {
+		return "", err
+	}
+	return present.PlainTextForViewer(raw, active), nil
+}
+
+func (s *ChatService) formatPlainTextPtrForViewer(ctx context.Context, viewerID int64, raw *string) (*string, error) {
 	active, err := s.isSubscriptionActive(ctx, viewerID)
 	if err != nil {
 		return nil, err
 	}
-	return present.TextPtrForViewer(raw, active), nil
+	return present.PlainTextPtrForViewer(raw, active), nil
 }
 
 func (s *ChatService) isSubscriptionActive(ctx context.Context, userID int64) (bool, error) {
@@ -233,11 +241,11 @@ func (s *ChatService) chatInformationForViewer(
 		}
 	}
 
-	title, err := s.formatTextForViewer(ctx, viewerID, displayTitle)
+	title, err := s.formatPlainTextForViewer(ctx, viewerID, displayTitle)
 	if err != nil {
 		return nil, fmt.Errorf("format chat title: %w", err)
 	}
-	description, err := s.formatTextPtrForViewer(ctx, viewerID, chat.Description)
+	description, err := s.formatPlainTextPtrForViewer(ctx, viewerID, chat.Description)
 	if err != nil {
 		return nil, fmt.Errorf("format chat description: %w", err)
 	}

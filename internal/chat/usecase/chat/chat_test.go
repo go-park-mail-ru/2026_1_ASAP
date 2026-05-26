@@ -1330,7 +1330,7 @@ func TestNegativeChatService_GetAllChats(t *testing.T) {
 	}
 }
 
-func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
+func TestPositiveChatService_CreateChatSanitizesTitle(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
 		userSvc   *mock.MockProfileServiceInterface
@@ -1375,7 +1375,7 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 				},
 				ownerID: 100,
 			},
-			wantTitle: `&lt;b&gt;Group&lt;/b&gt;`,
+			wantTitle: `Group`,
 		},
 		{
 			name: "ampersand in title",
@@ -1529,7 +1529,7 @@ func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 	}
 }
 
-func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
+func TestPositiveChatService_UpdateChatTitleSanitizesHTML(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
 		userSvc   *mock.MockProfileServiceInterface
@@ -1573,7 +1573,7 @@ func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 				chatID:  11,
 				request: &dto.RequestUpdateTitle{Title: `<script>alert(1)</script>`},
 			},
-			wantTitle: `&lt;script&gt;alert(1)&lt;/script&gt;`,
+			wantTitle: ``,
 		},
 		{
 			name: "ampersand",
