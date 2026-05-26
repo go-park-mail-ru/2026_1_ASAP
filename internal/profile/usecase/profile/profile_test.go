@@ -360,7 +360,7 @@ func TestPositiveProfileService_UpdateBioSanitizesHTML(t *testing.T) {
 				userID:  123,
 				request: &dto.RequestUpdateBio{Bio: strPtr(`<script>alert("xss")</script>`)},
 			},
-			wantBio: ``,
+			wantBio: `&lt;script&gt;alert(&#34;xss&#34;)&lt;/script&gt;`,
 		},
 		{
 			name: "ampersand",
@@ -449,8 +449,8 @@ func TestPositiveProfileService_UpdateNameSanitizesHTML(t *testing.T) {
 					LastName:  strPtr(`<img src=x onerror=alert(1)>`),
 				},
 			},
-			wantFirst:   `<b>Ann</b>`,
-			wantLast:    `<img src="x">`,
+			wantFirst:   `&lt;b&gt;Ann&lt;/b&gt;`,
+			wantLast:    `&lt;img src=x onerror=alert(1)&gt;`,
 			wantNilLast: false,
 		},
 		{

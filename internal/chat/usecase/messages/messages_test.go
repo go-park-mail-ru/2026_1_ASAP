@@ -64,7 +64,7 @@ func TestPositiveMessageService_SendMessageSanitizesHTML(t *testing.T) {
 					Text:   `<img src=x onerror=alert(1)>`,
 				},
 			},
-			wantText: ``,
+			wantText: `&lt;img src=x onerror=alert(1)&gt;`,
 		},
 		{
 			name: "ampersand",
@@ -521,7 +521,7 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 				ID:                7,
 				ChatID:            1,
 				SenderID:          10,
-				Text:              "edited <b>text</b>",
+				Text:              "edited &lt;b&gt;text&lt;/b&gt;",
 				ContentRaw:        "edited <b>text</b>",
 				CreatedAt:         now,
 				Edited:            true,
@@ -529,7 +529,7 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 				LastMessageEdited: true,
 				LastMessage: &dto.LastMessageDTO{
 					SenderId:   10,
-					Text:       "edited <b>text</b>",
+					Text:       "edited &lt;b&gt;text&lt;/b&gt;",
 					ContentRaw: "edited <b>text</b>",
 					CreatedAt:  now,
 				},
@@ -708,7 +708,7 @@ func TestPositiveMessageService_DeleteMessage(t *testing.T) {
 				LastMessageEdited: true,
 				LastMessage: &dto.LastMessageDTO{
 					SenderId:   11,
-					Text:       "prev <b>msg</b>",
+					Text:       "prev &lt;b&gt;msg&lt;/b&gt;",
 					ContentRaw: "prev <b>msg</b>",
 					CreatedAt:  now,
 				},

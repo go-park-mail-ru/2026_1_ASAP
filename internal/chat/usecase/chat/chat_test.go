@@ -1375,7 +1375,7 @@ func TestPositiveChatService_CreateChatSanitizesTitle(t *testing.T) {
 				},
 				ownerID: 100,
 			},
-			wantTitle: `<b>Group</b>`,
+			wantTitle: `&lt;b&gt;Group&lt;/b&gt;`,
 		},
 		{
 			name: "ampersand in title",
@@ -1573,7 +1573,7 @@ func TestPositiveChatService_UpdateChatTitleSanitizesHTML(t *testing.T) {
 				chatID:  11,
 				request: &dto.RequestUpdateTitle{Title: `<script>alert(1)</script>`},
 			},
-			wantTitle: ``,
+			wantTitle: `&lt;script&gt;alert(1)&lt;/script&gt;`,
 		},
 		{
 			name: "ampersand",

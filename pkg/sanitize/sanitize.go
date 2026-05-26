@@ -1,24 +1,9 @@
 package sanitize
 
-import "github.com/microcosm-cc/bluemonday"
-
-var (
-	strictPolicy = bluemonday.UGCPolicy()
-	htmlPolicy   = newMessageHTMLPolicy()
-)
-
-func newMessageHTMLPolicy() *bluemonday.Policy {
-	p := bluemonday.NewPolicy()
-	p.AllowElements(
-		"b", "strong", "i", "em", "u", "s", "strike",
-		"br", "p", "blockquote", "code", "pre",
-		"ul", "ol", "li",
-	)
-	return p
-}
+import "html"
 
 func Text(value string) string {
-	return strictPolicy.Sanitize(value)
+	return html.EscapeString(value)
 }
 
 func TextPtr(value *string) *string {
@@ -30,7 +15,7 @@ func TextPtr(value *string) *string {
 }
 
 func HTML(value string) string {
-	return htmlPolicy.Sanitize(value)
+	return html.EscapeString(value)
 }
 
 func HTMLPtr(value *string) *string {

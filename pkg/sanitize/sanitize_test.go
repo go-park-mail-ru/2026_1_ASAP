@@ -20,9 +20,9 @@ func TestText(t *testing.T) {
 		{name: "plain", value: "Hello World", want: "Hello World"},
 		{name: "ampersand", value: "A & B", want: "A &amp; B"},
 		{name: "less than", value: "x < y", want: "x &lt; y"},
-		{name: "script tag", value: "<script>alert('xss')</script>", want: ""},
-		{name: "bold tag kept", value: "<b>Bold text</b>", want: "<b>Bold text</b>"},
-		{name: "img tag sanitized", value: `<img src=x onerror=alert(1)>`, want: `<img src="x">`},
+		{name: "script tag", value: "<script>alert('xss')</script>", want: "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"},
+		{name: "bold tag escaped", value: "<b>Bold text</b>", want: "&lt;b&gt;Bold text&lt;/b&gt;"},
+		{name: "img tag escaped", value: `<img src=x onerror=alert(1)>`, want: `&lt;img src=x onerror=alert(1)&gt;`},
 		{name: "russian", value: "Привет мир", want: "Привет мир"},
 		{name: "newlines", value: "Line1\nLine2", want: "Line1\nLine2"},
 	}
@@ -43,10 +43,10 @@ func TestHTML(t *testing.T) {
 		{name: "empty", value: "", want: ""},
 		{name: "plain", value: "Hello World", want: "Hello World"},
 		{name: "ampersand", value: "a & b", want: "a &amp; b"},
-		{name: "bold kept", value: "<b>Bold text</b>", want: "<b>Bold text</b>"},
-		{name: "script stripped", value: "<script>alert('xss')</script>", want: ""},
-		{name: "img stripped", value: `<img src=x onerror=alert(1)>`, want: ""},
-		{name: "mixed", value: "edited <b>text</b>", want: "edited <b>text</b>"},
+		{name: "bold escaped", value: "<b>Bold text</b>", want: "&lt;b&gt;Bold text&lt;/b&gt;"},
+		{name: "script escaped", value: "<script>alert('xss')</script>", want: "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"},
+		{name: "img escaped", value: `<img src=x onerror=alert(1)>`, want: `&lt;img src=x onerror=alert(1)&gt;`},
+		{name: "mixed", value: "edited <b>text</b>", want: "edited &lt;b&gt;text&lt;/b&gt;"},
 	}
 
 	for _, tt := range tests {
@@ -67,11 +67,10 @@ func TestHTMLPtr(t *testing.T) {
 	require.Nil(t, HTMLPtr(nil))
 	got := HTMLPtr(strPtr("edited <b>x</b>"))
 	require.NotNil(t, got)
-	require.Equal(t, "edited <b>x</b>", *got)
+	require.Equal(t, "edited &lt;b&gt;x&lt;/b&gt;", *got)
 }
 
-func TestTextAndHTML_differOnImg(t *testing.T) {
+func TestTextAndHTML_match(t *testing.T) {
 	raw := `<img src=x onerror=alert(1)>`
-	require.Equal(t, `<img src="x">`, Text(raw))
-	require.Equal(t, "", HTML(raw))
+	require.Equal(t, Text(raw), HTML(raw))
 }
