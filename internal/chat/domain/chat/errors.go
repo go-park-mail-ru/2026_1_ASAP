@@ -45,4 +45,7 @@ var (
 	ErrAttachmentForbidden               = errors.New("attachment access forbidden")
 	ErrStickerNotFound                   = errors.New("sticker not found")
 	ErrInvalidSticker                    = errors.New("invalid sticker")
+	ErrSubscriptionRequired              = errors.New("subscription required")
+	ErrNotVoiceMessage                   = errors.New("message has no voice attachment")
+	ErrTranscriptionFailed               = errors.New("voice transcription failed")
 )

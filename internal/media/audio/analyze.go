@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	MaxVoiceDurationMs = 60000
+	MaxVoiceDurationMs = 30000
 	WaveformBars       = 100
 	MaxVoiceBytes      = 5 * 1024 * 1024
 )

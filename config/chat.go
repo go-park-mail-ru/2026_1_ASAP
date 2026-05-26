@@ -8,14 +8,19 @@ import (
 )
 
 type ChatConfig struct {
-	ServerConfig      ServerConfig
-	WSServerConfig    ServerConfig
-	PostgresConfig    PostgresConfig
-	RedisConfig       RedisConfig
-	ChatMediaConfig   ChatMediaConfig
-	ChatProfileConfig ChatProfileConfig
-	GatewayPublicURL  string `yaml:"gateway_public_url" env-default:"http://localhost:8088"`
-	AppConfig         AppConfig
+	ServerConfig           ServerConfig
+	WSServerConfig         ServerConfig
+	PostgresConfig         PostgresConfig
+	RedisConfig            RedisConfig
+	ChatMediaConfig        ChatMediaConfig
+	ChatProfileConfig      ChatProfileConfig
+	ChatSubscriptionConfig ChatSubscriptionConfig
+	GatewayPublicURL       string `yaml:"gateway_public_url" env-default:"http://localhost:8088"`
+	AppConfig              AppConfig
+}
+
+type ChatSubscriptionConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" env-default:"subscription:8011"`
 }
 
 type ChatMediaConfig struct {
@@ -42,9 +47,10 @@ type chatFile struct {
 		DB       string `yaml:"db"`
 		Password string `yaml:"password" env:"POSTGRES_PASSWORD" env-default:""`
 	} `yaml:"postgres"`
-	Media            ChatMediaConfig   `yaml:"media"`
-	Profile          ChatProfileConfig `yaml:"profile"`
-	GatewayPublicURL string            `yaml:"gateway_public_url"`
+	Media            ChatMediaConfig        `yaml:"media"`
+	Profile          ChatProfileConfig      `yaml:"profile"`
+	Subscription     ChatSubscriptionConfig `yaml:"subscription"`
+	GatewayPublicURL string                 `yaml:"gateway_public_url"`
 	Redis            struct {
 		Host     string `yaml:"host"`
 		Port     string `yaml:"port"`
@@ -86,9 +92,10 @@ func LoadChatConfigFromPath(path string) (*ChatConfig, error) {
 			Password: raw.Postgres.Password,
 			Database: raw.Postgres.DB,
 		},
-		ChatMediaConfig:   ChatMediaConfig{GRPCAddr: raw.Media.GRPCAddr},
-		ChatProfileConfig: ChatProfileConfig{GRPCAddr: raw.Profile.GRPCAddr},
-		GatewayPublicURL:  raw.GatewayPublicURL,
+		ChatMediaConfig:        ChatMediaConfig{GRPCAddr: raw.Media.GRPCAddr},
+		ChatProfileConfig:      ChatProfileConfig{GRPCAddr: raw.Profile.GRPCAddr},
+		ChatSubscriptionConfig: ChatSubscriptionConfig{GRPCAddr: raw.Subscription.GRPCAddr},
+		GatewayPublicURL:       raw.GatewayPublicURL,
 		RedisConfig: RedisConfig{
 			Host:     raw.Redis.Host,
 			Port:     raw.Redis.Port,

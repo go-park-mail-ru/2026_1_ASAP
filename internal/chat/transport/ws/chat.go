@@ -57,6 +57,11 @@ type MessagesServiceInterface interface {
 	EditMessage(ctx context.Context, userID, chatID int64, req *dto.RequestEditMessage) (*dto.ResponseEditMessage, error)
 	DeleteMessage(ctx context.Context, userID, chatID int64, req *dto.RequestDeleteMessage) (*dto.ResponseClearMessage, error)
 	MarkMessagesRead(ctx context.Context, userID, chatID int64, req *dto.RequestMarkRead) (*dto.ResponseMarkRead, error)
+	TranscribeVoiceMessage(ctx context.Context, userID, chatID, messageID int64) (*dto.ResponseVoiceTranscript, error)
+}
+
+type SubscriptionChecker interface {
+	IsActive(ctx context.Context, userID int64) (bool, error)
 }
 
 type ChatServiceInterface interface {
@@ -88,6 +93,7 @@ type ChatServer struct {
 	messageService          MessagesServiceInterface
 	chatService             ChatServiceInterface
 	presenceService         PresenceServiceInterface
+	subscription            SubscriptionChecker
 	onlineRepo              OnlineRepository
 	subscribers             map[*subscriber]struct{}
 	subscribersByUserID     map[int64]map[*subscriber]struct{}
@@ -102,6 +108,7 @@ func NewChatServer(
 	messageService MessagesServiceInterface,
 	chatService ChatServiceInterface,
 	presenceService PresenceServiceInterface,
+	subscription SubscriptionChecker,
 	onlineRepo OnlineRepository,
 ) *ChatServer {
 	if logger == nil {
@@ -114,6 +121,7 @@ func NewChatServer(
 		messageService:          messageService,
 		chatService:             chatService,
 		presenceService:         presenceService,
+		subscription:            subscription,
 		onlineRepo:              onlineRepo,
 		subscriberMessageBuffer: 16,
 	}
@@ -186,6 +194,52 @@ func (s *ChatServer) publishMessageNewToChatMembers(ctx context.Context, chatID 
 	for _, sub := range subs {
 		payload := append([]byte(nil), message...)
 		s.enqueueToSubscriber(sub, payload)
+	}
+}
+
+func (s *ChatServer) publishVoiceTranscriptToSubscribers(ctx context.Context, chatID, requesterUserID int64, payload []byte) {
+	log := loggerctx.From(ctx)
+	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		log.Warn("ws get chat members for voice transcript", zap.Int64("chat_id", chatID), zap.Error(err))
+		return
+	}
+	if len(memberIDs) == 0 {
+		return
+	}
+
+	s.mu.RLock()
+	type subTarget struct {
+		sub    *subscriber
+		userID int64
+	}
+	targets := make([]subTarget, 0)
+	for _, uid := range memberIDs {
+		if userHub, ok := s.subscribersByUserID[uid]; ok {
+			for sub := range userHub {
+				targets = append(targets, subTarget{sub: sub, userID: uid})
+			}
+		}
+	}
+	s.mu.RUnlock()
+
+	for _, t := range targets {
+		if t.userID == requesterUserID {
+			continue
+		}
+		if s.subscription == nil {
+			continue
+		}
+		active, err := s.subscription.IsActive(ctx, t.userID)
+		if err != nil {
+			log.Warn("ws subscription check for voice transcript", zap.Int64("user_id", t.userID), zap.Error(err))
+			continue
+		}
+		if !active {
+			continue
+		}
+		msg := append([]byte(nil), payload...)
+		s.enqueueToSubscriber(t.sub, msg)
 	}
 }
 
@@ -688,6 +742,80 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 			}
 
 			s.enqueueToSubscriber(sub, out)
+
+		case dtoWs.MessageTranscribeVoice:
+			var req dto.RequestTranscribeVoice
+			if len(env.Payload) == 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if err := json.Unmarshal(env.Payload, &req); err != nil {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+			if req.ChatID <= 0 || req.MessageID <= 0 {
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInvalidPayload,
+					Message: dtoWs.ErrCodeInvalidPayloadMsg,
+				})
+				continue
+			}
+
+			resp, err := s.messageService.TranscribeVoiceMessage(ctx, userID, req.ChatID, req.MessageID)
+			if err != nil {
+				log.Warn("ws transcribe voice", zap.Int64("chat_id", req.ChatID), zap.Int64("message_id", req.MessageID), zap.Error(err))
+				switch {
+				case errors.Is(err, domain.ErrSubscriptionRequired):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeSubscriptionRequired,
+						Message: dtoWs.ErrCodeSubscriptionRequiredMsg,
+					})
+				case errors.Is(err, domain.ErrMessageNotMember):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeNotMemberOfChat,
+						Message: dtoWs.ErrCodeNotMemberOfChatMsg,
+					})
+				case errors.Is(err, domain.ErrNotVoiceMessage):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeNotVoiceMessage,
+						Message: dtoWs.ErrCodeNotVoiceMessageMsg,
+					})
+				case errors.Is(err, domain.ErrTranscriptionFailed):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeTranscriptionFailed,
+						Message: dtoWs.ErrCodeTranscriptionFailedMsg,
+					})
+				case errors.Is(err, domain.ErrNoMessage):
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeInvalidPayload,
+						Message: dtoWs.ErrCodeInvalidPayloadMsg,
+					})
+				default:
+					s.sendErr(sub, dtoWs.WsErrorPayload{
+						Code:    dtoWs.ErrCodeInternal,
+						Message: dtoWs.ErrCodeInternalMsg,
+					})
+				}
+				continue
+			}
+
+			out, err := dtoWs.EncodeVoiceTranscript(resp)
+			if err != nil {
+				log.Error("ws encode voice transcript", zap.Error(err))
+				s.sendErr(sub, dtoWs.WsErrorPayload{
+					Code:    dtoWs.ErrCodeInternal,
+					Message: dtoWs.ErrCodeInternalMsg,
+				})
+				continue
+			}
+			s.enqueueToSubscriber(sub, out)
+			s.publishVoiceTranscriptToSubscribers(ctx, req.ChatID, userID, out)
 
 		case dtoWs.MessageMarkRead:
 			var req dto.RequestMarkRead

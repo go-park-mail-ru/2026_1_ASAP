@@ -29,6 +29,11 @@ type MessageMediaRepositoryInterface interface {
 		fileName string,
 	) (*chatmedia.UploadMessageAttachmentResult, error)
 	GetMessageVoiceMetadata(ctx context.Context, objectKey string) (*chatmedia.VoiceMetadataResult, error)
+	TranscribeVoice(ctx context.Context, objectKey string) (string, error)
+}
+
+type SubscriptionChecker interface {
+	IsActive(ctx context.Context, userID int64) (bool, error)
 }
 
 type ProfileContactsInterface interface {
@@ -314,11 +319,11 @@ func messageToSendResponse(msg *domain.Message, read bool) *dto.ResponseSendMess
 		CreatedAt:   msg.CreatedAt,
 		Edited:      msg.Edited,
 		Read:        read,
-		Attachments: mapAttachmentsToDTO(msg.Attachments),
+		Attachments: mapAttachmentsToDTOForViewer(msg.Attachments, false),
 	}
 }
 
-func mapAttachmentsToDTO(attachments []domain.MessageAttachment) []dto.MessageAttachmentDTO {
+func mapAttachmentsToDTOForViewer(attachments []domain.MessageAttachment, subscriptionActive bool) []dto.MessageAttachmentDTO {
 	if len(attachments) == 0 {
 		return nil
 	}
@@ -336,6 +341,13 @@ func mapAttachmentsToDTO(attachments []domain.MessageAttachment) []dto.MessageAt
 		item.DurationMs = a.DurationMs
 		if len(a.Waveform) > 0 {
 			item.Waveform = a.Waveform
+		}
+		if subscriptionActive && a.Type == domain.AttachmentTypeVoice {
+			can := true
+			item.CanTranscribe = &can
+			if a.Transcript != nil && *a.Transcript != "" {
+				item.Transcript = a.Transcript
+			}
 		}
 		out = append(out, item)
 	}

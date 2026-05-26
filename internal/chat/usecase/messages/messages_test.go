@@ -115,7 +115,7 @@ func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088")
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			resp, err := s.SendMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.NoError(t, err)
 			require.Equal(t, tt.wantText, resp.Text)
@@ -220,7 +220,7 @@ func TestNegativeMessageService_SendMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088")
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			resp, err := s.SendMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.Nil(t, resp)
 			if tt.wantAnyErr {
@@ -336,7 +336,7 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088")
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.GetMessagesByChatId(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
@@ -414,7 +414,7 @@ func TestNegativeMessageService_GetMessagesByChatId(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088")
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.GetMessagesByChatId(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.Nil(t, got)
 			if tt.wantAnyErr {
@@ -509,7 +509,7 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088")
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.EditMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
@@ -598,7 +598,7 @@ func TestNegativeMessageService_EditMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088")
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.EditMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.Nil(t, got)
 			if tt.wantAnyErr {
@@ -687,7 +687,7 @@ func TestPositiveMessageService_DeleteMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088")
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.DeleteMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
@@ -773,7 +773,7 @@ func TestNegativeMessageService_DeleteMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088")
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.DeleteMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.Nil(t, got)
 			if tt.wantAnyErr {

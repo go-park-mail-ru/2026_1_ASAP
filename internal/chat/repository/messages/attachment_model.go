@@ -23,6 +23,7 @@ type AttachmentModel struct {
 	ContactUserID    sql.NullInt64
 	FileSize         sql.NullInt64
 	DurationMs       sql.NullInt32
+	Transcript       sql.NullString
 	SortOrder        int
 }
 
@@ -78,6 +79,10 @@ func attachmentToDomain(m *AttachmentModel) domain.MessageAttachment {
 	if m.ContactAvatarURL.Valid {
 		v := m.ContactAvatarURL.String
 		out.ContactAvatarURL = &v
+	}
+	if m.Transcript.Valid {
+		v := m.Transcript.String
+		out.Transcript = &v
 	}
 	return out
 }

@@ -31,3 +31,9 @@ var GetAttachmentsByMessageIDs string
 
 //go:embed can_access_attachment.sql
 var CanAccessAttachment string
+
+//go:embed update_message_attachment_transcript.sql
+var UpdateMessageAttachmentTranscript string
+
+//go:embed get_message_by_id.sql
+var GetMessageByID string

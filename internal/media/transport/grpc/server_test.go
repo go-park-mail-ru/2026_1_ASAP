@@ -600,7 +600,7 @@ func TestNewMediaServer(t *testing.T) {
 	mockRepo := mock.NewMockMediaRepositoryInterface(ctrl)
 	logger := zap.NewNop()
 
-	server := NewMediaServer(mockRepo, logger)
+	server := NewMediaServer(mockRepo, nil, logger)
 	require.NotNil(t, server)
 	require.Equal(t, mockRepo, server.MediaRepository)
 	require.Equal(t, logger, server.logger)

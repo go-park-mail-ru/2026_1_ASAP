@@ -79,13 +79,14 @@ func (MessageAttachmentKind) EnumDescriptor() ([]byte, []int) {
 type MediaErrorCode int32
 
 const (
-	MediaErrorCode_MEDIA_ERROR_UNSPECIFIED       MediaErrorCode = 0
-	MediaErrorCode_MEDIA_ERROR_FILE_TOO_LARGE    MediaErrorCode = 1
-	MediaErrorCode_MEDIA_ERROR_FILE_INVALID_TYPE MediaErrorCode = 2
-	MediaErrorCode_MEDIA_ERROR_FILE_EMPTY        MediaErrorCode = 3
-	MediaErrorCode_MEDIA_ERROR_INTERNAL          MediaErrorCode = 4
-	MediaErrorCode_MEDIA_ERROR_INVALID_INPUT     MediaErrorCode = 5
-	MediaErrorCode_MEDIA_ERROR_VOICE_TOO_LONG    MediaErrorCode = 6
+	MediaErrorCode_MEDIA_ERROR_UNSPECIFIED          MediaErrorCode = 0
+	MediaErrorCode_MEDIA_ERROR_FILE_TOO_LARGE       MediaErrorCode = 1
+	MediaErrorCode_MEDIA_ERROR_FILE_INVALID_TYPE    MediaErrorCode = 2
+	MediaErrorCode_MEDIA_ERROR_FILE_EMPTY           MediaErrorCode = 3
+	MediaErrorCode_MEDIA_ERROR_INTERNAL             MediaErrorCode = 4
+	MediaErrorCode_MEDIA_ERROR_INVALID_INPUT        MediaErrorCode = 5
+	MediaErrorCode_MEDIA_ERROR_VOICE_TOO_LONG       MediaErrorCode = 6
+	MediaErrorCode_MEDIA_ERROR_TRANSCRIPTION_FAILED MediaErrorCode = 7
 )
 
 // Enum value maps for MediaErrorCode.
@@ -98,15 +99,17 @@ var (
 		4: "MEDIA_ERROR_INTERNAL",
 		5: "MEDIA_ERROR_INVALID_INPUT",
 		6: "MEDIA_ERROR_VOICE_TOO_LONG",
+		7: "MEDIA_ERROR_TRANSCRIPTION_FAILED",
 	}
 	MediaErrorCode_value = map[string]int32{
-		"MEDIA_ERROR_UNSPECIFIED":       0,
-		"MEDIA_ERROR_FILE_TOO_LARGE":    1,
-		"MEDIA_ERROR_FILE_INVALID_TYPE": 2,
-		"MEDIA_ERROR_FILE_EMPTY":        3,
-		"MEDIA_ERROR_INTERNAL":          4,
-		"MEDIA_ERROR_INVALID_INPUT":     5,
-		"MEDIA_ERROR_VOICE_TOO_LONG":    6,
+		"MEDIA_ERROR_UNSPECIFIED":          0,
+		"MEDIA_ERROR_FILE_TOO_LARGE":       1,
+		"MEDIA_ERROR_FILE_INVALID_TYPE":    2,
+		"MEDIA_ERROR_FILE_EMPTY":           3,
+		"MEDIA_ERROR_INTERNAL":             4,
+		"MEDIA_ERROR_INVALID_INPUT":        5,
+		"MEDIA_ERROR_VOICE_TOO_LONG":       6,
+		"MEDIA_ERROR_TRANSCRIPTION_FAILED": 7,
 	}
 )
 
@@ -757,6 +760,94 @@ func (x *ResponseGetMessageVoiceMetadata) GetFileSize() int64 {
 	return 0
 }
 
+type RequestTranscribeVoice struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ObjectKey     string                 `protobuf:"bytes,1,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestTranscribeVoice) Reset() {
+	*x = RequestTranscribeVoice{}
+	mi := &file_media_v1_media_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestTranscribeVoice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestTranscribeVoice) ProtoMessage() {}
+
+func (x *RequestTranscribeVoice) ProtoReflect() protoreflect.Message {
+	mi := &file_media_v1_media_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestTranscribeVoice.ProtoReflect.Descriptor instead.
+func (*RequestTranscribeVoice) Descriptor() ([]byte, []int) {
+	return file_media_v1_media_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RequestTranscribeVoice) GetObjectKey() string {
+	if x != nil {
+		return x.ObjectKey
+	}
+	return ""
+}
+
+type ResponseTranscribeVoice struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Transcript    string                 `protobuf:"bytes,1,opt,name=transcript,proto3" json:"transcript,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResponseTranscribeVoice) Reset() {
+	*x = ResponseTranscribeVoice{}
+	mi := &file_media_v1_media_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResponseTranscribeVoice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResponseTranscribeVoice) ProtoMessage() {}
+
+func (x *ResponseTranscribeVoice) ProtoReflect() protoreflect.Message {
+	mi := &file_media_v1_media_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResponseTranscribeVoice.ProtoReflect.Descriptor instead.
+func (*ResponseTranscribeVoice) Descriptor() ([]byte, []int) {
+	return file_media_v1_media_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ResponseTranscribeVoice) GetTranscript() string {
+	if x != nil {
+		return x.Transcript
+	}
+	return ""
+}
+
 type RequestGetMessageAttachment struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ObjectKey     string                 `protobuf:"bytes,1,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
@@ -766,7 +857,7 @@ type RequestGetMessageAttachment struct {
 
 func (x *RequestGetMessageAttachment) Reset() {
 	*x = RequestGetMessageAttachment{}
-	mi := &file_media_v1_media_proto_msgTypes[11]
+	mi := &file_media_v1_media_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -778,7 +869,7 @@ func (x *RequestGetMessageAttachment) String() string {
 func (*RequestGetMessageAttachment) ProtoMessage() {}
 
 func (x *RequestGetMessageAttachment) ProtoReflect() protoreflect.Message {
-	mi := &file_media_v1_media_proto_msgTypes[11]
+	mi := &file_media_v1_media_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -791,7 +882,7 @@ func (x *RequestGetMessageAttachment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestGetMessageAttachment.ProtoReflect.Descriptor instead.
 func (*RequestGetMessageAttachment) Descriptor() ([]byte, []int) {
-	return file_media_v1_media_proto_rawDescGZIP(), []int{11}
+	return file_media_v1_media_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RequestGetMessageAttachment) GetObjectKey() string {
@@ -812,7 +903,7 @@ type ResponseGetMessageAttachment struct {
 
 func (x *ResponseGetMessageAttachment) Reset() {
 	*x = ResponseGetMessageAttachment{}
-	mi := &file_media_v1_media_proto_msgTypes[12]
+	mi := &file_media_v1_media_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -824,7 +915,7 @@ func (x *ResponseGetMessageAttachment) String() string {
 func (*ResponseGetMessageAttachment) ProtoMessage() {}
 
 func (x *ResponseGetMessageAttachment) ProtoReflect() protoreflect.Message {
-	mi := &file_media_v1_media_proto_msgTypes[12]
+	mi := &file_media_v1_media_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -837,7 +928,7 @@ func (x *ResponseGetMessageAttachment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResponseGetMessageAttachment.ProtoReflect.Descriptor instead.
 func (*ResponseGetMessageAttachment) Descriptor() ([]byte, []int) {
-	return file_media_v1_media_proto_rawDescGZIP(), []int{12}
+	return file_media_v1_media_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ResponseGetMessageAttachment) GetContent() []byte {
@@ -870,7 +961,7 @@ type RequestDeleteUserAvatar struct {
 
 func (x *RequestDeleteUserAvatar) Reset() {
 	*x = RequestDeleteUserAvatar{}
-	mi := &file_media_v1_media_proto_msgTypes[13]
+	mi := &file_media_v1_media_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -882,7 +973,7 @@ func (x *RequestDeleteUserAvatar) String() string {
 func (*RequestDeleteUserAvatar) ProtoMessage() {}
 
 func (x *RequestDeleteUserAvatar) ProtoReflect() protoreflect.Message {
-	mi := &file_media_v1_media_proto_msgTypes[13]
+	mi := &file_media_v1_media_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -895,7 +986,7 @@ func (x *RequestDeleteUserAvatar) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestDeleteUserAvatar.ProtoReflect.Descriptor instead.
 func (*RequestDeleteUserAvatar) Descriptor() ([]byte, []int) {
-	return file_media_v1_media_proto_rawDescGZIP(), []int{13}
+	return file_media_v1_media_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *RequestDeleteUserAvatar) GetUserId() int64 {
@@ -913,7 +1004,7 @@ type ResponseDeleteUserAvatar struct {
 
 func (x *ResponseDeleteUserAvatar) Reset() {
 	*x = ResponseDeleteUserAvatar{}
-	mi := &file_media_v1_media_proto_msgTypes[14]
+	mi := &file_media_v1_media_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -925,7 +1016,7 @@ func (x *ResponseDeleteUserAvatar) String() string {
 func (*ResponseDeleteUserAvatar) ProtoMessage() {}
 
 func (x *ResponseDeleteUserAvatar) ProtoReflect() protoreflect.Message {
-	mi := &file_media_v1_media_proto_msgTypes[14]
+	mi := &file_media_v1_media_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -938,7 +1029,7 @@ func (x *ResponseDeleteUserAvatar) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResponseDeleteUserAvatar.ProtoReflect.Descriptor instead.
 func (*ResponseDeleteUserAvatar) Descriptor() ([]byte, []int) {
-	return file_media_v1_media_proto_rawDescGZIP(), []int{14}
+	return file_media_v1_media_proto_rawDescGZIP(), []int{16}
 }
 
 var File_media_v1_media_proto protoreflect.FileDescriptor
@@ -996,7 +1087,14 @@ const file_media_v1_media_proto_rawDesc = "" +
 	"durationMs\x12\x1a\n" +
 	"\bwaveform\x18\x02 \x03(\rR\bwaveform\x12\x1b\n" +
 	"\tmime_type\x18\x03 \x01(\tR\bmimeType\x12\x1b\n" +
-	"\tfile_size\x18\x04 \x01(\x03R\bfileSize\"<\n" +
+	"\tfile_size\x18\x04 \x01(\x03R\bfileSize\"7\n" +
+	"\x16RequestTranscribeVoice\x12\x1d\n" +
+	"\n" +
+	"object_key\x18\x01 \x01(\tR\tobjectKey\"9\n" +
+	"\x17ResponseTranscribeVoice\x12\x1e\n" +
+	"\n" +
+	"transcript\x18\x01 \x01(\tR\n" +
+	"transcript\"<\n" +
 	"\x1bRequestGetMessageAttachment\x12\x1d\n" +
 	"\n" +
 	"object_key\x18\x01 \x01(\tR\tobjectKey\"o\n" +
@@ -1012,7 +1110,7 @@ const file_media_v1_media_proto_rawDesc = "" +
 	"\x1dMESSAGE_ATTACHMENT_KIND_PHOTO\x10\x01\x12!\n" +
 	"\x1dMESSAGE_ATTACHMENT_KIND_VIDEO\x10\x02\x12 \n" +
 	"\x1cMESSAGE_ATTACHMENT_KIND_FILE\x10\x03\x12!\n" +
-	"\x1dMESSAGE_ATTACHMENT_KIND_VOICE\x10\x04*\xe5\x01\n" +
+	"\x1dMESSAGE_ATTACHMENT_KIND_VOICE\x10\x04*\x8b\x02\n" +
 	"\x0eMediaErrorCode\x12\x1b\n" +
 	"\x17MEDIA_ERROR_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aMEDIA_ERROR_FILE_TOO_LARGE\x10\x01\x12!\n" +
@@ -1020,14 +1118,16 @@ const file_media_v1_media_proto_rawDesc = "" +
 	"\x16MEDIA_ERROR_FILE_EMPTY\x10\x03\x12\x18\n" +
 	"\x14MEDIA_ERROR_INTERNAL\x10\x04\x12\x1d\n" +
 	"\x19MEDIA_ERROR_INVALID_INPUT\x10\x05\x12\x1e\n" +
-	"\x1aMEDIA_ERROR_VOICE_TOO_LONG\x10\x062\xd5\x05\n" +
+	"\x1aMEDIA_ERROR_VOICE_TOO_LONG\x10\x06\x12$\n" +
+	" MEDIA_ERROR_TRANSCRIPTION_FAILED\x10\a2\xad\x06\n" +
 	"\x05Media\x12Y\n" +
 	"\x10UpdateUserAvatar\x12!.media.v1.RequestUpdateUserAvatar\x1a\".media.v1.ResponseUpdateUserAvatar\x12Y\n" +
 	"\x10UploadChatAvatar\x12!.media.v1.RequestUpdateChatAvatar\x1a\".media.v1.ResponseUpdateChatAvatar\x12t\n" +
 	"\x19UploadComplaintAttachment\x12*.media.v1.RequestUpdateComplaintAttachment\x1a+.media.v1.ResponseUpdateComplaintAttachment\x12n\n" +
 	"\x17UploadMessageAttachment\x12(.media.v1.RequestUploadMessageAttachment\x1a).media.v1.ResponseUploadMessageAttachment\x12e\n" +
 	"\x14GetMessageAttachment\x12%.media.v1.RequestGetMessageAttachment\x1a&.media.v1.ResponseGetMessageAttachment\x12n\n" +
-	"\x17GetMessageVoiceMetadata\x12(.media.v1.RequestGetMessageVoiceMetadata\x1a).media.v1.ResponseGetMessageVoiceMetadata\x12Y\n" +
+	"\x17GetMessageVoiceMetadata\x12(.media.v1.RequestGetMessageVoiceMetadata\x1a).media.v1.ResponseGetMessageVoiceMetadata\x12V\n" +
+	"\x0fTranscribeVoice\x12 .media.v1.RequestTranscribeVoice\x1a!.media.v1.ResponseTranscribeVoice\x12Y\n" +
 	"\x10DeleteUserAvatar\x12!.media.v1.RequestDeleteUserAvatar\x1a\".media.v1.ResponseDeleteUserAvatarB@Z>github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1;mediav1b\x06proto3"
 
 var (
@@ -1043,7 +1143,7 @@ func file_media_v1_media_proto_rawDescGZIP() []byte {
 }
 
 var file_media_v1_media_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_media_v1_media_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_media_v1_media_proto_goTypes = []any{
 	(MessageAttachmentKind)(0),                // 0: media.v1.MessageAttachmentKind
 	(MediaErrorCode)(0),                       // 1: media.v1.MediaErrorCode
@@ -1058,10 +1158,12 @@ var file_media_v1_media_proto_goTypes = []any{
 	(*ResponseUploadMessageAttachment)(nil),   // 10: media.v1.ResponseUploadMessageAttachment
 	(*RequestGetMessageVoiceMetadata)(nil),    // 11: media.v1.RequestGetMessageVoiceMetadata
 	(*ResponseGetMessageVoiceMetadata)(nil),   // 12: media.v1.ResponseGetMessageVoiceMetadata
-	(*RequestGetMessageAttachment)(nil),       // 13: media.v1.RequestGetMessageAttachment
-	(*ResponseGetMessageAttachment)(nil),      // 14: media.v1.ResponseGetMessageAttachment
-	(*RequestDeleteUserAvatar)(nil),           // 15: media.v1.RequestDeleteUserAvatar
-	(*ResponseDeleteUserAvatar)(nil),          // 16: media.v1.ResponseDeleteUserAvatar
+	(*RequestTranscribeVoice)(nil),            // 13: media.v1.RequestTranscribeVoice
+	(*ResponseTranscribeVoice)(nil),           // 14: media.v1.ResponseTranscribeVoice
+	(*RequestGetMessageAttachment)(nil),       // 15: media.v1.RequestGetMessageAttachment
+	(*ResponseGetMessageAttachment)(nil),      // 16: media.v1.ResponseGetMessageAttachment
+	(*RequestDeleteUserAvatar)(nil),           // 17: media.v1.RequestDeleteUserAvatar
+	(*ResponseDeleteUserAvatar)(nil),          // 18: media.v1.ResponseDeleteUserAvatar
 }
 var file_media_v1_media_proto_depIdxs = []int32{
 	2,  // 0: media.v1.RequestUpdateUserAvatar.avatar:type_name -> media.v1.File
@@ -1073,18 +1175,20 @@ var file_media_v1_media_proto_depIdxs = []int32{
 	5,  // 6: media.v1.Media.UploadChatAvatar:input_type -> media.v1.RequestUpdateChatAvatar
 	7,  // 7: media.v1.Media.UploadComplaintAttachment:input_type -> media.v1.RequestUpdateComplaintAttachment
 	9,  // 8: media.v1.Media.UploadMessageAttachment:input_type -> media.v1.RequestUploadMessageAttachment
-	13, // 9: media.v1.Media.GetMessageAttachment:input_type -> media.v1.RequestGetMessageAttachment
+	15, // 9: media.v1.Media.GetMessageAttachment:input_type -> media.v1.RequestGetMessageAttachment
 	11, // 10: media.v1.Media.GetMessageVoiceMetadata:input_type -> media.v1.RequestGetMessageVoiceMetadata
-	15, // 11: media.v1.Media.DeleteUserAvatar:input_type -> media.v1.RequestDeleteUserAvatar
-	4,  // 12: media.v1.Media.UpdateUserAvatar:output_type -> media.v1.ResponseUpdateUserAvatar
-	6,  // 13: media.v1.Media.UploadChatAvatar:output_type -> media.v1.ResponseUpdateChatAvatar
-	8,  // 14: media.v1.Media.UploadComplaintAttachment:output_type -> media.v1.ResponseUpdateComplaintAttachment
-	10, // 15: media.v1.Media.UploadMessageAttachment:output_type -> media.v1.ResponseUploadMessageAttachment
-	14, // 16: media.v1.Media.GetMessageAttachment:output_type -> media.v1.ResponseGetMessageAttachment
-	12, // 17: media.v1.Media.GetMessageVoiceMetadata:output_type -> media.v1.ResponseGetMessageVoiceMetadata
-	16, // 18: media.v1.Media.DeleteUserAvatar:output_type -> media.v1.ResponseDeleteUserAvatar
-	12, // [12:19] is the sub-list for method output_type
-	5,  // [5:12] is the sub-list for method input_type
+	13, // 11: media.v1.Media.TranscribeVoice:input_type -> media.v1.RequestTranscribeVoice
+	17, // 12: media.v1.Media.DeleteUserAvatar:input_type -> media.v1.RequestDeleteUserAvatar
+	4,  // 13: media.v1.Media.UpdateUserAvatar:output_type -> media.v1.ResponseUpdateUserAvatar
+	6,  // 14: media.v1.Media.UploadChatAvatar:output_type -> media.v1.ResponseUpdateChatAvatar
+	8,  // 15: media.v1.Media.UploadComplaintAttachment:output_type -> media.v1.ResponseUpdateComplaintAttachment
+	10, // 16: media.v1.Media.UploadMessageAttachment:output_type -> media.v1.ResponseUploadMessageAttachment
+	16, // 17: media.v1.Media.GetMessageAttachment:output_type -> media.v1.ResponseGetMessageAttachment
+	12, // 18: media.v1.Media.GetMessageVoiceMetadata:output_type -> media.v1.ResponseGetMessageVoiceMetadata
+	14, // 19: media.v1.Media.TranscribeVoice:output_type -> media.v1.ResponseTranscribeVoice
+	18, // 20: media.v1.Media.DeleteUserAvatar:output_type -> media.v1.ResponseDeleteUserAvatar
+	13, // [13:21] is the sub-list for method output_type
+	5,  // [5:13] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -1103,7 +1207,7 @@ func file_media_v1_media_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_media_v1_media_proto_rawDesc), len(file_media_v1_media_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   15,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

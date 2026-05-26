@@ -12,6 +12,9 @@ s3:
   public_port: ""
   public_path: /
 
+speechkit:
+  lang: ru-RU
+
 app:
   shutdown_seconds: 20
   log_level: info

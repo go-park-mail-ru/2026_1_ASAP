@@ -20,6 +20,8 @@ type MessageRepositoryInterface interface {
 	CreateMessageWithAttachments(ctx context.Context, message *domain.Message, attachments []domain.MessageAttachment) (*domain.Message, error)
 	GetMessagesByChatId(ctx context.Context, chatId int64, beforeID *int64, limit int) ([]*domain.Message, error)
 	GetAttachmentsByMessageIDs(ctx context.Context, messageIDs []int64) (map[int64][]domain.MessageAttachment, error)
+	GetMessageByID(ctx context.Context, chatID, messageID int64) (*domain.Message, error)
+	UpdateAttachmentTranscript(ctx context.Context, attachmentID int64, transcript string) (*domain.MessageAttachment, error)
 	CanUserAccessAttachment(ctx context.Context, userID int64, objectKey, attachmentRef string) (bool, error)
 	UpdateMessage(ctx context.Context, message *domain.Message) (*domain.Message, bool, error)
 	DeleteMessage(ctx context.Context, message *domain.Message) (*domain.Message, bool, error)
@@ -43,6 +45,7 @@ type MessageService struct {
 	chatRepo            ChatRepositoryInterface
 	mediaRepo           MessageMediaRepositoryInterface
 	profileRepo         ProfileContactsInterface
+	subscription        SubscriptionChecker
 	stickerRepo         StickerRepositoryInterface
 	attachmentProxyBase string
 }
@@ -53,6 +56,7 @@ func NewMessageService(
 	mediaRepo MessageMediaRepositoryInterface,
 	profileRepo ProfileContactsInterface,
 	attachmentProxyBase string,
+	subscription SubscriptionChecker,
 	stickerRepo ...StickerRepositoryInterface,
 ) *MessageService {
 	var stickers StickerRepositoryInterface
@@ -64,6 +68,7 @@ func NewMessageService(
 		chatRepo:            chatRepo,
 		mediaRepo:           mediaRepo,
 		profileRepo:         profileRepo,
+		subscription:        subscription,
 		stickerRepo:         stickers,
 		attachmentProxyBase: strings.TrimRight(attachmentProxyBase, "/"),
 	}
@@ -124,6 +129,11 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 		return nil, err
 	}
 
+	subscriptionActive, err := m.isSubscriptionActive(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check subscription: %w", err)
+	}
+
 	items := make([]dto.MessageDTO, 0, len(raw))
 	for _, msg := range raw {
 		items = append(items, dto.MessageDTO{
@@ -134,7 +144,7 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 			CreatedAt:   msg.CreatedAt,
 			Edited:      msg.Edited,
 			Read:        outgoingReadByPeers(msg.Id, msg.SenderId, userID, lastReads),
-			Attachments: mapAttachmentsToDTO(attachmentsByMessage[msg.Id]),
+			Attachments: mapAttachmentsToDTOForViewer(attachmentsByMessage[msg.Id], subscriptionActive),
 			Sticker:     stickerDTOFromMessage(msg, stickersByID),
 		})
 	}
