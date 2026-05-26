@@ -23,6 +23,7 @@ type PaymentUseCase interface {
 	HandleYooKassaWebhook(ctx context.Context, rawBody []byte) error
 }
 
+//go:generate mockgen -source=server.go -destination=mock/payment_usecase_mock.go -package=mock
 type PaymentServer struct {
 	paymentv1.UnimplementedPaymentServer
 

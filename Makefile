@@ -17,7 +17,7 @@ generate: $(MOCKGEN) $(EASYJSON)
 
 coverage: generate
 	go test $(COVER_PKGS) -coverprofile=coverage.raw.out
-	grep -Ev '(^|/)(mock|gen)(/|$$)|_easyjson\.go:' coverage.raw.out > coverage.out
+	grep -Ev '(^|/)(mock|gen|dto|docs|tools)(/|$$)|(^|/)dto\.go:|_easyjson\.go:|/transport/grpc/clients/' coverage.raw.out > coverage.out
 	rm -f coverage.raw.out
 	go tool cover -func=coverage.out
 
@@ -32,7 +32,7 @@ lint: generate $(GOLANGCI_LINT)
 lint-fix: $(GOLANGCI_LINT)
 	PATH="$(shell go env GOPATH)/bin:$${PATH}" golangci-lint run ./... --fix
 
-COVER_PKGS := $(shell go list ./... | grep -Ev '/mock$$|/gen(/|$$)')
+COVER_PKGS := $(shell go list ./... | grep -Ev '/mock$$|/gen(/|$$)|/dto(/|$$)|/cmd(/|$$)|/docs$$|/tools(/|$$)|/transport/grpc/clients/|/transport/subscription$$|/transport/ws$$|/gateway/ws$$')
 
 install-mockgen:
 	go install github.com/golang/mock/mockgen@v1.6.0
