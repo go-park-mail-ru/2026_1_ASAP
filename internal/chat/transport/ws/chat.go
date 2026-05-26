@@ -17,6 +17,7 @@ import (
 	chatdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	dtoWs "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/ws"
+	messagesuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
 )
 
@@ -169,7 +170,55 @@ func (s *ChatServer) sendErr(sub *subscriber, p dtoWs.WsErrorPayload) {
 	s.enqueueToSubscriber(sub, b)
 }
 
-func (s *ChatServer) publishMessageNewToChatMembers(ctx context.Context, chatID int64, message []byte) {
+func (s *ChatServer) publishMessageNewPerViewer(ctx context.Context, chatID int64, resp *dto.ResponseSendMessage) {
+	log := loggerctx.From(ctx)
+	if resp == nil {
+		return
+	}
+	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		log.Warn("ws get chat members for publish", zap.Int64("chat_id", chatID), zap.Error(err))
+		return
+	}
+	if len(memberIDs) == 0 {
+		return
+	}
+
+	s.mu.RLock()
+	type subTarget struct {
+		sub    *subscriber
+		userID int64
+	}
+	targets := make([]subTarget, 0)
+	for _, uid := range memberIDs {
+		if userHub, ok := s.subscribersByUserID[uid]; ok {
+			for sub := range userHub {
+				targets = append(targets, subTarget{sub: sub, userID: uid})
+			}
+		}
+	}
+	s.mu.RUnlock()
+
+	for _, t := range targets {
+		active := false
+		if s.subscription != nil {
+			var subErr error
+			active, subErr = s.subscription.IsActive(ctx, t.userID)
+			if subErr != nil {
+				log.Warn("ws subscription check for message new", zap.Int64("user_id", t.userID), zap.Error(subErr))
+			}
+		}
+		presented := messagesuc.PresentSendMessageForViewer(resp, active)
+		out, encErr := dtoWs.EncodeMessageNew(presented)
+		if encErr != nil {
+			log.Error("ws encode message new", zap.Error(encErr))
+			continue
+		}
+		s.enqueueToSubscriber(t.sub, out)
+	}
+}
+
+func (s *ChatServer) publishBytesToChatMembers(ctx context.Context, chatID int64, message []byte) {
 	log := loggerctx.From(ctx)
 	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
 	if err != nil {
@@ -522,17 +571,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageNew(resp)
-			if err != nil {
-				log.Error("ws encode message new", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageNewPerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.MessageSendSticker:
 			var req dto.RequestSendSticker
@@ -591,16 +630,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageNew(resp)
-			if err != nil {
-				log.Error("ws encode sticker message new", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageNewPerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.MessageSendAttachments:
 			var req dto.RequestSendMessageAttachments
@@ -679,16 +709,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageNew(resp)
-			if err != nil {
-				log.Error("ws encode message new", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageNewPerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.MessageRecv:
 			var req dto.RequestGetMessages
@@ -874,7 +895,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishBytesToChatMembers(ctx, req.ChatID, out)
 
 		case dtoWs.MessageEdit:
 			var req dto.RequestEditMessage
@@ -933,7 +954,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishBytesToChatMembers(ctx, req.ChatID, out)
 
 		case dtoWs.MessageDelete:
 			var req dto.RequestDeleteMessage
@@ -992,7 +1013,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			s.publishMessageNewToChatMembers(ctx, req.ChatID, out)
+			s.publishBytesToChatMembers(ctx, req.ChatID, out)
 
 		case dtoWs.PresenceTypingStart:
 			s.handlePresenceTyping(ctx, userID, sub, env, true)

@@ -186,7 +186,6 @@ func TestAnalyticRepository_Close(t *testing.T) {
 	mock := newPGMock(t)
 	repo := newTestAnalyticRepository(mock)
 
-	// Close не должен паниковать
 	repo.Close()
 }
 

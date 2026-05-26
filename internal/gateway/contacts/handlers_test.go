@@ -35,8 +35,6 @@ func TestPositiveGatewayContactsHandler_GetContacts(t *testing.T) {
 		userID int64
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int
@@ -199,8 +197,6 @@ func TestPositiveGatewayContactsHandler_CreateContact(t *testing.T) {
 		body   contactdto.AddContactRequest
 		userID int64
 	}
-
-	//now := time.Now()
 
 	tests := []struct {
 		prepare func(*fields)
@@ -429,7 +425,6 @@ func TestNegativeGatewayContactsHandler_CreateContact(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/contacts", bytes.NewBuffer(bodyBytes))
 			req.Header.Set("Content-Type", "application/json")
 
-			// Добавляем user_id в контекст только если это не тест на missing user_id
 			if tt.name != "Missing user_id" {
 				ctx := context.WithValue(req.Context(), middleware.UserID, int64(100))
 				req = req.WithContext(ctx)

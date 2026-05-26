@@ -65,4 +65,5 @@ type MessageAttachment struct {
 	DurationMs       *int32
 	Transcript       *string
 	SortOrder        int
+	IsCapybara       bool
 }

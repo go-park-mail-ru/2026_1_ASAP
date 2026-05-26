@@ -387,9 +387,6 @@ func TestMessageRepository_GetMessagesByChatId_Negative(t *testing.T) {
 	}
 }
 
-// internal/chat/repository/messages/messages_test.go
-// Добавьте эти тесты в конец файла
-
 func TestMessageRepository_UpdateMessage_Positive(t *testing.T) {
 	ctx := context.Background()
 	created := time.Date(2024, 7, 1, 10, 0, 0, 0, time.UTC)
@@ -547,7 +544,7 @@ func TestMessageRepository_UpdateMessage_Negative(t *testing.T) {
 
 func TestMessageRepository_DeleteMessage_Positive(t *testing.T) {
 	ctx := context.Background()
-	//created := time.Date(2024, 7, 1, 10, 0, 0, 0, time.UTC)
+
 	deleted := time.Date(2024, 7, 3, 12, 0, 0, 0, time.UTC)
 	updated := time.Date(2024, 7, 3, 12, 0, 0, 0, time.UTC)
 
@@ -711,11 +708,11 @@ func TestMessageRepository_GetMessagesByChatId_ScanError(t *testing.T) {
 			beforeID: nil,
 			limit:    10,
 			prepare: func(t *testing.T, m pgxmock.PgxPoolIface) {
-				// Создаем строку с неправильным типом данных для scan
+
 				rows := pgxmock.NewRows([]string{
 					"id", "chat_id", "sender_id", "content", "sticker_id", "edited", "created_at", "updated_at", "deleted_at",
 				}).AddRow(
-					"invalid", // string вместо int64 - вызовет ошибку scan
+					"invalid",
 					int64(1), int64(2), "content", sql.NullInt64{}, false, time.Now(), time.Now(), sql.NullTime{},
 				)
 				m.ExpectQuery(messagessql.GetMessagesByChat).WithArgs(int64(1), 10).WillReturnRows(rows)
@@ -752,11 +749,9 @@ func TestMessageRepository_NewMessageRepository(t *testing.T) {
 	}
 	logger := zap.NewNop()
 
-	// Этот тест проверит, что функция не паникует и возвращает ошибку
-	// (невозможно реально подключиться в тесте)
 	repo, err := NewMessageRepository(ctx, cfg, logger)
 	if err != nil {
-		// Ожидаем ошибку подключения, это нормально в unit тесте
+
 		require.Nil(t, repo)
 		require.Error(t, err)
 	}
@@ -766,7 +761,6 @@ func TestMessageRepository_Close(t *testing.T) {
 	mock := newPGMock(t)
 	repo := newTestMessageRepository(mock)
 
-	// Close не должен паниковать
 	repo.Close()
 }
 
@@ -796,7 +790,7 @@ func TestMessageRepository_Log(t *testing.T) {
 			got := repo.log(context.Background())
 			require.NotNil(t, got)
 			if tt.expectNotNop {
-				// Проверяем, что это не NopLogger (сложно проверить напрямую, но хотя бы не nil)
+
 				require.NotNil(t, got)
 			}
 		})

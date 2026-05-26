@@ -325,7 +325,7 @@ func TestNegativeGatewayComplaintHandler_CreateComplaint(t *testing.T) {
 					"body": "Bug description",
 				},
 			},
-			want: http.StatusOK, // Хендлер отправляет unspecified тип, но gR Call может пройти
+			want: http.StatusOK,
 		},
 		{
 			name: "Invalid complaint type - uses default unspecified",
@@ -344,7 +344,7 @@ func TestNegativeGatewayComplaintHandler_CreateComplaint(t *testing.T) {
 					"body": "Bug description",
 				},
 			},
-			want: http.StatusOK, // Хендлер конвертирует invalid в COMPLAINT_TYPE_UNSPECIFIED
+			want: http.StatusOK,
 		},
 		{
 			name: "Missing body field - sends empty body",
@@ -1040,7 +1040,7 @@ func TestNegativeGatewayComplaintHandler_UpdateComplaintStatus(t *testing.T) {
 					"complaint_id": float64(1),
 				},
 			},
-			want: http.StatusOK, // Хендлер отправляет unspecified статус
+			want: http.StatusOK,
 		},
 		{
 			name: "Invalid status value - sends unspecified",

@@ -14,7 +14,6 @@ import (
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/domain/complaint"
 	complaintsql "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/repository/complaint/sql"
-	//"github.com/go-park-mail-ru/2026_1_ASAP/pkg/null"
 )
 
 func ptrInt64(i int64) *int64 {
@@ -681,7 +680,6 @@ func TestComplaintRepository_Close(t *testing.T) {
 	mock := newPGMock(t)
 	repo := newTestComplaintRepository(mock)
 
-	// Close не должен паниковать
 	repo.Close()
 }
 

@@ -22,6 +22,7 @@ type ResponseSendMessage struct {
 	Read        bool                   `json:"read"`
 	Attachments []MessageAttachmentDTO `json:"attachments,omitempty"`
 	Sticker     *stickerdto.StickerDTO `json:"sticker,omitempty"`
+	ContentRaw  string                 `json:"-"`
 }
 
 type ResponseEditMessage struct {

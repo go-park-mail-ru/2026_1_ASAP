@@ -29,8 +29,6 @@ func NewGatewayChatHandler(chat chatv1.ChatClient) *GatewayChatHandler {
 	return &GatewayChatHandler{ChatService: chat}
 }
 
-// DTO types
-
 type MessageInfoResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	Text      string    `json:"text"`
@@ -98,8 +96,6 @@ type StickerPackResponse struct {
 type StickerPacksResponse struct {
 	Packs []StickerPackResponse `json:"packs"`
 }
-
-// helpers
 
 func userID(r *http.Request) (int64, bool) {
 	uid, ok := r.Context().Value(middleware.UserID).(int64)
@@ -332,8 +328,6 @@ func mapStickerPacks(resp *chatv1.ResponseGetStickerPacks) StickerPacksResponse 
 	}
 	return StickerPacksResponse{Packs: packs}
 }
-
-// Handlers
 
 func (h *GatewayChatHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

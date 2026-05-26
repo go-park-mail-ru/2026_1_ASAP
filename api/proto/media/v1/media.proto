@@ -13,6 +13,7 @@ service Media {
   rpc GetMessageAttachment(RequestGetMessageAttachment) returns (ResponseGetMessageAttachment);
   rpc GetMessageVoiceMetadata(RequestGetMessageVoiceMetadata) returns (ResponseGetMessageVoiceMetadata);
   rpc TranscribeVoice(RequestTranscribeVoice) returns (ResponseTranscribeVoice);
+  rpc ClassifyMessagePhoto(RequestClassifyMessagePhoto) returns (ResponseClassifyMessagePhoto);
   rpc DeleteUserAvatar(RequestDeleteUserAvatar) returns (ResponseDeleteUserAvatar);
 }
 
@@ -83,6 +84,15 @@ message ResponseUploadMessageAttachment {
   string object_key = 5;
   int32 duration_ms = 6;
   repeated uint32 waveform = 7;
+  bool is_capybara = 8;
+}
+
+message RequestClassifyMessagePhoto {
+  string object_key = 1;
+}
+
+message ResponseClassifyMessagePhoto {
+  bool is_capybara = 1;
 }
 
 message RequestGetMessageVoiceMetadata {

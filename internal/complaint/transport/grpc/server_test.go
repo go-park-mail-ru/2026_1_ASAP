@@ -206,7 +206,7 @@ func TestPositiveComplaintServer_CreateComplaint_Authorized(t *testing.T) {
 		{
 			name: "Successful create authorized complaint",
 			prepare: func(f *fields) {
-				//userId := int64(100)
+
 				f.complaintUsecase.EXPECT().CreateAuthrozied(gomock.Any(), int64(100), dtoComplaint.RequestCreateComplaint{
 					Type: "bug",
 					FeedBackInfo: dtoComplaint.FeedbackDTO{

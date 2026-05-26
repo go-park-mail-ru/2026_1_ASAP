@@ -765,7 +765,7 @@ func TestChatRepository_GetDialogBetweenUsers(t *testing.T) {
 					WillReturnError(pgx.ErrNoRows)
 			},
 			assert: func(t *testing.T, chat *domain.Chat, err error) {
-				// Метод возвращает nil, nil когда диалог не найден
+
 				require.NoError(t, err)
 				require.Nil(t, chat)
 			},
