@@ -104,7 +104,7 @@ func main() {
 	subscriptionClient := grpcSubscription.New(subscriptionv1.NewSubscriptionClient(subscriptionConn))
 
 	realtime := chatws.NewRealtimeNotifier(logger.Named("chat.realtime"))
-	chatService := chatuc.NewChatService(chatRepo, profileClient, mediaClient, realtime)
+	chatService := chatuc.NewChatService(chatRepo, profileClient, mediaClient, realtime, subscriptionClient)
 	messageService := messagesuc.NewMessageService(msgRepo, chatRepo, mediaClient, profileClient, cfg.GatewayPublicURL, subscriptionClient, stickerRepo)
 	stickerService := stickersuc.NewService(stickerRepo)
 

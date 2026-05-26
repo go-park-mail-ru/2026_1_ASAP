@@ -218,6 +218,102 @@ func (s *ChatServer) publishMessageNewPerViewer(ctx context.Context, chatID int6
 	}
 }
 
+func (s *ChatServer) publishMessageEditPerViewer(ctx context.Context, chatID int64, resp *dto.ResponseEditMessage) {
+	log := loggerctx.From(ctx)
+	if resp == nil {
+		return
+	}
+	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		log.Warn("ws get chat members for publish", zap.Int64("chat_id", chatID), zap.Error(err))
+		return
+	}
+	if len(memberIDs) == 0 {
+		return
+	}
+
+	s.mu.RLock()
+	type subTarget struct {
+		sub    *subscriber
+		userID int64
+	}
+	targets := make([]subTarget, 0)
+	for _, uid := range memberIDs {
+		if userHub, ok := s.subscribersByUserID[uid]; ok {
+			for sub := range userHub {
+				targets = append(targets, subTarget{sub: sub, userID: uid})
+			}
+		}
+	}
+	s.mu.RUnlock()
+
+	for _, t := range targets {
+		active := false
+		if s.subscription != nil {
+			var subErr error
+			active, subErr = s.subscription.IsActive(ctx, t.userID)
+			if subErr != nil {
+				log.Warn("ws subscription check for message edit", zap.Int64("user_id", t.userID), zap.Error(subErr))
+			}
+		}
+		presented := messagesuc.PresentEditMessageForViewer(resp, active)
+		out, encErr := dtoWs.EncodeMessageEdit(presented)
+		if encErr != nil {
+			log.Error("ws encode message edit", zap.Error(encErr))
+			continue
+		}
+		s.enqueueToSubscriber(t.sub, out)
+	}
+}
+
+func (s *ChatServer) publishMessageDeletePerViewer(ctx context.Context, chatID int64, resp *dto.ResponseClearMessage) {
+	log := loggerctx.From(ctx)
+	if resp == nil {
+		return
+	}
+	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
+	if err != nil {
+		log.Warn("ws get chat members for publish", zap.Int64("chat_id", chatID), zap.Error(err))
+		return
+	}
+	if len(memberIDs) == 0 {
+		return
+	}
+
+	s.mu.RLock()
+	type subTarget struct {
+		sub    *subscriber
+		userID int64
+	}
+	targets := make([]subTarget, 0)
+	for _, uid := range memberIDs {
+		if userHub, ok := s.subscribersByUserID[uid]; ok {
+			for sub := range userHub {
+				targets = append(targets, subTarget{sub: sub, userID: uid})
+			}
+		}
+	}
+	s.mu.RUnlock()
+
+	for _, t := range targets {
+		active := false
+		if s.subscription != nil {
+			var subErr error
+			active, subErr = s.subscription.IsActive(ctx, t.userID)
+			if subErr != nil {
+				log.Warn("ws subscription check for message delete", zap.Int64("user_id", t.userID), zap.Error(subErr))
+			}
+		}
+		presented := messagesuc.PresentClearMessageForViewer(resp, active)
+		out, encErr := dtoWs.EncodeMessageDelete(presented)
+		if encErr != nil {
+			log.Error("ws encode message delete", zap.Error(encErr))
+			continue
+		}
+		s.enqueueToSubscriber(t.sub, out)
+	}
+}
+
 func (s *ChatServer) publishBytesToChatMembers(ctx context.Context, chatID int64, message []byte) {
 	log := loggerctx.From(ctx)
 	memberIDs, err := s.chatService.GetChatMemberIDs(ctx, chatID)
@@ -944,17 +1040,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageEdit(resp)
-			if err != nil {
-				log.Error("ws encode message edit", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-
-			s.publishBytesToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageEditPerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.MessageDelete:
 			var req dto.RequestDeleteMessage
@@ -1003,17 +1089,7 @@ func (s *ChatServer) readClientMessages(ctx context.Context, wsConn *websocket.C
 				continue
 			}
 
-			out, err := dtoWs.EncodeMessageDelete(resp)
-			if err != nil {
-				log.Error("ws encode message delete", zap.Error(err))
-				s.sendErr(sub, dtoWs.WsErrorPayload{
-					Code:    dtoWs.ErrCodeInternal,
-					Message: dtoWs.ErrCodeInternalMsg,
-				})
-				continue
-			}
-
-			s.publishBytesToChatMembers(ctx, req.ChatID, out)
+			s.publishMessageDeletePerViewer(ctx, req.ChatID, resp)
 
 		case dtoWs.PresenceTypingStart:
 			s.handlePresenceTyping(ctx, userID, sub, env, true)

@@ -58,7 +58,7 @@ func (m MessageService) TranscribeVoiceMessage(
 			ChatID:       chatID,
 			MessageID:    messageID,
 			AttachmentID: voiceAtt.Id,
-			Transcript:   *voiceAtt.Transcript,
+			Transcript:   formatTextForViewer(*voiceAtt.Transcript, true),
 		}, nil
 	}
 
@@ -93,7 +93,7 @@ func (m MessageService) TranscribeVoiceMessage(
 		ChatID:       chatID,
 		MessageID:    messageID,
 		AttachmentID: updated.Id,
-		Transcript:   text,
+		Transcript:   formatTextForViewer(text, true),
 	}, nil
 }
 

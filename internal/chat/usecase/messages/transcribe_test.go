@@ -106,6 +106,21 @@ func TestFormatTextForViewer_Profanity(t *testing.T) {
 	require.Equal(t, "***", formatTextForViewer(raw, true))
 }
 
+func TestPresentEditMessageForViewer(t *testing.T) {
+	t.Parallel()
+	resp := &dto.ResponseEditMessage{
+		ContentRaw: "блять",
+		Text:       "блять",
+		LastMessage: &dto.LastMessageDTO{
+			ContentRaw: "блять",
+			Text:       "блять",
+		},
+	}
+	out := PresentEditMessageForViewer(resp, true)
+	require.Equal(t, "***", out.Text)
+	require.Equal(t, "***", out.LastMessage.Text)
+}
+
 func TestPresentSendMessageForViewer(t *testing.T) {
 	t.Parallel()
 	resp := &dto.ResponseSendMessage{
