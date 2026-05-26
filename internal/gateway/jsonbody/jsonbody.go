@@ -7,11 +7,7 @@ import (
 )
 
 func Decode(r io.Reader, v easyjson.Unmarshaler) error {
-	body, err := io.ReadAll(r)
-	if err != nil {
-		return err
-	}
-	return easyjson.Unmarshal(body, v)
+	return easyjson.UnmarshalFromReader(r, v)
 }
 
 func Unmarshal(data []byte, v easyjson.Unmarshaler) error {
