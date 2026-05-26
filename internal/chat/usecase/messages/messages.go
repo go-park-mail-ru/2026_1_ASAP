@@ -99,7 +99,6 @@ func (m MessageService) GetMessagesByChatId(ctx context.Context, userID int64, c
 		return nil, domain.ErrMessageNotMember
 	}
 
-	// Берем limit+1, чтобы понять has_more
 	raw, err := m.messageRepo.GetMessagesByChatId(ctx, chatID, req.BeforeID, limit+1)
 	if err != nil {
 		return nil, fmt.Errorf("messageRepo get messages: %w", err)
@@ -346,8 +345,6 @@ func (m MessageService) MarkMessagesRead(ctx context.Context, userID int64, chat
 	}, nil
 }
 
-// outgoingReadByPeers reports whether every chat member except the viewer has a read cursor >= messageID
-// for messages authored by the viewer (read receipts).
 func outgoingReadByPeers(messageID, messageSenderID, viewerID int64, lastReads map[int64]*int64) bool {
 	if messageSenderID != viewerID {
 		return false

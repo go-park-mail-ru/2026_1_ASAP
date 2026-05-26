@@ -17,11 +17,9 @@ import (
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
 
-	//pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
 
-	//msgdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc/mock"
 )
 
@@ -194,8 +192,6 @@ func TestPositiveChatServer_Create(t *testing.T) {
 		ctx context.Context
 		req *chatv1.RequestChatCreate
 	}
-
-	//now := time.Now()
 
 	tests := []struct {
 		prepare func(*fields)

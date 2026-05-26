@@ -44,7 +44,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("load config: %v", err)
 	}
-	if err := filter.Init(cfg.ProfanityRootsPath); err != nil {
+	if err = filter.Init(cfg.ProfanityRootsPath); err != nil {
 		log.Fatalf("load profanity roots: %v", err)
 	}
 

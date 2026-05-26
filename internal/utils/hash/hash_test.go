@@ -98,7 +98,7 @@ func TestNegativeHash_CheckPassword(t *testing.T) {
 	validStored, err := HashPassword("OnlyForNegativeTable99!")
 	require.NoError(t, err)
 
-	tooShortDecoded := make([]byte, 10) // < saltLen + argonKeyLen after decode
+	tooShortDecoded := make([]byte, 10)
 	tooShortEncoded := argonStoredPrefix + base64.RawStdEncoding.EncodeToString(tooShortDecoded)
 
 	tests := []struct {

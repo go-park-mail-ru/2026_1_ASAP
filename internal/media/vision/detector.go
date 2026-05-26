@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,7 +44,6 @@ func NewDetector(cfg config.CapybaraDetectorConfig, logger *zap.Logger) *Detecto
 	return &Detector{cfg: cfg, logger: logger}
 }
 
-// Warmup starts the Python worker and loads the CLIP model (call once at service startup).
 func (d *Detector) Warmup(ctx context.Context) error {
 	if !d.cfg.Enabled {
 		return nil
@@ -124,13 +124,12 @@ func (d *Detector) ensureWorkerLocked(ctx context.Context) error {
 }
 
 func (d *Detector) startWorkerLocked(ctx context.Context) error {
-	args := []string{
-		d.cfg.ScriptPath,
-		"--serve",
-		"--threshold",
-		fmt.Sprintf("%g", d.cfg.ScoreThreshold),
+	python, script, err := validateWorkerPaths(d.cfg.PythonPath, d.cfg.ScriptPath)
+	if err != nil {
+		return err
 	}
-	cmd := exec.Command(d.cfg.PythonPath, args...)
+	threshold := fmt.Sprintf("%g", d.cfg.ScoreThreshold)
+	cmd := exec.Command(python, script, "--serve", "--threshold", threshold) //nosec G204
 	cmd.Env = append(os.Environ(),
 		"OMP_NUM_THREADS=1",
 		"MKL_NUM_THREADS=1",
@@ -147,9 +146,9 @@ func (d *Detector) startWorkerLocked(ctx context.Context) error {
 		return fmt.Errorf("stdout pipe: %w", err)
 	}
 	cmd.Stderr = os.Stderr
-	if err := cmd.Start(); err != nil {
+	if startErr := cmd.Start(); startErr != nil {
 		_ = stdin.Close()
-		return fmt.Errorf("start worker: %w", err)
+		return fmt.Errorf("start worker: %w", startErr)
 	}
 
 	worker := &detectorWorker{
@@ -241,6 +240,32 @@ func (d *Detector) DetectBytes(ctx context.Context, data []byte) (Result, error)
 
 func DefaultScriptPath() string {
 	return filepath.Join("scripts", "vision", "detect_capybara.py")
+}
+
+func validateWorkerPaths(pythonPath, scriptPath string) (string, string, error) {
+	pythonPath = strings.TrimSpace(pythonPath)
+	scriptPath = strings.TrimSpace(scriptPath)
+	if pythonPath == "" {
+		pythonPath = "python3"
+	}
+	switch pythonPath {
+	case "python3", "python":
+	default:
+		clean := filepath.Clean(pythonPath)
+		if !filepath.IsAbs(clean) || strings.Contains(clean, "..") {
+			return "", "", fmt.Errorf("invalid python path %q", pythonPath)
+		}
+		pythonPath = clean
+	}
+
+	scriptPath = filepath.Clean(scriptPath)
+	if scriptPath == "" || strings.Contains(scriptPath, "..") {
+		return "", "", fmt.Errorf("invalid script path %q", scriptPath)
+	}
+	if filepath.Base(scriptPath) != "detect_capybara.py" {
+		return "", "", fmt.Errorf("unexpected capybara script %q", scriptPath)
+	}
+	return pythonPath, scriptPath, nil
 }
 
 func isLikelyOOM(err error) bool {

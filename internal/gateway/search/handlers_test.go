@@ -36,8 +36,6 @@ func TestPositiveGatewaySearchHandler_SearchMessages(t *testing.T) {
 		beforeID string
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int
@@ -271,8 +269,6 @@ func TestPositiveGatewaySearchHandler_SearchUsers(t *testing.T) {
 		beforeID string
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int
@@ -475,8 +471,6 @@ func TestPositiveGatewaySearchHandler_SearchChats(t *testing.T) {
 		limit    string
 		beforeID string
 	}
-
-	//now := time.Now()
 
 	tests := []struct {
 		prepare func(*fields)

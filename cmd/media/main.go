@@ -46,8 +46,8 @@ func main() {
 	capybaraDetector := vision.NewDetector(cfg.CapybaraDetectorConfig, logger.Named("capybara"))
 	if cfg.CapybaraDetectorConfig.Enabled {
 		warmCtx, warmCancel := context.WithTimeout(ctx, 2*time.Minute)
-		if err := capybaraDetector.Warmup(warmCtx); err != nil {
-			logger.Warn("capybara worker warmup failed", zap.Error(err))
+		if warmErr := capybaraDetector.Warmup(warmCtx); warmErr != nil {
+			logger.Warn("capybara worker warmup failed", zap.Error(warmErr))
 		} else {
 			logger.Info("capybara worker ready")
 		}

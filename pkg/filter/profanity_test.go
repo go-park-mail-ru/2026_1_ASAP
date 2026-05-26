@@ -40,7 +40,7 @@ func TestLoadRootsFromFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "roots.txt")
 	content := "# comment\n\nкастом\n\n# tail\n"
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := LoadRootsFromFile(path); err != nil {
@@ -53,7 +53,6 @@ func TestLoadRootsFromFile(t *testing.T) {
 		t.Fatalf("old root should not match after reload: got %q", got)
 	}
 
-	// restore embedded defaults for other tests in package
 	if err := SetRootsFromReader(strings.NewReader(string(defaultProfanityRoots))); err != nil {
 		t.Fatal(err)
 	}

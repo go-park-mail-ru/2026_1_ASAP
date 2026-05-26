@@ -288,8 +288,6 @@ func TestPositiveProfileServer_UpdateProfileAvatar(t *testing.T) {
 		req *profilev1.RequestUpdateAvatar
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    *profilev1.ResponseGetProfile
