@@ -20,6 +20,9 @@ media:
 profile:
   grpc_addr: "profile:8002"
 
+subscription:
+  grpc_addr: "subscription:8011"
+
 redis:
   host: redis
   port: "6379"

@@ -36,6 +36,10 @@ func EncodeMessageDelete(m *dto.ResponseClearMessage) ([]byte, error) {
 	return Encode(MessageClear, m)
 }
 
+func EncodeVoiceTranscript(m *dto.ResponseVoiceTranscript) ([]byte, error) {
+	return Encode(MessageVoiceTranscript, m)
+}
+
 func EncodeChatNew(c *chatdto.ChatInformationDTO) ([]byte, error) {
 	return Encode(ChatNew, c)
 }

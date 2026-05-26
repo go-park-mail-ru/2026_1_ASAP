@@ -8,9 +8,15 @@ import (
 )
 
 type MediaConfig struct {
-	ServerConfig ServerConfig
-	S3Config     S3Config
-	AppConfig    AppConfig
+	ServerConfig    ServerConfig
+	S3Config        S3Config
+	SpeechKitConfig SpeechKitConfig
+	AppConfig       AppConfig
+}
+
+type SpeechKitConfig struct {
+	APIKey string `yaml:"api_key" env:"SPEECHKIT_API_KEY" env-default:""`
+	Lang   string `yaml:"lang" env-default:"ru-RU"`
 }
 
 type mediaFile struct {
@@ -30,6 +36,10 @@ type mediaFile struct {
 		PublicPort   string `yaml:"public_port"`
 		PublicPath   string `yaml:"public_path"`
 	} `yaml:"s3"`
+	SpeechKit struct {
+		APIKey string `yaml:"api_key" env:"SPEECHKIT_API_KEY" env-default:""`
+		Lang   string `yaml:"lang" env-default:"ru-RU"`
+	} `yaml:"speechkit"`
 	App struct {
 		ShutdownSeconds int    `yaml:"shutdown_seconds"`
 		LogLevel        string `yaml:"log_level"`
@@ -57,6 +67,10 @@ func LoadMediaConfigFromPath(path string) (*MediaConfig, error) {
 
 	return &MediaConfig{
 		ServerConfig: ServerConfig{Host: raw.Server.Host, Port: raw.Server.Port},
+		SpeechKitConfig: SpeechKitConfig{
+			APIKey: raw.SpeechKit.APIKey,
+			Lang:   raw.SpeechKit.Lang,
+		},
 		S3Config: S3Config{
 			Host:         raw.S3.Host,
 			Port:         raw.S3.Port,

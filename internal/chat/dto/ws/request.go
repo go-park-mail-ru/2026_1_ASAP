@@ -14,6 +14,7 @@ const (
 	MessageEdit            WsRequestType = "message.Edit"
 	MessageDelete          WsRequestType = "message.Delete"
 	MessageMarkRead        WsRequestType = "message.MarkRead"
+	MessageTranscribeVoice WsRequestType = "message.TranscribeVoice"
 
 	PresenceTypingStart WsRequestType = "presence.TypingStart"
 	PresenceTypingStop  WsRequestType = "presence.TypingStop"
@@ -41,6 +42,9 @@ const (
 	ErrCodeTooManyAttachments       WsErrorCode = "TOO_MANY_ATTACHMENTS"
 	ErrCodeInvalidSticker           WsErrorCode = "INVALID_STICKER"
 	ErrCodeStickerNotFound          WsErrorCode = "STICKER_NOT_FOUND"
+	ErrCodeSubscriptionRequired     WsErrorCode = "SUBSCRIPTION_REQUIRED"
+	ErrCodeNotVoiceMessage          WsErrorCode = "NOT_VOICE_MESSAGE"
+	ErrCodeTranscriptionFailed      WsErrorCode = "TRANSCRIPTION_FAILED"
 )
 
 const (
@@ -62,6 +66,9 @@ const (
 	ErrCodeTooManyAttachmentsMsg       WsErrorMessage = "too many attachments"
 	ErrCodeInvalidStickerMsg           WsErrorMessage = "invalid sticker"
 	ErrCodeStickerNotFoundMsg          WsErrorMessage = "sticker not found"
+	ErrCodeSubscriptionRequiredMsg     WsErrorMessage = "subscription required"
+	ErrCodeNotVoiceMessageMsg          WsErrorMessage = "message has no voice attachment"
+	ErrCodeTranscriptionFailedMsg      WsErrorMessage = "voice transcription failed"
 )
 
 type WsRequest struct {

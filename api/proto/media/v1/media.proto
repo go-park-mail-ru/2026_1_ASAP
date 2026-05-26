@@ -12,6 +12,7 @@ service Media {
   rpc UploadMessageAttachment(RequestUploadMessageAttachment) returns (ResponseUploadMessageAttachment);
   rpc GetMessageAttachment(RequestGetMessageAttachment) returns (ResponseGetMessageAttachment);
   rpc GetMessageVoiceMetadata(RequestGetMessageVoiceMetadata) returns (ResponseGetMessageVoiceMetadata);
+  rpc TranscribeVoice(RequestTranscribeVoice) returns (ResponseTranscribeVoice);
   rpc DeleteUserAvatar(RequestDeleteUserAvatar) returns (ResponseDeleteUserAvatar);
 }
 
@@ -31,6 +32,7 @@ enum MediaErrorCode {
   MEDIA_ERROR_INTERNAL         = 4;
   MEDIA_ERROR_INVALID_INPUT    = 5;
   MEDIA_ERROR_VOICE_TOO_LONG   = 6;
+  MEDIA_ERROR_TRANSCRIPTION_FAILED = 7;
 }
 
 message File {
@@ -92,6 +94,14 @@ message ResponseGetMessageVoiceMetadata {
   repeated uint32 waveform = 2;
   string mime_type = 3;
   int64 file_size = 4;
+}
+
+message RequestTranscribeVoice {
+  string object_key = 1;
+}
+
+message ResponseTranscribeVoice {
+  string transcript = 1;
 }
 
 message RequestGetMessageAttachment {

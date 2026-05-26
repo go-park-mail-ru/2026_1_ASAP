@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strings"
 
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	chatmedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
@@ -139,4 +140,18 @@ func (m *MediaAdapter) GetMessageVoiceMetadata(ctx context.Context, objectKey st
 		result.Waveform = wf
 	}
 	return result, nil
+}
+
+func (m *MediaAdapter) TranscribeVoice(ctx context.Context, objectKey string) (string, error) {
+	resp, err := m.client.TranscribeVoice(ctx, &mediav1.RequestTranscribeVoice{
+		ObjectKey: objectKey,
+	})
+	if err != nil {
+		return "", err
+	}
+	text := strings.TrimSpace(resp.GetTranscript())
+	if text == "" {
+		return "", errors.New("empty transcript")
+	}
+	return text, nil
 }
