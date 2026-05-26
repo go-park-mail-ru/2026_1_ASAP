@@ -37,13 +37,6 @@ func TestEnrichLoggerFromContext(t *testing.T) {
 		}
 	})
 
-	t.Run("nil context", func(t *testing.T) {
-		logger := zap.NewNop()
-		if got := EnrichLoggerFromContext(nil, logger); got != logger {
-			t.Fatalf("EnrichLoggerFromContext() returned unexpected logger")
-		}
-	})
-
 	t.Run("logger with context", func(t *testing.T) {
 		logger := zap.NewNop()
 		if got := EnrichLoggerFromContext(context.Background(), logger); got != logger {

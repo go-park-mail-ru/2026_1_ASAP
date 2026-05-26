@@ -194,9 +194,9 @@ func TestPaymentRepository_PaymentGetByPaymentID_Positive(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		want     *domain.Payment
-		name     string
+		prepare   func(t *testing.T, m pgxmock.PgxPoolIface)
+		want      *domain.Payment
+		name      string
 		paymentID string
 	}{
 		{
@@ -238,9 +238,9 @@ func TestPaymentRepository_PaymentGetByPaymentID_Negative(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		assert   func(t *testing.T, payment *domain.Payment, err error)
-		name     string
+		prepare   func(t *testing.T, m pgxmock.PgxPoolIface)
+		assert    func(t *testing.T, payment *domain.Payment, err error)
+		name      string
 		paymentID string
 	}{
 		{

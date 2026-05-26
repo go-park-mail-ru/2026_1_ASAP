@@ -162,10 +162,10 @@ func TestPositiveSubscriptionRepository_SubscriptionSet(t *testing.T) {
 	endAt := startAt.AddDate(0, 1, 0)
 
 	tests := []struct {
-		sub        *domain.Subscription
-		prepare    func(t *testing.T, m pgxmock.PgxPoolIface)
-		want       *domain.Subscription
-		name       string
+		sub     *domain.Subscription
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		want    *domain.Subscription
+		name    string
 	}{
 		{
 			name: "creates new subscription",
