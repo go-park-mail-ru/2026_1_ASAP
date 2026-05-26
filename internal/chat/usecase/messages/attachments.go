@@ -323,10 +323,6 @@ func messageToSendResponse(msg *domain.Message, read bool) *dto.ResponseSendMess
 	}
 }
 
-func mapAttachmentsToDTO(attachments []domain.MessageAttachment) []dto.MessageAttachmentDTO {
-	return mapAttachmentsToDTOForViewer(attachments, false)
-}
-
 func mapAttachmentsToDTOForViewer(attachments []domain.MessageAttachment, subscriptionActive bool) []dto.MessageAttachmentDTO {
 	if len(attachments) == 0 {
 		return nil
