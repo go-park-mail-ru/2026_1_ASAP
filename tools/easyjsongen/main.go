@@ -12,7 +12,6 @@ import (
 
 var jsonPackages = []string{
 	"internal/auth/dto/auth",
-	"internal/auth/dto/session",
 	"internal/auth/dto/vkid",
 	"internal/chat/dto/chat",
 	"internal/chat/dto/message",
@@ -23,13 +22,10 @@ var jsonPackages = []string{
 	"internal/gateway/payment",
 	"internal/complaint/dto/analytic",
 	"internal/complaint/dto/complaint",
-	"internal/media/dto",
-	"internal/payment/dto",
+	"internal/media/speechkit",
+	"internal/media/vision",
 	"internal/profile/dto/contact",
-	"internal/profile/dto/media",
 	"internal/profile/dto/profile",
-	"internal/search/dto/search",
-	"internal/subscription/dto",
 }
 
 func main() {

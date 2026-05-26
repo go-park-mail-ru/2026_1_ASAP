@@ -3,7 +3,6 @@ package vision
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -76,10 +75,10 @@ func (d *Detector) detectViaWorker(ctx context.Context, imagePath string) (Resul
 		return Result{}, nil
 	}
 
-	req, err := json.Marshal(map[string]any{
-		"image_path": imagePath,
-		"threshold":  d.cfg.ScoreThreshold,
-	})
+	req, err := DetectRequest{
+		ImagePath: imagePath,
+		Threshold: d.cfg.ScoreThreshold,
+	}.MarshalJSON()
 	if err != nil {
 		return Result{}, nil
 	}
@@ -100,12 +99,8 @@ func (d *Detector) detectViaWorker(ctx context.Context, imagePath string) (Resul
 		return Result{}, nil
 	}
 
-	var parsed struct {
-		IsCapybara bool    `json:"is_capybara"`
-		Score      float64 `json:"score"`
-		Error      string  `json:"error"`
-	}
-	if err := json.Unmarshal([]byte(line), &parsed); err != nil {
+	var parsed DetectResponse
+	if err := parsed.UnmarshalJSON([]byte(line)); err != nil {
 		d.logger.Warn("capybara detector invalid json", zap.String("output", line), zap.Error(err))
 		return Result{}, nil
 	}
@@ -165,10 +160,8 @@ func (d *Detector) startWorkerLocked(ctx context.Context) error {
 		d.stopWorkerLocked()
 		return fmt.Errorf("wait ready: %w", err)
 	}
-	var ready struct {
-		Ready bool `json:"ready"`
-	}
-	if err := json.Unmarshal([]byte(line), &ready); err != nil || !ready.Ready {
+	var ready ReadyResponse
+	if err := ready.UnmarshalJSON([]byte(line)); err != nil || !ready.Ready {
 		d.stopWorkerLocked()
 		return fmt.Errorf("unexpected ready response: %q", line)
 	}

@@ -91,7 +91,12 @@ func (c *Client) recognizeOgg(ctx context.Context, ogg []byte) (string, error) {
 		return "", fmt.Errorf("%w: status %d: %s", ErrTranscriptionFailed, resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
-	text := strings.TrimSpace(string(body))
+	var parsed RecognizeResponse
+	if err := parsed.UnmarshalJSON(body); err != nil {
+		return "", fmt.Errorf("%w: invalid response: %w", ErrTranscriptionFailed, err)
+	}
+
+	text := strings.TrimSpace(parsed.Result)
 	if text == "" {
 		return "", ErrTranscriptionFailed
 	}

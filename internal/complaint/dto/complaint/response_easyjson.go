@@ -277,7 +277,11 @@ func easyjson6ff3ac1dDecodeGithubComGoParkMailRu20261ASAPInternalComplaintDtoCom
 				out.Status = string(in.String())
 			}
 		case "feedback":
-			easyjson6ff3ac1dDecodeGithubComGoParkMailRu20261ASAPInternalComplaintDtoComplaint4(in, &out.FeedbackDTO)
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				(out.FeedbackDTO).UnmarshalEasyJSON(in)
+			}
 		case "body":
 			if in.IsNull() {
 				in.Skip()
@@ -352,7 +356,7 @@ func easyjson6ff3ac1dEncodeGithubComGoParkMailRu20261ASAPInternalComplaintDtoCom
 	{
 		const prefix string = ",\"feedback\":"
 		out.RawString(prefix)
-		easyjson6ff3ac1dEncodeGithubComGoParkMailRu20261ASAPInternalComplaintDtoComplaint4(out, in.FeedbackDTO)
+		(in.FeedbackDTO).MarshalEasyJSON(out)
 	}
 	{
 		const prefix string = ",\"body\":"
@@ -404,56 +408,4 @@ func (v *ComplaintDTO) UnmarshalJSON(data []byte) error {
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *ComplaintDTO) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson6ff3ac1dDecodeGithubComGoParkMailRu20261ASAPInternalComplaintDtoComplaint3(l, v)
-}
-func easyjson6ff3ac1dDecodeGithubComGoParkMailRu20261ASAPInternalComplaintDtoComplaint4(in *jlexer.Lexer, out *FeedbackDTO) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		switch key {
-		case "feedback_name":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.FeedBackName = string(in.String())
-			}
-		case "feedback_email":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				out.FeedBackEmail = string(in.String())
-			}
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson6ff3ac1dEncodeGithubComGoParkMailRu20261ASAPInternalComplaintDtoComplaint4(out *jwriter.Writer, in FeedbackDTO) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"feedback_name\":"
-		out.RawString(prefix[1:])
-		out.String(string(in.FeedBackName))
-	}
-	{
-		const prefix string = ",\"feedback_email\":"
-		out.RawString(prefix)
-		out.String(string(in.FeedBackEmail))
-	}
-	out.RawByte('}')
 }

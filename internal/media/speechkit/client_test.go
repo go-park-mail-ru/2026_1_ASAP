@@ -14,7 +14,7 @@ func TestClient_recognizeOgg_Success(t *testing.T) {
 		require.Equal(t, "Api-Key test-key", r.Header.Get("Authorization"))
 		require.Contains(t, r.URL.RawQuery, "lang=ru-RU")
 		require.Contains(t, r.URL.RawQuery, "format=oggopus")
-		_, _ = w.Write([]byte("привет"))
+		_, _ = w.Write([]byte(`{"result":"привет"}`))
 	}))
 	t.Cleanup(srv.Close)
 
