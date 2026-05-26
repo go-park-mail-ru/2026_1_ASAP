@@ -334,18 +334,21 @@ func parseChatKinds(raw string) ([]searchv1.SearchChatKind, error) {
 	seen := make(map[searchv1.SearchChatKind]struct{}, len(parts))
 	kinds := make([]searchv1.SearchChatKind, 0, len(parts))
 	for _, p := range parts {
+		var k searchv1.SearchChatKind
 		switch strings.ToLower(strings.TrimSpace(p)) {
 		case "dialog":
-			seen[searchv1.SearchChatKind_SEARCH_CHAT_KIND_DIALOG] = struct{}{}
+			k = searchv1.SearchChatKind_SEARCH_CHAT_KIND_DIALOG
 		case "group":
-			seen[searchv1.SearchChatKind_SEARCH_CHAT_KIND_GROUP] = struct{}{}
+			k = searchv1.SearchChatKind_SEARCH_CHAT_KIND_GROUP
 		case "channel":
-			seen[searchv1.SearchChatKind_SEARCH_CHAT_KIND_CHANNEL] = struct{}{}
+			k = searchv1.SearchChatKind_SEARCH_CHAT_KIND_CHANNEL
 		default:
 			return nil, fmt.Errorf("invalid type filter: use dialog,group,channel")
 		}
-	}
-	for k := range seen {
+		if _, ok := seen[k]; ok {
+			continue
+		}
+		seen[k] = struct{}{}
 		kinds = append(kinds, k)
 	}
 	return kinds, nil
