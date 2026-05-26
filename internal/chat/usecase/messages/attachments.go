@@ -357,7 +357,18 @@ func mapAttachmentsToDTOForViewer(attachments []domain.MessageAttachment, subscr
 			can := true
 			item.CanTranscribe = &can
 			if a.Transcript != nil && *a.Transcript != "" {
-				item.Transcript = a.Transcript
+				masked := formatTextForViewer(*a.Transcript, true)
+				item.Transcript = &masked
+			}
+		}
+		if subscriptionActive {
+			if item.ContactFirstName != nil {
+				v := formatTextForViewer(*item.ContactFirstName, true)
+				item.ContactFirstName = &v
+			}
+			if item.ContactLastName != nil {
+				v := formatTextForViewer(*item.ContactLastName, true)
+				item.ContactLastName = &v
 			}
 		}
 		out = append(out, item)

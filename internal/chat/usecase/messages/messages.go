@@ -247,11 +247,17 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 	}
 	read := outgoingReadByPeers(editedMessage.Id, editedMessage.SenderId, userID, lastReads)
 
+	subscriptionActive, err := m.isSubscriptionActive(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check subscription: %w", err)
+	}
+
 	resp := &dto.ResponseEditMessage{
 		ID:                editedMessage.Id,
 		ChatID:            editedMessage.ChatId,
 		SenderID:          editedMessage.SenderId,
-		Text:              formatTextForViewer(editedMessage.Content, false),
+		Text:              formatTextForViewer(editedMessage.Content, subscriptionActive),
+		ContentRaw:        editedMessage.Content,
 		CreatedAt:         editedMessage.CreatedAt,
 		Edited:            editedMessage.Edited,
 		Read:              read,
@@ -259,9 +265,10 @@ func (m MessageService) EditMessage(ctx context.Context, userID, chatID int64, r
 	}
 	if lastMessageEdited {
 		resp.LastMessage = &dto.LastMessageDTO{
-			SenderId:  editedMessage.SenderId,
-			Text:      formatTextForViewer(editedMessage.Content, false),
-			CreatedAt: editedMessage.CreatedAt,
+			SenderId:   editedMessage.SenderId,
+			Text:       formatTextForViewer(editedMessage.Content, subscriptionActive),
+			ContentRaw: editedMessage.Content,
+			CreatedAt:  editedMessage.CreatedAt,
 		}
 	}
 	return resp, nil
@@ -295,6 +302,11 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 		return nil, fmt.Errorf("messageRepo delete message: %w", err)
 	}
 
+	subscriptionActive, subErr := m.isSubscriptionActive(ctx, userID)
+	if subErr != nil {
+		return nil, fmt.Errorf("check subscription: %w", subErr)
+	}
+
 	resp := &dto.ResponseClearMessage{
 		ID:                deletedMessage.Id,
 		ChatID:            deletedMessage.ChatId,
@@ -305,9 +317,10 @@ func (m MessageService) DeleteMessage(ctx context.Context, userID, chatID int64,
 		lm, err := m.chatRepo.GetLastMessageOfChat(ctx, chatID)
 		if err == nil && lm != nil {
 			resp.LastMessage = &dto.LastMessageDTO{
-				SenderId:  lm.SenderId,
-				Text:      formatTextForViewer(lm.Content, false),
-				CreatedAt: lm.CreatedAt,
+				SenderId:   lm.SenderId,
+				Text:       formatTextForViewer(lm.Content, subscriptionActive),
+				ContentRaw: lm.Content,
+				CreatedAt:  lm.CreatedAt,
 			}
 		}
 	}
