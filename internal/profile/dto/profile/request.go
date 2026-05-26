@@ -1,9 +1,5 @@
 package profile
 
-import (
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
-)
-
 type RequestCreateProfile struct {
 	ProfileID int64  `json:"profile_id"`
 	FirstName string `json:"first_name"`
@@ -14,10 +10,6 @@ type RequestSearchIdByLogin struct {
 }
 type RequestUpdateBio struct {
 	Bio *string `json:"bio,omitempty"`
-}
-
-type RequestUpdateAvatar struct {
-	File *media.FileInput
 }
 
 type RequestUpdateAvatarURL struct {

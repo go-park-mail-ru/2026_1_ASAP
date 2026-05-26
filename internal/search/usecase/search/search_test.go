@@ -1,4 +1,4 @@
-//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=search.go -destination=mock/search_mock.go -package=mock
+//go:generate mockgen -source=search.go -destination=mock/search_mock.go -package=mock
 package search
 
 import (

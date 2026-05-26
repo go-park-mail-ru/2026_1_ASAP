@@ -1,13 +1,13 @@
 package auth
 
 import (
-	"encoding/json"
 	"net/http"
 
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	auth2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
 	dtoVK "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/vkid"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/jsonbody"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
@@ -33,7 +33,7 @@ func (h *GatewayAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	newRequestLogin := new(auth2.RequestLogin)
-	if err := json.NewDecoder(r.Body).Decode(newRequestLogin); err != nil {
+	if err := jsonbody.Decode(r.Body, newRequestLogin); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -89,7 +89,7 @@ func (h *GatewayAuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	newRequestRegister := new(auth2.RequestRegistrate)
-	if err := json.NewDecoder(r.Body).Decode(newRequestRegister); err != nil {
+	if err := jsonbody.Decode(r.Body, newRequestRegister); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -188,7 +188,7 @@ func (h *GatewayAuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var request dtoVK.RequestVKID
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	if err := jsonbody.Decode(r.Body, &request); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},

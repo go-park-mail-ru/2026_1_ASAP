@@ -1,7 +1,6 @@
 package payment
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 
@@ -10,6 +9,7 @@ import (
 
 	paymentv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/jsonbody"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
@@ -45,12 +45,6 @@ func paymentDetailsHTTPBody(p *paymentv1.PaymentDetails) map[string]any {
 	return body
 }
 
-type CreatePaymentRequest struct {
-	Amount           int32  `json:"amount"`
-	SubscriptionDays int32  `json:"subscription_days"`
-	Description      string `json:"description,omitempty"`
-}
-
 func (h *GatewayPaymentHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -65,7 +59,7 @@ func (h *GatewayPaymentHandler) CreatePayment(w http.ResponseWriter, r *http.Req
 	}
 
 	var req CreatePaymentRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonbody.Decode(r.Body, &req); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},

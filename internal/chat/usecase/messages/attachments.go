@@ -17,7 +17,7 @@ import (
 
 const maxAttachmentsPerMessage = 10
 
-//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -destination=mock/profile_contacts_mock.go -package=mock github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages ProfileContactsInterface
+//go:generate mockgen -destination=mock/profile_contacts_mock.go -package=mock github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages ProfileContactsInterface
 
 type MessageMediaRepositoryInterface interface {
 	UploadMessageAttachment(
