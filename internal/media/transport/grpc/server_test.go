@@ -14,6 +14,8 @@ import (
 
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	mediadto "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/dto"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/repository"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/speechkit"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/transport/grpc/mock"
 )
 
@@ -563,6 +565,353 @@ func TestStatusFromAvatarFileError(t *testing.T) {
 			st, ok := status.FromError(err)
 			require.True(t, ok)
 			require.Equal(t, tt.wantCode, st.Code())
+		})
+	}
+}
+
+func TestProtoFileToMessageInput(t *testing.T) {
+	tests := []struct {
+		name     string
+		file     *mediav1.File
+		wantErr  error
+		wantType string
+		wantSize int64
+	}{
+		{name: "nil file", wantErr: mediadto.ErrEmptyFile},
+		{name: "empty content", file: &mediav1.File{Type: "image/png"}, wantErr: mediadto.ErrEmptyFile},
+		{name: "uses type", file: &mediav1.File{Content: []byte("hello"), Type: "text/plain"}, wantType: "text/plain", wantSize: 5},
+		{name: "detects type", file: &mediav1.File{Content: []byte{0x89, 0x50, 0x4E, 0x47}, Type: ""}, wantType: "text/plain; charset=utf-8", wantSize: 4},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := protoFileToMessageInput(tt.file)
+			if tt.wantErr != nil {
+				require.ErrorIs(t, err, tt.wantErr)
+				require.Nil(t, got)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.wantType, got.ContentType)
+			require.Equal(t, tt.wantSize, got.Size)
+		})
+	}
+}
+
+func TestProtoKindToDTO(t *testing.T) {
+	tests := []struct {
+		name    string
+		kind    mediav1.MessageAttachmentKind
+		want    mediadto.MessageAttachmentKind
+		wantErr error
+	}{
+		{name: "photo", kind: mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_PHOTO, want: mediadto.MessageAttachmentKindPhoto},
+		{name: "video", kind: mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VIDEO, want: mediadto.MessageAttachmentKindVideo},
+		{name: "file", kind: mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_FILE, want: mediadto.MessageAttachmentKindFile},
+		{name: "voice", kind: mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_VOICE, want: mediadto.MessageAttachmentKindVoice},
+		{name: "invalid", kind: mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_UNSPECIFIED, wantErr: mediadto.ErrInvalidFileType},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := protoKindToDTO(tt.kind)
+			if tt.wantErr != nil {
+				require.ErrorIs(t, err, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestStatusFromFileError_AppCodes(t *testing.T) {
+	tests := []struct {
+		name        string
+		err         error
+		wantCode    codes.Code
+		wantAppCode int32
+	}{
+		{name: "too large", err: mediadto.ErrFileTooLarge, wantCode: codes.InvalidArgument, wantAppCode: int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_TOO_LARGE)},
+		{name: "invalid type", err: mediadto.ErrInvalidFileType, wantCode: codes.InvalidArgument, wantAppCode: int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_INVALID_TYPE)},
+		{name: "empty", err: mediadto.ErrEmptyFile, wantCode: codes.InvalidArgument, wantAppCode: int32(mediav1.MediaErrorCode_MEDIA_ERROR_FILE_EMPTY)},
+		{name: "voice too long", err: mediadto.ErrVoiceTooLong, wantCode: codes.InvalidArgument, wantAppCode: int32(mediav1.MediaErrorCode_MEDIA_ERROR_VOICE_TOO_LONG)},
+		{name: "speechkit failed", err: speechkit.ErrTranscriptionFailed, wantCode: codes.Internal, wantAppCode: int32(mediav1.MediaErrorCode_MEDIA_ERROR_TRANSCRIPTION_FAILED)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := statusFromFileError(tt.err)
+			require.Error(t, err)
+			st, ok := status.FromError(err)
+			require.True(t, ok)
+			require.Equal(t, tt.wantCode, st.Code())
+		})
+	}
+}
+
+func TestMediaServer_UploadMessageAttachment(t *testing.T) {
+	fileName := "photo.png"
+
+	tests := []struct {
+		name       string
+		req        *mediav1.RequestUploadMessageAttachment
+		prepare    func(*mock.MockMediaRepositoryInterface)
+		wantCode   codes.Code
+		wantObject string
+	}{
+		{
+			name:     "nil request",
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "invalid kind",
+			req: &mediav1.RequestUploadMessageAttachment{
+				UserId: 1,
+				Kind:   mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_UNSPECIFIED,
+				File:   &mediav1.File{Content: []byte("x"), Type: "image/png"},
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "empty file",
+			req: &mediav1.RequestUploadMessageAttachment{
+				UserId: 1,
+				Kind:   mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_PHOTO,
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "repo error",
+			req: &mediav1.RequestUploadMessageAttachment{
+				UserId: 1,
+				Kind:   mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_PHOTO,
+				File:   &mediav1.File{Content: []byte("x"), Type: "image/png"},
+			},
+			prepare: func(repo *mock.MockMediaRepositoryInterface) {
+				repo.EXPECT().
+					UploadMessageAttachment(gomock.Any(), int64(1), mediadto.MessageAttachmentKindPhoto, gomock.Any()).
+					Return(nil, mediadto.ErrFileTooLarge)
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "success",
+			req: &mediav1.RequestUploadMessageAttachment{
+				UserId:   1,
+				Kind:     mediav1.MessageAttachmentKind_MESSAGE_ATTACHMENT_KIND_PHOTO,
+				File:     &mediav1.File{Content: []byte("x"), Type: "image/png"},
+				FileName: &fileName,
+			},
+			prepare: func(repo *mock.MockMediaRepositoryInterface) {
+				repo.EXPECT().
+					UploadMessageAttachment(gomock.Any(), int64(1), mediadto.MessageAttachmentKindPhoto, gomock.Any()).
+					Return(&repository.MessageAttachmentObject{
+						ObjectKey:   "message/1/file.png",
+						ContentType: "image/png",
+						Size:        1,
+						DurationMs:  12,
+						Waveform:    []uint8{1, 2},
+						IsCapybara:  true,
+					}, nil)
+			},
+			wantObject: "message/1/file.png",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			repo := mock.NewMockMediaRepositoryInterface(ctrl)
+			if tt.prepare != nil {
+				tt.prepare(repo)
+			}
+			s := &MediaServer{MediaRepository: repo, logger: zap.NewNop()}
+
+			got, err := s.UploadMessageAttachment(context.Background(), tt.req)
+			if tt.wantCode != 0 {
+				require.Error(t, err)
+				st, ok := status.FromError(err)
+				require.True(t, ok)
+				require.Equal(t, tt.wantCode, st.Code())
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.wantObject, got.GetObjectKey())
+			require.Equal(t, "photo.png", got.GetFileName())
+			require.Equal(t, []uint32{1, 2}, got.GetWaveform())
+			require.True(t, got.GetIsCapybara())
+		})
+	}
+}
+
+func TestMediaServer_MessageAttachmentReadAndMetadata(t *testing.T) {
+	tests := []struct {
+		name     string
+		call     func(MediaServer) (any, error)
+		prepare  func(*mock.MockMediaRepositoryInterface)
+		wantCode codes.Code
+		assert   func(t *testing.T, got any)
+	}{
+		{
+			name: "classify success",
+			call: func(s MediaServer) (any, error) {
+				return s.ClassifyMessagePhoto(context.Background(), &mediav1.RequestClassifyMessagePhoto{ObjectKey: "message/1/a.png"})
+			},
+			prepare: func(repo *mock.MockMediaRepositoryInterface) {
+				repo.EXPECT().ClassifyMessagePhoto(gomock.Any(), "message/1/a.png").Return(true, nil)
+			},
+			assert: func(t *testing.T, got any) {
+				require.True(t, got.(*mediav1.ResponseClassifyMessagePhoto).GetIsCapybara())
+			},
+		},
+		{
+			name: "metadata success",
+			call: func(s MediaServer) (any, error) {
+				return s.GetMessageVoiceMetadata(context.Background(), &mediav1.RequestGetMessageVoiceMetadata{ObjectKey: "message/1/a.webm"})
+			},
+			prepare: func(repo *mock.MockMediaRepositoryInterface) {
+				repo.EXPECT().GetMessageVoiceMetadata(gomock.Any(), "message/1/a.webm").Return(&repository.VoiceMetadata{
+					DurationMs: 100,
+					Waveform:   []uint8{1, 3},
+					MimeType:   "audio/webm",
+					FileSize:   7,
+				}, nil)
+			},
+			assert: func(t *testing.T, got any) {
+				resp := got.(*mediav1.ResponseGetMessageVoiceMetadata)
+				require.Equal(t, int32(100), resp.GetDurationMs())
+				require.Equal(t, []uint32{1, 3}, resp.GetWaveform())
+				require.Equal(t, int64(7), resp.GetFileSize())
+			},
+		},
+		{
+			name: "get attachment success",
+			call: func(s MediaServer) (any, error) {
+				return s.GetMessageAttachment(context.Background(), &mediav1.RequestGetMessageAttachment{ObjectKey: "message/1/a.png"})
+			},
+			prepare: func(repo *mock.MockMediaRepositoryInterface) {
+				repo.EXPECT().GetMessageAttachment(gomock.Any(), "message/1/a.png").Return([]byte("data"), "image/png", nil)
+			},
+			assert: func(t *testing.T, got any) {
+				resp := got.(*mediav1.ResponseGetMessageAttachment)
+				require.Equal(t, []byte("data"), resp.GetContent())
+				require.Equal(t, int64(4), resp.GetSize())
+			},
+		},
+		{
+			name: "empty classify key",
+			call: func(s MediaServer) (any, error) {
+				return s.ClassifyMessagePhoto(context.Background(), &mediav1.RequestClassifyMessagePhoto{})
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "metadata repo error",
+			call: func(s MediaServer) (any, error) {
+				return s.GetMessageVoiceMetadata(context.Background(), &mediav1.RequestGetMessageVoiceMetadata{ObjectKey: "message/1/a.webm"})
+			},
+			prepare: func(repo *mock.MockMediaRepositoryInterface) {
+				repo.EXPECT().GetMessageVoiceMetadata(gomock.Any(), "message/1/a.webm").Return(nil, mediadto.ErrInvalidFileType)
+			},
+			wantCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			repo := mock.NewMockMediaRepositoryInterface(ctrl)
+			if tt.prepare != nil {
+				tt.prepare(repo)
+			}
+			got, err := tt.call(MediaServer{MediaRepository: repo, logger: zap.NewNop()})
+			if tt.wantCode != 0 {
+				require.Error(t, err)
+				st, ok := status.FromError(err)
+				require.True(t, ok)
+				require.Equal(t, tt.wantCode, st.Code())
+				return
+			}
+			require.NoError(t, err)
+			tt.assert(t, got)
+		})
+	}
+}
+
+type fakeTranscriber struct {
+	text string
+	err  error
+}
+
+func (t fakeTranscriber) Transcribe(ctx context.Context, data []byte, contentType string) (string, error) {
+	return t.text, t.err
+}
+
+func TestMediaServer_TranscribeVoice(t *testing.T) {
+	tests := []struct {
+		name        string
+		req         *mediav1.RequestTranscribeVoice
+		transcriber VoiceTranscriber
+		prepare     func(*mock.MockMediaRepositoryInterface)
+		wantCode    codes.Code
+		wantText    string
+	}{
+		{name: "nil request", wantCode: codes.InvalidArgument},
+		{name: "no transcriber", req: &mediav1.RequestTranscribeVoice{ObjectKey: "message/1/a.webm"}, wantCode: codes.Internal},
+		{
+			name:        "load error",
+			req:         &mediav1.RequestTranscribeVoice{ObjectKey: "message/1/a.webm"},
+			transcriber: fakeTranscriber{text: "ignored"},
+			prepare: func(repo *mock.MockMediaRepositoryInterface) {
+				repo.EXPECT().GetMessageAttachment(gomock.Any(), "message/1/a.webm").Return(nil, "", mediadto.ErrFileTooLarge)
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name:        "transcribe error",
+			req:         &mediav1.RequestTranscribeVoice{ObjectKey: "message/1/a.webm"},
+			transcriber: fakeTranscriber{err: speechkit.ErrTranscriptionFailed},
+			prepare: func(repo *mock.MockMediaRepositoryInterface) {
+				repo.EXPECT().GetMessageAttachment(gomock.Any(), "message/1/a.webm").Return([]byte("voice"), "audio/webm", nil)
+			},
+			wantCode: codes.Internal,
+		},
+		{
+			name:        "success",
+			req:         &mediav1.RequestTranscribeVoice{ObjectKey: "message/1/a.webm"},
+			transcriber: fakeTranscriber{text: "hello"},
+			prepare: func(repo *mock.MockMediaRepositoryInterface) {
+				repo.EXPECT().GetMessageAttachment(gomock.Any(), "message/1/a.webm").Return([]byte("voice"), "audio/webm", nil)
+			},
+			wantText: "hello",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			repo := mock.NewMockMediaRepositoryInterface(ctrl)
+			if tt.prepare != nil {
+				tt.prepare(repo)
+			}
+			got, err := (MediaServer{MediaRepository: repo, transcriber: tt.transcriber, logger: zap.NewNop()}).
+				TranscribeVoice(context.Background(), tt.req)
+			if tt.wantCode != 0 {
+				require.Error(t, err)
+				st, ok := status.FromError(err)
+				require.True(t, ok)
+				require.Equal(t, tt.wantCode, st.Code())
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.wantText, got.GetTranscript())
 		})
 	}
 }
