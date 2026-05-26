@@ -30,15 +30,15 @@ func TestTextForViewer(t *testing.T) {
 			subscriptionActive: true,
 		},
 		{
-			name:               "html tags are stripped for free viewer",
+			name:               "html escaped for free viewer",
 			raw:                "<b>Hello</b>",
-			want:               "<b>Hello</b>",
+			want:               "&lt;b&gt;Hello&lt;/b&gt;",
 			subscriptionActive: false,
 		},
 		{
-			name:               "html tags are stripped for active subscription",
+			name:               "html escaped for active subscription",
 			raw:                "<b>Hello</b>",
-			want:               "<b>Hello</b>",
+			want:               "&lt;b&gt;Hello&lt;/b&gt;",
 			subscriptionActive: true,
 		},
 		{
@@ -56,7 +56,7 @@ func TestTextForViewer(t *testing.T) {
 		{
 			name:               "html with profanity for active subscription",
 			raw:                "<b>блять</b>",
-			want:               "<b>***</b>",
+			want:               "&lt;b&gt;***&lt;/b&gt;",
 			subscriptionActive: true,
 		},
 		{
@@ -66,9 +66,9 @@ func TestTextForViewer(t *testing.T) {
 			subscriptionActive: false,
 		},
 		{
-			name:               "script tag stripped",
+			name:               "script tag escaped",
 			raw:                "<script>alert('xss')</script>",
-			want:               "",
+			want:               "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;",
 			subscriptionActive: false,
 		},
 	}
@@ -107,9 +107,9 @@ func TestTextPtrForViewer(t *testing.T) {
 			subscriptionActive: true,
 		},
 		{
-			name:               "html tags stripped from pointer",
+			name:               "html escaped from pointer",
 			raw:                ptrString("<b>Hello</b>"),
-			want:               ptrString("<b>Hello</b>"),
+			want:               ptrString("&lt;b&gt;Hello&lt;/b&gt;"),
 			subscriptionActive: false,
 		},
 		{
@@ -161,13 +161,13 @@ func TestPlainTextForViewer(t *testing.T) {
 		{
 			name:               "html escaped for free viewer",
 			raw:                "<b>Hello</b>",
-			want:               "<b>Hello</b>",
+			want:               "&lt;b&gt;Hello&lt;/b&gt;",
 			subscriptionActive: false,
 		},
 		{
 			name:               "html escaped and profanity masked for active subscription",
 			raw:                "<b>блять</b>",
-			want:               "<b>***</b>",
+			want:               "&lt;b&gt;***&lt;/b&gt;",
 			subscriptionActive: true,
 		},
 		{
@@ -220,13 +220,13 @@ func TestPlainTextPtrForViewer(t *testing.T) {
 		{
 			name:               "html escaped from pointer",
 			raw:                ptrString("<b>Hello</b>"),
-			want:               ptrString("<b>Hello</b>"),
+			want:               ptrString("&lt;b&gt;Hello&lt;/b&gt;"),
 			subscriptionActive: false,
 		},
 		{
 			name:               "html escaped and profanity masked for active subscription",
 			raw:                ptrString("<b>блять</b>"),
-			want:               ptrString("<b>***</b>"),
+			want:               ptrString("&lt;b&gt;***&lt;/b&gt;"),
 			subscriptionActive: true,
 		},
 		{

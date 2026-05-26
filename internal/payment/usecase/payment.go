@@ -12,6 +12,8 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/payment/dto"
 )
 
+//go:generate mockgen -source=payment.go -destination=mock/payment_mock.go -package=mock
+
 type PaymentRepository interface {
 	PaymentCreate(ctx context.Context, p *domain.Payment) (*domain.Payment, error)
 	PaymentGetByID(ctx context.Context, id int64) (*domain.Payment, error)
