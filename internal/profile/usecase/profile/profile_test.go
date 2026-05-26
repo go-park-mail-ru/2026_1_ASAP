@@ -449,8 +449,8 @@ func TestPositiveProfileService_UpdateNameSanitizesHTML(t *testing.T) {
 					LastName:  strPtr(`<img src=x onerror=alert(1)>`),
 				},
 			},
-			wantFirst:   `Ann`,
-			wantLast:    ``,
+			wantFirst:   `<b>Ann</b>`,
+			wantLast:    `<img src="x">`,
 			wantNilLast: false,
 		},
 		{

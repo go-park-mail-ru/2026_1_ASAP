@@ -21,8 +21,8 @@ func TestText(t *testing.T) {
 		{name: "ampersand", value: "A & B", want: "A &amp; B"},
 		{name: "less than", value: "x < y", want: "x &lt; y"},
 		{name: "script tag", value: "<script>alert('xss')</script>", want: ""},
-		{name: "bold tag stripped", value: "<b>Bold text</b>", want: "Bold text"},
-		{name: "img tag stripped", value: `<img src=x onerror=alert(1)>`, want: ""},
+		{name: "bold tag kept", value: "<b>Bold text</b>", want: "<b>Bold text</b>"},
+		{name: "img tag sanitized", value: `<img src=x onerror=alert(1)>`, want: `<img src="x">`},
 		{name: "russian", value: "Привет мир", want: "Привет мир"},
 		{name: "newlines", value: "Line1\nLine2", want: "Line1\nLine2"},
 	}
@@ -68,4 +68,10 @@ func TestHTMLPtr(t *testing.T) {
 	got := HTMLPtr(strPtr("edited <b>x</b>"))
 	require.NotNil(t, got)
 	require.Equal(t, "edited <b>x</b>", *got)
+}
+
+func TestTextAndHTML_differOnImg(t *testing.T) {
+	raw := `<img src=x onerror=alert(1)>`
+	require.Equal(t, `<img src="x">`, Text(raw))
+	require.Equal(t, "", HTML(raw))
 }

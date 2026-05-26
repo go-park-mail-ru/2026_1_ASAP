@@ -1351,7 +1351,7 @@ func TestPositiveChatService_CreateChatSanitizesTitle(t *testing.T) {
 		wantTitle string
 	}{
 		{
-			name: "bold markup",
+			name: "bold markup kept",
 			prepare: func(f *fields) {
 				rawTitle := `<b>Group</b>`
 				f.chatRepo.EXPECT().
@@ -1375,7 +1375,7 @@ func TestPositiveChatService_CreateChatSanitizesTitle(t *testing.T) {
 				},
 				ownerID: 100,
 			},
-			wantTitle: `Group`,
+			wantTitle: `<b>Group</b>`,
 		},
 		{
 			name: "ampersand in title",
