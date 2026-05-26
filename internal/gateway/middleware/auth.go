@@ -10,7 +10,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 )
 
-//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/session_service_mock.go -package=mock
+//go:generate mockgen -source=auth.go -destination=mock/session_service_mock.go -package=mock
 
 const (
 	UserID    ctxKey = "userID"

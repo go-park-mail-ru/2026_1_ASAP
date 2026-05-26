@@ -22,7 +22,7 @@ type ProfileService interface {
 	UpdateAvatarFromURL(ctx context.Context, profileId int64, avatarURL string) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/auth_mock.go -package=mock
+//go:generate mockgen -source=auth.go -destination=mock/auth_mock.go -package=mock
 type UserRepository interface {
 	Create(ctx context.Context, u *domain.User) (*domain.User, error)
 	CreateUserByVKID(ctx context.Context, vkID int64, newUser *domain.User) (*domain.User, error)

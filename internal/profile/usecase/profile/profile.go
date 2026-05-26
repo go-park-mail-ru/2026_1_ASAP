@@ -13,7 +13,7 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
 )
 
-//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=profile.go -destination=mock/profile_mock.go -package=mock
+//go:generate mockgen -source=profile.go -destination=mock/profile_mock.go -package=mock
 type MediaService interface {
 	UploadAvatar(ctx context.Context, userId int64, input *media2.FileInput) (string, error)
 	DeleteAvatar(ctx context.Context, userID int64) error

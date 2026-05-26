@@ -1,7 +1,6 @@
 package contacts
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,6 +11,7 @@ import (
 
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/jsonbody"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
@@ -87,7 +87,7 @@ func (h *GatewayContactsHandler) CreateContact(w http.ResponseWriter, r *http.Re
 		return
 	}
 	var body contactdto.AddContactRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	if err := jsonbody.Decode(r.Body, &body); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{

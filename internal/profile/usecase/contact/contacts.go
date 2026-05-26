@@ -11,7 +11,7 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 )
 
-//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=contacts.go -destination=mock/contacts_mock.go -package=mock
+//go:generate mockgen -source=contacts.go -destination=mock/contacts_mock.go -package=mock
 type ContactRepositoryInterface interface {
 	GetAllContactsByUserID(ctx context.Context, userID int64) ([]*domain.Contact, error)
 	GetContact(ctx context.Context, userID, contactUserID int64) (*domain.Contact, error)

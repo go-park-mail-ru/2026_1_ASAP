@@ -1,20 +1,19 @@
 package chat
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/jsonbody"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
@@ -27,76 +26,6 @@ type GatewayChatHandler struct {
 
 func NewGatewayChatHandler(chat chatv1.ChatClient) *GatewayChatHandler {
 	return &GatewayChatHandler{ChatService: chat}
-}
-
-// DTO types
-
-type MessageInfoResponse struct {
-	CreatedAt time.Time `json:"created_at"`
-	Text      string    `json:"text"`
-	SenderID  int64     `json:"sender_id"`
-}
-
-type ChatInfoResponse struct {
-	Avatar            *string             `json:"avatar"`
-	Description       *string             `json:"description"`
-	Type              string              `json:"type"`
-	Title             string              `json:"title"`
-	LastMessage       MessageInfoResponse `json:"last_message"`
-	ID                int64               `json:"id"`
-	OwnerID           int64               `json:"owner_id"`
-	UnreadCount       int64               `json:"unread_count"`
-	LastReadMessageID int64               `json:"last_read_message_id"`
-}
-
-type CreateChatRequest struct {
-	Title     string  `json:"title"`
-	Type      string  `json:"type"`
-	MembersID []int64 `json:"members_id"`
-}
-
-type UpdateTitleRequest struct {
-	Title string `json:"title"`
-}
-
-type UpdateDescriptionRequest struct {
-	Description string `json:"description"`
-}
-
-type AddMembersRequest struct {
-	MembersID []int64 `json:"members_id"`
-}
-
-type JoinChannelRequest struct {
-	UserId int64 `json:"user_id"`
-	ChatId int64 `json:"chat_id"`
-}
-
-type ChatMembersResponse struct {
-	MembersID []int64 `json:"members_id"`
-}
-
-type StickerResponse struct {
-	Slug    *string `json:"slug,omitempty"`
-	Emoji   *string `json:"emoji,omitempty"`
-	FileURL string  `json:"file_url"`
-	ID      int64   `json:"id"`
-	PackID  int64   `json:"pack_id"`
-	Width   *int32  `json:"width,omitempty"`
-	Height  *int32  `json:"height,omitempty"`
-}
-
-type StickerPackResponse struct {
-	Slug         *string           `json:"slug,omitempty"`
-	ThumbnailURL *string           `json:"thumbnail_url,omitempty"`
-	Name         string            `json:"name"`
-	Title        string            `json:"title"`
-	ID           int64             `json:"id"`
-	Stickers     []StickerResponse `json:"stickers"`
-}
-
-type StickerPacksResponse struct {
-	Packs []StickerPackResponse `json:"packs"`
 }
 
 // helpers
@@ -369,7 +298,7 @@ func (h *GatewayChatHandler) CreateChat(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var req CreateChatRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonbody.Decode(r.Body, &req); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -548,7 +477,7 @@ func (h *GatewayChatHandler) UpdateChatTitle(w http.ResponseWriter, r *http.Requ
 	}
 
 	var req UpdateTitleRequest
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err = jsonbody.Decode(r.Body, &req); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -588,7 +517,7 @@ func (h *GatewayChatHandler) UpdateChatDescription(w http.ResponseWriter, r *htt
 	}
 
 	var req UpdateDescriptionRequest
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err = jsonbody.Decode(r.Body, &req); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -628,7 +557,7 @@ func (h *GatewayChatHandler) AddMembers(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var req AddMembersRequest
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err = jsonbody.Decode(r.Body, &req); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
