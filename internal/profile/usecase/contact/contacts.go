@@ -11,9 +11,10 @@ import (
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 )
 
-//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=contacts.go -destination=mock/contacts_mock.go -package=mock
+//go:generate mockgen -source=contacts.go -destination=mock/contacts_mock.go -package=mock
 type ContactRepositoryInterface interface {
 	GetAllContactsByUserID(ctx context.Context, userID int64) ([]*domain.Contact, error)
+	GetContact(ctx context.Context, userID, contactUserID int64) (*domain.Contact, error)
 	CreateContact(ctx context.Context, contact *domain.Contact) (*domain.Contact, error)
 	DeleteContact(ctx context.Context, userID, contactUserID int64) error
 	IsContact(ctx context.Context, userID, contactUserID int64) (bool, error)
@@ -23,15 +24,25 @@ type ProfileRepositoryInterface interface {
 	GetProfileById(ctx context.Context, id int64) (*profile.Profile, error)
 }
 
+type OnlineRepository interface {
+	FilterOnline(ctx context.Context, userIDs []int64) (map[int64]bool, error)
+}
+
 type ContactService struct {
 	contactRepo ContactRepositoryInterface
 	profileRepo ProfileRepositoryInterface
+	onlineRepo  OnlineRepository
 }
 
-func NewContactService(contactRepo ContactRepositoryInterface, userRepo ProfileRepositoryInterface) *ContactService {
+func NewContactService(
+	contactRepo ContactRepositoryInterface,
+	userRepo ProfileRepositoryInterface,
+	onlineRepo OnlineRepository,
+) *ContactService {
 	return &ContactService{
 		contactRepo: contactRepo,
 		profileRepo: userRepo,
+		onlineRepo:  onlineRepo,
 	}
 }
 
@@ -57,7 +68,25 @@ func (s *ContactService) GetContacts(ctx context.Context, userID int64) ([]*dto.
 		})
 	}
 
+	s.enrichContactsOnline(ctx, result)
 	return result, nil
+}
+
+func (s *ContactService) enrichContactsOnline(ctx context.Context, contacts []*dto.ContactResponse) {
+	if s.onlineRepo == nil || len(contacts) == 0 {
+		return
+	}
+	ids := make([]int64, 0, len(contacts))
+	for _, c := range contacts {
+		ids = append(ids, c.ContactUserID)
+	}
+	online, err := s.onlineRepo.FilterOnline(ctx, ids)
+	if err != nil {
+		return
+	}
+	for _, c := range contacts {
+		c.IsOnline = online[c.ContactUserID]
+	}
 }
 
 func (s *ContactService) AddContact(ctx context.Context, contactRequest dto.AddContactRequest, userID int64) (*dto.ContactResponse, error) {
@@ -110,6 +139,27 @@ func (s *ContactService) AddContact(ctx context.Context, contactRequest dto.AddC
 	}
 
 	return contactDTO, nil
+}
+
+func (s *ContactService) HasContact(ctx context.Context, userID, contactUserID int64) (bool, error) {
+	return s.contactRepo.IsContact(ctx, userID, contactUserID)
+}
+
+func (s *ContactService) GetContact(ctx context.Context, userID, contactUserID int64) (*dto.ContactResponse, error) {
+	contact, err := s.contactRepo.GetContact(ctx, userID, contactUserID)
+	if err != nil {
+		return nil, err
+	}
+	resp := &dto.ContactResponse{
+		UserID:           contact.UserID,
+		ContactUserID:    contact.ContactUserID,
+		FirstName:        contact.FirstName,
+		LastName:         contact.LastName,
+		ContactAvatarUrl: contact.ContactAvatarUrl,
+		CreatedAt:        contact.CreatedAt,
+	}
+	s.enrichContactsOnline(ctx, []*dto.ContactResponse{resp})
+	return resp, nil
 }
 
 func (s *ContactService) DeleteContact(ctx context.Context, contactRequest dto.DeleteContactRequest, userID int64) error {

@@ -22,7 +22,7 @@ type ProfileService interface {
 	UpdateAvatarFromURL(ctx context.Context, profileId int64, avatarURL string) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=auth.go -destination=mock/auth_mock.go -package=mock
+//go:generate mockgen -source=auth.go -destination=mock/auth_mock.go -package=mock
 type UserRepository interface {
 	Create(ctx context.Context, u *domain.User) (*domain.User, error)
 	CreateUserByVKID(ctx context.Context, vkID int64, newUser *domain.User) (*domain.User, error)
@@ -58,30 +58,30 @@ func (authService *AuthService) AuthWithVKID(ctx context.Context, request *dtoVK
 	user, err := authService.userRepository.GetUserByVKID(ctx, request.VKUserID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			user := &domain.User{
+			newUser := &domain.User{
 				Login: login,
 				Email: request.Email,
 			}
-			createdUser, err := authService.userRepository.CreateUserByVKID(ctx, request.VKUserID, user)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create profile: %w", err)
+			createdUser, createErr := authService.userRepository.CreateUserByVKID(ctx, request.VKUserID, newUser)
+			if createErr != nil {
+				return nil, fmt.Errorf("failed to create profile: %w", createErr)
 			}
 			if authService.ProfileService != nil {
-				if err := authService.ProfileService.Create(ctx, createdUser.ID, firstName); err != nil {
-					return nil, fmt.Errorf("failed to create profile: %w", err)
+				if profileErr := authService.ProfileService.Create(ctx, createdUser.ID, firstName); profileErr != nil {
+					return nil, fmt.Errorf("failed to create profile: %w", profileErr)
 				}
 				if lastName != "" {
-					if err := authService.ProfileService.UpdateName(ctx, createdUser.ID, firstName, lastName); err != nil {
-						return nil, fmt.Errorf("failed to update vk profile name: %w", err)
+					if profileErr := authService.ProfileService.UpdateName(ctx, createdUser.ID, firstName, lastName); profileErr != nil {
+						return nil, fmt.Errorf("failed to update vk profile name: %w", profileErr)
 					}
 				}
 				if avatarURL := strings.TrimSpace(request.AvatarURL); avatarURL != "" {
 					_ = authService.ProfileService.UpdateAvatarFromURL(ctx, createdUser.ID, avatarURL)
 				}
 			}
-			sessionData, err := authService.SessionService.CreateSession(ctx, createdUser.ID)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create session: %w", err)
+			sessionData, sessionErr := authService.SessionService.CreateSession(ctx, createdUser.ID)
+			if sessionErr != nil {
+				return nil, fmt.Errorf("failed to create session: %w", sessionErr)
 			}
 
 			return sessionData, nil

@@ -6,6 +6,10 @@ import (
 	"errors"
 	"strings"
 
+	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
@@ -13,13 +17,12 @@ import (
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type ContactServiceInterface interface {
 	GetContacts(ctx context.Context, userID int64) ([]*dto.ContactResponse, error)
+	HasContact(ctx context.Context, userID, contactUserID int64) (bool, error)
+	GetContact(ctx context.Context, userID, contactUserID int64) (*dto.ContactResponse, error)
 	AddContact(ctx context.Context, contactRequest dto.AddContactRequest, userID int64) (*dto.ContactResponse, error)
 	DeleteContact(ctx context.Context, contactRequest dto.DeleteContactRequest, userID int64) error
 }
@@ -34,6 +37,7 @@ type ProfileServiceInterface interface {
 	SearchIdByLogin(ctx context.Context, login *profile.RequestSearchIdByLogin) (response *profile.ResponseSearchIdByLogin, err error)
 	UpdateProfileName(ctx context.Context, userID int64, request *profile.RequestUpdateName) (*profile.ResponseUpdateProfile, error)
 	DeleteProfileAvatar(ctx context.Context, userID int64) (response *profile.ResponseDeleteProfile, err error)
+	UpdateLastSeen(ctx context.Context, userID int64) error
 }
 
 type ProfileServer struct {
@@ -231,6 +235,21 @@ func (p ProfileServer) UpdateProfileName(ctx context.Context, name *profilev1.Re
 		}
 	}
 	return mapUpdateProfileToProto(profileDTO), nil
+}
+
+func (p ProfileServer) UpdateLastSeen(ctx context.Context, request *profilev1.RequestUpdateLastSeen) (*emptypb.Empty, error) {
+	if request == nil || request.GetUserId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INVALID_INPUT), "user_id is required")
+	}
+	if err := p.profileUseCase.UpdateLastSeen(ctx, request.GetUserId()); err != nil {
+		if errors.Is(err, pdomain.ErrNotFound) {
+			p.Log(ctx).Info("profile not found", zap.Int64("user_id", request.GetUserId()), zap.Error(err))
+			return nil, grpcerr.New(codes.NotFound, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_NOT_FOUND), "profile not found")
+		}
+		p.Log(ctx).Error("failed to update last seen", zap.Int64("user_id", request.GetUserId()), zap.Error(err))
+		return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "profile internal error")
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (p ProfileServer) SearchIdByLogin(ctx context.Context, request *profilev1.RequestSearchIdByLogin) (*profilev1.ResponseSearchIdByLogin, error) {

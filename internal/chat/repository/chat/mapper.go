@@ -7,14 +7,16 @@ import (
 
 func toDomainChat(chatModel *ChatModel) *domain.Chat {
 	return &domain.Chat{
-		Id:          chatModel.Id,
-		Type:        domain.ChatType(chatModel.Type),
-		Title:       chatModel.Title,
-		Description: null.NullStringToPtrString(chatModel.Description),
-		OwnerId:     chatModel.OwnerId,
-		AvatarUrl:   null.NullStringToPtrString(chatModel.AvatarUrl),
-		CreatedAt:   chatModel.CreatedAt,
-		UpdatedAt:   chatModel.UpdatedAt,
+		Id:                chatModel.Id,
+		Type:              domain.ChatType(chatModel.Type),
+		Title:             chatModel.Title,
+		Description:       null.NullStringToPtrString(chatModel.Description),
+		OwnerId:           chatModel.OwnerId,
+		AvatarUrl:         null.NullStringToPtrString(chatModel.AvatarUrl),
+		CreatedAt:         chatModel.CreatedAt,
+		UpdatedAt:         chatModel.UpdatedAt,
+		LastReadMessageID: chatModel.LastReadMessageID,
+		UnreadCount:       chatModel.UnreadCount,
 	}
 }
 

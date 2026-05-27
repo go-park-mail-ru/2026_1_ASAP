@@ -19,6 +19,9 @@ service Profile {
     rpc ListContacts(RequestListContacts) returns (ResponseListContacts);
     rpc AddContact(RequestAddContact) returns (ResponseAddContact);
     rpc DeleteContact(RequestDeleteContact) returns (ResponseDeleteContact);
+    rpc HasContact(RequestHasContact) returns (ResponseHasContact);
+    rpc GetContact(RequestGetContact) returns (ResponseGetContact);
+    rpc UpdateLastSeen(RequestUpdateLastSeen) returns (google.protobuf.Empty);
 }
 
 enum ProfileErrorCode {
@@ -73,6 +76,10 @@ message RequestGetProfile {
     int64 user_id = 1;
 }
 
+message RequestUpdateLastSeen {
+    int64 user_id = 1;
+}
+
 message RequestSearchIdByLogin {
     string login = 1;
 }
@@ -93,6 +100,7 @@ message ContactItem {
     optional string last_name = 4;
     optional string contact_avatar_url = 5;
     google.protobuf.Timestamp created_at = 6;
+    bool is_online = 7;
 }
 
 message ResponseListContacts {
@@ -117,6 +125,24 @@ message RequestDeleteContact {
 
 message ResponseDeleteContact {}
 
+message RequestHasContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+}
+
+message ResponseHasContact {
+    bool exists = 1;
+}
+
+message RequestGetContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+}
+
+message ResponseGetContact {
+    ContactItem contact = 1;
+}
+
 message ResponseGetProfile {
     int64 user_id = 1;
     string first_name = 2;
@@ -125,4 +151,5 @@ message ResponseGetProfile {
     string bio = 5;
     string birth_date = 6;
     string avatar = 7;
+    bool is_online = 8;
 }

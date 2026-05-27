@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -20,6 +19,11 @@ import (
 
 func strPtr(s string) *string {
 	return &s
+}
+
+func stubChatMemberUnread(repo *mock.MockChatRepositoryInterface) {
+	repo.EXPECT().GetChatMemberUnread(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(int64(0), int64(0), nil).AnyTimes()
 }
 
 func TestPositiveChatService_GetChatByID(t *testing.T) {
@@ -64,6 +68,7 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 					Content:   "Hello!",
 					CreatedAt: now,
 				}, nil)
+				f.chatRepo.EXPECT().GetChatMemberUnread(context.Background(), int64(1), int64(100)).Return(int64(5), int64(2), nil)
 			},
 			args: args{ctx: context.Background(), chatID: 1, userID: 100},
 			want: &dto.ChatInformationDTO{
@@ -77,7 +82,9 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 					Text:      "Hello!",
 					CreatedAt: now,
 				},
-				Avatar: strPtr("avatar.jpg"),
+				Avatar:            strPtr("avatar.jpg"),
+				LastReadMessageID: 5,
+				UnreadCount:       2,
 			},
 		},
 		{
@@ -113,6 +120,7 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 					LastName:  strPtr("User"),
 					Avatar:    strPtr("friend_avatar.jpg"),
 				}, nil)
+				f.chatRepo.EXPECT().GetChatMemberUnread(context.Background(), int64(2), int64(100)).Return(int64(0), int64(1), nil)
 			},
 			args: args{ctx: context.Background(), chatID: 2, userID: 100},
 			want: &dto.ChatInformationDTO{
@@ -126,7 +134,9 @@ func TestPositiveChatService_GetChatByID(t *testing.T) {
 					Text:      "Hi!",
 					CreatedAt: now,
 				},
-				Avatar: strPtr("friend_avatar.jpg"),
+				Avatar:            strPtr("friend_avatar.jpg"),
+				LastReadMessageID: 0,
+				UnreadCount:       1,
 			},
 		},
 	}
@@ -224,6 +234,7 @@ func TestNegativeChatService_GetChatByID(t *testing.T) {
 				}, nil)
 				f.chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(100)).Return(true, nil)
 				f.chatRepo.EXPECT().GetLastMessageOfChat(context.Background(), int64(1)).Return(nil, errors.New("db error"))
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{ctx: context.Background(), chatID: 1, userID: 100},
 			want: &dto.ChatInformationDTO{
@@ -317,6 +328,7 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(10), int64(100), "owner").Return(nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(10), int64(101), "member").Return(nil)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx: context.Background(),
@@ -361,6 +373,7 @@ func TestPositiveChatService_CreateChat(t *testing.T) {
 					UserId:    101,
 					FirstName: "Friend",
 				}, nil).Times(2)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx: context.Background(),
@@ -486,7 +499,7 @@ func TestNegativeChatService_CreateChat(t *testing.T) {
 				},
 				ownerID: 100,
 			},
-			wantErr: fmt.Errorf("get user %d: %w", 101, pdomain.ErrNotFound),
+			wantErr: domain.ErrUserNotFound,
 		},
 	}
 
@@ -728,6 +741,7 @@ func TestPositiveChatService_UpdateChatAvatar(t *testing.T) {
 					Content:   "Hello",
 					CreatedAt: now,
 				}, nil)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -1112,22 +1126,26 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 			prepare: func(f *fields) {
 				f.chatRepo.EXPECT().GetAllChatsByUserID(context.Background(), int64(100)).Return([]*domain.Chat{
 					{
-						Id:        1,
-						Type:      domain.ChatTypeGroup,
-						Title:     "Group Chat",
-						OwnerId:   100,
-						AvatarUrl: strPtr("group_avatar.jpg"),
-						CreatedAt: now,
-						UpdatedAt: now,
+						Id:                1,
+						Type:              domain.ChatTypeGroup,
+						Title:             "Group Chat",
+						OwnerId:           100,
+						AvatarUrl:         strPtr("group_avatar.jpg"),
+						CreatedAt:         now,
+						UpdatedAt:         now,
+						LastReadMessageID: 8,
+						UnreadCount:       3,
 					},
 					{
-						Id:        2,
-						Type:      domain.ChatTypeDialog,
-						Title:     "",
-						OwnerId:   100,
-						AvatarUrl: nil,
-						CreatedAt: now,
-						UpdatedAt: now,
+						Id:                2,
+						Type:              domain.ChatTypeDialog,
+						Title:             "",
+						OwnerId:           100,
+						AvatarUrl:         nil,
+						CreatedAt:         now,
+						UpdatedAt:         now,
+						LastReadMessageID: 0,
+						UnreadCount:       1,
 					},
 				}, nil)
 
@@ -1166,7 +1184,9 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 						Text:      "Hello group!",
 						CreatedAt: now,
 					},
-					Avatar: strPtr("group_avatar.jpg"),
+					Avatar:            strPtr("group_avatar.jpg"),
+					LastReadMessageID: 8,
+					UnreadCount:       3,
 				},
 				{
 					ID:       2,
@@ -1177,7 +1197,9 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 						Text:      "Hi in dialog!",
 						CreatedAt: now,
 					},
-					Avatar: nil,
+					Avatar:            nil,
+					LastReadMessageID: 0,
+					UnreadCount:       1,
 				},
 			},
 		},
@@ -1241,6 +1263,8 @@ func TestPositiveChatService_GetAllChats(t *testing.T) {
 				require.Equal(t, tt.want[i].ChatType, result[i].ChatType)
 				require.Equal(t, tt.want[i].Title, result[i].Title)
 				require.Equal(t, tt.want[i].Avatar, result[i].Avatar)
+				require.Equal(t, tt.want[i].UnreadCount, result[i].UnreadCount)
+				require.Equal(t, tt.want[i].LastReadMessageID, result[i].LastReadMessageID)
 			}
 		})
 	}
@@ -1306,7 +1330,7 @@ func TestNegativeChatService_GetAllChats(t *testing.T) {
 	}
 }
 
-func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
+func TestPositiveChatService_CreateChatSanitizesTitle(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
 		userSvc   *mock.MockProfileServiceInterface
@@ -1327,7 +1351,7 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 		wantTitle string
 	}{
 		{
-			name: "bold markup",
+			name: "bold markup kept",
 			prepare: func(f *fields) {
 				rawTitle := `<b>Group</b>`
 				f.chatRepo.EXPECT().
@@ -1340,6 +1364,7 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(101)).Return(&pdomain.Profile{UserId: 101, FirstName: "Member"}, nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(77), int64(100), "owner").Return(nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(77), int64(101), "member").Return(nil)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx: context.Background(),
@@ -1366,6 +1391,7 @@ func TestPositiveChatService_CreateChatEscapesTitle(t *testing.T) {
 				f.userSvc.EXPECT().GetUserByID(context.Background(), int64(11)).Return(&pdomain.Profile{UserId: 11, FirstName: "User2"}, nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(78), int64(10), "owner").Return(nil)
 				f.chatRepo.EXPECT().AddMember(context.Background(), int64(78), int64(11), "member").Return(nil)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx: context.Background(),
@@ -1451,6 +1477,7 @@ func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 					Content:   "Hello",
 					CreatedAt: now,
 				}, nil)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -1502,7 +1529,7 @@ func TestPositiveChatService_UpdateChatTitle(t *testing.T) {
 	}
 }
 
-func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
+func TestPositiveChatService_UpdateChatTitleSanitizesHTML(t *testing.T) {
 	type fields struct {
 		chatRepo  *mock.MockChatRepositoryInterface
 		userSvc   *mock.MockProfileServiceInterface
@@ -1538,6 +1565,7 @@ func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 					Title: rawTitle,
 				}, nil)
 				f.chatRepo.EXPECT().GetLastMessageOfChat(context.Background(), int64(11)).Return(&domain.Message{}, domain.ErrNoMessage)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -1562,6 +1590,7 @@ func TestPositiveChatService_UpdateChatTitleEscapesHTML(t *testing.T) {
 					Title: rawTitle,
 				}, nil)
 				f.chatRepo.EXPECT().GetLastMessageOfChat(context.Background(), int64(12)).Return(&domain.Message{}, domain.ErrNoMessage)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -2312,6 +2341,7 @@ func TestPositiveChatService_UpdateChatDescription(t *testing.T) {
 				}, nil)
 				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(1)).Return([]int64{100, 101}, nil)
 				f.notifier.EXPECT().NotifyChatDescriptionUpdated(gomock.Any(), []int64{100, 101}, int64(1), gomock.Any()).Times(1)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx:         context.Background(),
@@ -2349,6 +2379,7 @@ func TestPositiveChatService_UpdateChatDescription(t *testing.T) {
 				f.chatRepo.EXPECT().GetLastMessageOfChat(context.Background(), int64(2)).Return(&domain.Message{}, domain.ErrNoMessage)
 				f.chatRepo.EXPECT().GetChatMembers(context.Background(), int64(2)).Return([]int64{100, 101}, nil)
 				f.notifier.EXPECT().NotifyChatDescriptionUpdated(gomock.Any(), []int64{100, 101}, int64(2), gomock.Any()).Times(1)
+				stubChatMemberUnread(f.chatRepo)
 			},
 			args: args{
 				ctx:         context.Background(),

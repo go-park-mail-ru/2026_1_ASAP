@@ -22,6 +22,11 @@ const (
 	Media_UpdateUserAvatar_FullMethodName          = "/media.v1.Media/UpdateUserAvatar"
 	Media_UploadChatAvatar_FullMethodName          = "/media.v1.Media/UploadChatAvatar"
 	Media_UploadComplaintAttachment_FullMethodName = "/media.v1.Media/UploadComplaintAttachment"
+	Media_UploadMessageAttachment_FullMethodName   = "/media.v1.Media/UploadMessageAttachment"
+	Media_GetMessageAttachment_FullMethodName      = "/media.v1.Media/GetMessageAttachment"
+	Media_GetMessageVoiceMetadata_FullMethodName   = "/media.v1.Media/GetMessageVoiceMetadata"
+	Media_TranscribeVoice_FullMethodName           = "/media.v1.Media/TranscribeVoice"
+	Media_ClassifyMessagePhoto_FullMethodName      = "/media.v1.Media/ClassifyMessagePhoto"
 	Media_DeleteUserAvatar_FullMethodName          = "/media.v1.Media/DeleteUserAvatar"
 )
 
@@ -32,6 +37,11 @@ type MediaClient interface {
 	UpdateUserAvatar(ctx context.Context, in *RequestUpdateUserAvatar, opts ...grpc.CallOption) (*ResponseUpdateUserAvatar, error)
 	UploadChatAvatar(ctx context.Context, in *RequestUpdateChatAvatar, opts ...grpc.CallOption) (*ResponseUpdateChatAvatar, error)
 	UploadComplaintAttachment(ctx context.Context, in *RequestUpdateComplaintAttachment, opts ...grpc.CallOption) (*ResponseUpdateComplaintAttachment, error)
+	UploadMessageAttachment(ctx context.Context, in *RequestUploadMessageAttachment, opts ...grpc.CallOption) (*ResponseUploadMessageAttachment, error)
+	GetMessageAttachment(ctx context.Context, in *RequestGetMessageAttachment, opts ...grpc.CallOption) (*ResponseGetMessageAttachment, error)
+	GetMessageVoiceMetadata(ctx context.Context, in *RequestGetMessageVoiceMetadata, opts ...grpc.CallOption) (*ResponseGetMessageVoiceMetadata, error)
+	TranscribeVoice(ctx context.Context, in *RequestTranscribeVoice, opts ...grpc.CallOption) (*ResponseTranscribeVoice, error)
+	ClassifyMessagePhoto(ctx context.Context, in *RequestClassifyMessagePhoto, opts ...grpc.CallOption) (*ResponseClassifyMessagePhoto, error)
 	DeleteUserAvatar(ctx context.Context, in *RequestDeleteUserAvatar, opts ...grpc.CallOption) (*ResponseDeleteUserAvatar, error)
 }
 
@@ -73,6 +83,56 @@ func (c *mediaClient) UploadComplaintAttachment(ctx context.Context, in *Request
 	return out, nil
 }
 
+func (c *mediaClient) UploadMessageAttachment(ctx context.Context, in *RequestUploadMessageAttachment, opts ...grpc.CallOption) (*ResponseUploadMessageAttachment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseUploadMessageAttachment)
+	err := c.cc.Invoke(ctx, Media_UploadMessageAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mediaClient) GetMessageAttachment(ctx context.Context, in *RequestGetMessageAttachment, opts ...grpc.CallOption) (*ResponseGetMessageAttachment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseGetMessageAttachment)
+	err := c.cc.Invoke(ctx, Media_GetMessageAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mediaClient) GetMessageVoiceMetadata(ctx context.Context, in *RequestGetMessageVoiceMetadata, opts ...grpc.CallOption) (*ResponseGetMessageVoiceMetadata, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseGetMessageVoiceMetadata)
+	err := c.cc.Invoke(ctx, Media_GetMessageVoiceMetadata_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mediaClient) TranscribeVoice(ctx context.Context, in *RequestTranscribeVoice, opts ...grpc.CallOption) (*ResponseTranscribeVoice, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseTranscribeVoice)
+	err := c.cc.Invoke(ctx, Media_TranscribeVoice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mediaClient) ClassifyMessagePhoto(ctx context.Context, in *RequestClassifyMessagePhoto, opts ...grpc.CallOption) (*ResponseClassifyMessagePhoto, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResponseClassifyMessagePhoto)
+	err := c.cc.Invoke(ctx, Media_ClassifyMessagePhoto_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mediaClient) DeleteUserAvatar(ctx context.Context, in *RequestDeleteUserAvatar, opts ...grpc.CallOption) (*ResponseDeleteUserAvatar, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResponseDeleteUserAvatar)
@@ -90,6 +150,11 @@ type MediaServer interface {
 	UpdateUserAvatar(context.Context, *RequestUpdateUserAvatar) (*ResponseUpdateUserAvatar, error)
 	UploadChatAvatar(context.Context, *RequestUpdateChatAvatar) (*ResponseUpdateChatAvatar, error)
 	UploadComplaintAttachment(context.Context, *RequestUpdateComplaintAttachment) (*ResponseUpdateComplaintAttachment, error)
+	UploadMessageAttachment(context.Context, *RequestUploadMessageAttachment) (*ResponseUploadMessageAttachment, error)
+	GetMessageAttachment(context.Context, *RequestGetMessageAttachment) (*ResponseGetMessageAttachment, error)
+	GetMessageVoiceMetadata(context.Context, *RequestGetMessageVoiceMetadata) (*ResponseGetMessageVoiceMetadata, error)
+	TranscribeVoice(context.Context, *RequestTranscribeVoice) (*ResponseTranscribeVoice, error)
+	ClassifyMessagePhoto(context.Context, *RequestClassifyMessagePhoto) (*ResponseClassifyMessagePhoto, error)
 	DeleteUserAvatar(context.Context, *RequestDeleteUserAvatar) (*ResponseDeleteUserAvatar, error)
 	mustEmbedUnimplementedMediaServer()
 }
@@ -109,6 +174,21 @@ func (UnimplementedMediaServer) UploadChatAvatar(context.Context, *RequestUpdate
 }
 func (UnimplementedMediaServer) UploadComplaintAttachment(context.Context, *RequestUpdateComplaintAttachment) (*ResponseUpdateComplaintAttachment, error) {
 	return nil, status.Error(codes.Unimplemented, "method UploadComplaintAttachment not implemented")
+}
+func (UnimplementedMediaServer) UploadMessageAttachment(context.Context, *RequestUploadMessageAttachment) (*ResponseUploadMessageAttachment, error) {
+	return nil, status.Error(codes.Unimplemented, "method UploadMessageAttachment not implemented")
+}
+func (UnimplementedMediaServer) GetMessageAttachment(context.Context, *RequestGetMessageAttachment) (*ResponseGetMessageAttachment, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMessageAttachment not implemented")
+}
+func (UnimplementedMediaServer) GetMessageVoiceMetadata(context.Context, *RequestGetMessageVoiceMetadata) (*ResponseGetMessageVoiceMetadata, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMessageVoiceMetadata not implemented")
+}
+func (UnimplementedMediaServer) TranscribeVoice(context.Context, *RequestTranscribeVoice) (*ResponseTranscribeVoice, error) {
+	return nil, status.Error(codes.Unimplemented, "method TranscribeVoice not implemented")
+}
+func (UnimplementedMediaServer) ClassifyMessagePhoto(context.Context, *RequestClassifyMessagePhoto) (*ResponseClassifyMessagePhoto, error) {
+	return nil, status.Error(codes.Unimplemented, "method ClassifyMessagePhoto not implemented")
 }
 func (UnimplementedMediaServer) DeleteUserAvatar(context.Context, *RequestDeleteUserAvatar) (*ResponseDeleteUserAvatar, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteUserAvatar not implemented")
@@ -188,6 +268,96 @@ func _Media_UploadComplaintAttachment_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Media_UploadMessageAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestUploadMessageAttachment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MediaServer).UploadMessageAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Media_UploadMessageAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MediaServer).UploadMessageAttachment(ctx, req.(*RequestUploadMessageAttachment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Media_GetMessageAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestGetMessageAttachment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MediaServer).GetMessageAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Media_GetMessageAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MediaServer).GetMessageAttachment(ctx, req.(*RequestGetMessageAttachment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Media_GetMessageVoiceMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestGetMessageVoiceMetadata)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MediaServer).GetMessageVoiceMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Media_GetMessageVoiceMetadata_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MediaServer).GetMessageVoiceMetadata(ctx, req.(*RequestGetMessageVoiceMetadata))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Media_TranscribeVoice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestTranscribeVoice)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MediaServer).TranscribeVoice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Media_TranscribeVoice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MediaServer).TranscribeVoice(ctx, req.(*RequestTranscribeVoice))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Media_ClassifyMessagePhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestClassifyMessagePhoto)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MediaServer).ClassifyMessagePhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Media_ClassifyMessagePhoto_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MediaServer).ClassifyMessagePhoto(ctx, req.(*RequestClassifyMessagePhoto))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Media_DeleteUserAvatar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RequestDeleteUserAvatar)
 	if err := dec(in); err != nil {
@@ -224,6 +394,26 @@ var Media_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UploadComplaintAttachment",
 			Handler:    _Media_UploadComplaintAttachment_Handler,
+		},
+		{
+			MethodName: "UploadMessageAttachment",
+			Handler:    _Media_UploadMessageAttachment_Handler,
+		},
+		{
+			MethodName: "GetMessageAttachment",
+			Handler:    _Media_GetMessageAttachment_Handler,
+		},
+		{
+			MethodName: "GetMessageVoiceMetadata",
+			Handler:    _Media_GetMessageVoiceMetadata_Handler,
+		},
+		{
+			MethodName: "TranscribeVoice",
+			Handler:    _Media_TranscribeVoice_Handler,
+		},
+		{
+			MethodName: "ClassifyMessagePhoto",
+			Handler:    _Media_ClassifyMessagePhoto_Handler,
 		},
 		{
 			MethodName: "DeleteUserAvatar",

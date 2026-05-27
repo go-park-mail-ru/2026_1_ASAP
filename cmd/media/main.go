@@ -8,15 +8,20 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/encoding/gzip"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
 	mediarepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/repository"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/speechkit"
 	mediagrpc "github.com/go-park-mail-ru/2026_1_ASAP/internal/media/transport/grpc"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/media/vision"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 func main() {
@@ -38,18 +43,39 @@ func main() {
 	}
 	defer mRepo.Close()
 
-	mediaSrv := mediagrpc.NewMediaServer(mRepo, logger.Named("media_grpc"))
+	capybaraDetector := vision.NewDetector(cfg.CapybaraDetectorConfig, logger.Named("capybara"))
+	if cfg.CapybaraDetectorConfig.Enabled {
+		warmCtx, warmCancel := context.WithTimeout(ctx, 2*time.Minute)
+		if warmErr := capybaraDetector.Warmup(warmCtx); warmErr != nil {
+			logger.Warn("capybara worker warmup failed", zap.Error(warmErr))
+		} else {
+			logger.Info("capybara worker ready")
+		}
+		warmCancel()
+	}
+	mRepo.SetCapybaraDetector(&vision.ClassifierAdapter{Detector: capybaraDetector})
+
+	stt := speechkit.NewClient(speechkit.Config{
+		APIKey: cfg.SpeechKitConfig.APIKey,
+		Lang:   cfg.SpeechKitConfig.Lang,
+	})
+	mediaSrv := mediagrpc.NewMediaServer(mRepo, stt, logger.Named("media_grpc"))
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())
 	if err != nil {
 		logger.Fatal("listen", zap.Error(err))
 	}
 
-	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("media")))
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("media")),
+		grpc.MaxRecvMsgSize(64<<20),
+		grpc.MaxSendMsgSize(64<<20),
+	)
 	mediav1.RegisterMediaServer(grpcServer, mediaSrv)
 	metricsServer := &http.Server{
-		Addr:    ":9103",
-		Handler: promhttp.Handler(),
+		Addr:              ":9103",
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)

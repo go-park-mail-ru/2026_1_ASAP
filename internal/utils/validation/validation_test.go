@@ -1,9 +1,11 @@
 package validation
 
 import (
+	"strings"
 	"testing"
 
 	dtoAuth "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
+	dtoContact "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 )
 
 func TestValidateEmail(t *testing.T) {
@@ -122,6 +124,70 @@ func TestValidationRequestLogin(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if errs := ValidationRequestLogin(tt.req); len(errs) != 0 {
 				t.Fatalf("expected no errors, got %v", errs)
+			}
+		})
+	}
+}
+
+func TestValidationContactCreate(t *testing.T) {
+	longName := strings.Repeat("a", 101)
+	validLastName := "Smith"
+
+	tests := []struct {
+		req       *dtoContact.AddContactRequest
+		name      string
+		wantCodes []string
+	}{
+		{
+			name: "valid",
+			req: &dtoContact.AddContactRequest{
+				FirstName:     "Ann",
+				LastName:      &validLastName,
+				ContactUserID: 10,
+			},
+		},
+		{
+			name: "long first name",
+			req: &dtoContact.AddContactRequest{
+				FirstName:     longName,
+				ContactUserID: 10,
+			},
+			wantCodes: []string{"CONTACT_FIRST_NAME_MUST_LESS_100_CHARACTERS"},
+		},
+		{
+			name: "long last name",
+			req: &dtoContact.AddContactRequest{
+				LastName:      &longName,
+				ContactUserID: 10,
+			},
+			wantCodes: []string{"CONTACT_LAST_NAME_MUST_LESS_100_CHARACTERS"},
+		},
+		{
+			name: "missing contact user id",
+			req: &dtoContact.AddContactRequest{
+				ContactUserID: 0,
+			},
+			wantCodes: []string{"CONTACT_USER_ID_REQUIRED"},
+		},
+		{
+			name: "negative contact user id",
+			req: &dtoContact.AddContactRequest{
+				ContactUserID: -1,
+			},
+			wantCodes: []string{"CONTACT_USER_ID_INVALID"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errs := ValidationContactCreate(tt.req)
+			if len(errs) != len(tt.wantCodes) {
+				t.Fatalf("expected %d errors, got %v", len(tt.wantCodes), errs)
+			}
+			for i, code := range tt.wantCodes {
+				if errs[i].Code != code {
+					t.Fatalf("error code[%d] = %q, want %q", i, errs[i].Code, code)
+				}
 			}
 		})
 	}

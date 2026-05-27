@@ -3,9 +3,11 @@ package ws
 type WsResponseStatus string
 
 const (
-	Error      WsResponseStatus = "error"
-	MessageNew WsResponseStatus = "message.New"
-	MessageGet WsResponseStatus = "message.Get"
+	Error                  WsResponseStatus = "error"
+	MessageNew             WsResponseStatus = "message.New"
+	MessageGet             WsResponseStatus = "message.Get"
+	MessageRead            WsResponseStatus = "message.Read"
+	MessageVoiceTranscript WsResponseStatus = "message.VoiceTranscript"
 
 	MessageUpdate          WsResponseStatus = "message.Update"           // Добавить bool last_message_edited
 	MessageClear           WsResponseStatus = "message.Clear"            // Добавить bool last_message_edited
@@ -15,6 +17,11 @@ const (
 	ChatUpdatedTitle       WsResponseStatus = "chat.Updated.Title"       // chat_id + title
 	ChatUpdatedDescription WsResponseStatus = "chat.Updated.Description" // chat_id + description
 	ChatUpdatedMembers     WsResponseStatus = "chat.Updated.Members"     // chat_id + type (deleted, added) + updated_members_id[] + name
+
+	PresenceTyping   WsResponseStatus = "presence.Typing"
+	PresenceOnline   WsResponseStatus = "presence.Online"
+	PresenceOffline  WsResponseStatus = "presence.Offline"
+	PresenceLastSeen WsResponseStatus = "presence.LastSeen"
 )
 
 type WsResponse[T any] struct {

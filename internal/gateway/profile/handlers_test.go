@@ -35,8 +35,6 @@ func TestPositiveGatewayProfileHandler_GetMyProfile(t *testing.T) {
 		profileClient *mock.MockProfileClient
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int
@@ -203,11 +201,11 @@ func TestPositiveGatewayProfileHandler_GetUserProfile(t *testing.T) {
 	}
 
 	tests := []struct {
-		prepare     func(*fields)
-		want        int
-		name        string
-		userID      int64
-		profileID   string
+		prepare   func(*fields)
+		want      int
+		name      string
+		userID    int64
+		profileID string
 	}{
 		{
 			name:      "Successful get user profile",
@@ -627,8 +625,8 @@ func TestPositiveGatewayProfileHandler_UpdateProfileName(t *testing.T) {
 			userID: 100,
 			prepare: func(f *fields) {
 				f.profileClient.EXPECT().UpdateProfileName(gomock.Any(), &profilev1.RequestUpdateName{
-					UserId:    100,
-					FirstName: "NewFirstName",
+					UserId:     100,
+					FirstName:  "NewFirstName",
 					SecondName: nil,
 				}).Return(&profilev1.ResponseGetProfile{
 					UserId:    100,

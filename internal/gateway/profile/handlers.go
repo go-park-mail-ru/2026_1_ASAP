@@ -1,7 +1,6 @@
 package profile
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -9,9 +8,11 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/jsonbody"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/profile"
@@ -115,6 +116,7 @@ func profileResponseToDTO(resp *profilev1.ResponseGetProfile) *dto.ResponseGetPr
 	out := &dto.ResponseGetProfile{
 		UserId:    resp.GetUserId(),
 		FirstName: resp.GetFirstName(),
+		IsOnline:  resp.GetIsOnline(),
 	}
 	if resp.LastName != nil {
 		out.LastName = resp.LastName
@@ -244,7 +246,7 @@ func (h *GatewayProfileHandler) UpdateUserBio(w http.ResponseWriter, r *http.Req
 		return
 	}
 	var body dto.RequestUpdateBio
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	if err := jsonbody.Decode(r.Body, &body); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -366,7 +368,7 @@ func (h *GatewayProfileHandler) UpdateUserBirthDate(w http.ResponseWriter, r *ht
 		return
 	}
 	var body dto.RequestUpdateBirthDate
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	if err := jsonbody.Decode(r.Body, &body); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -416,7 +418,7 @@ func (h *GatewayProfileHandler) UpdateProfileName(w http.ResponseWriter, r *http
 		return
 	}
 	var body dto.RequestUpdateName
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	if err := jsonbody.Decode(r.Body, &body); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},

@@ -5,6 +5,9 @@ import (
 	"context"
 	"errors"
 
+	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+
 	complaintv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/complaint/v1"
 	domainComplaint "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/domain/complaint"
 	dtoAnalytic "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/dto/analytic"
@@ -12,8 +15,6 @@ import (
 	dtoMedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/dto/media"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
 )
 
 type ComplaintUsecase interface {

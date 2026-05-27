@@ -1,15 +1,16 @@
 package complaint
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+
 	complaintv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/complaint/v1"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/jsonbody"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
@@ -30,56 +31,6 @@ type GatewayAnalyticHandler struct {
 func NewGatewayAnalyticHandler(complaintService complaintv1.ComplaintClient) *GatewayAnalyticHandler {
 	return &GatewayAnalyticHandler{ComplaintService: complaintService}
 }
-
-type createComplaintRequest struct {
-	Type     string `json:"type"`
-	Feedback struct {
-		FeedbackName  string `json:"feedback_name"`
-		FeedbackEmail string `json:"feedback_email"`
-	} `json:"feedback"`
-	Body string `json:"body"`
-}
-
-type updateStatusRequest struct {
-	ComplaintID int64  `json:"complaint_id"`
-	Status      string `json:"status"`
-}
-
-type complaintDTO struct {
-	ID            int64    `json:"id"`
-	Type          string   `json:"type"`
-	Status        string   `json:"status"`
-	Feedback      feedback `json:"feedback"`
-	Body          string   `json:"body"`
-	UserID        int64    `json:"user_id,omitempty"`
-	AttachmentURL *string  `json:"attachment_url,omitempty"`
-	CreatedAt     anyTime  `json:"created_at"`
-	UpdatedAt     anyTime  `json:"updated_at"`
-}
-
-type feedback struct {
-	FeedbackName  string `json:"feedback_name"`
-	FeedbackEmail string `json:"feedback_email"`
-}
-
-type complaintAnalyticDTO struct {
-	CountStatus countStatusDTO `json:"count_status"`
-	CountType   countTypeDTO   `json:"count_type"`
-}
-
-type countStatusDTO struct {
-	CountStatusOpened int64 `json:"count_status_opened"`
-	CountStatusInWork int64 `json:"count_status_in_work"`
-	CountStatusClosed int64 `json:"count_status_closed"`
-}
-
-type countTypeDTO struct {
-	CountBug     int64 `json:"count_type_bug"`
-	CountUpgrade int64 `json:"count_type_upgrade"`
-	CountProduct int64 `json:"count_type_product"`
-}
-
-type anyTime = string
 
 func (h *GatewayComplaintHandler) CreateComplaintUnAuthorized(w http.ResponseWriter, r *http.Request) {
 	h.createComplaint(w, r, nil)
@@ -116,7 +67,7 @@ func (h *GatewayComplaintHandler) createComplaint(w http.ResponseWriter, r *http
 			return
 		}
 		var payload createComplaintRequest
-		if err := json.Unmarshal([]byte(payloadRaw), &payload); err != nil {
+		if err := jsonbody.Unmarshal([]byte(payloadRaw), &payload); err != nil {
 			sendInvalidJSON(w)
 			return
 		}
@@ -141,7 +92,7 @@ func (h *GatewayComplaintHandler) createComplaint(w http.ResponseWriter, r *http
 		}
 	} else {
 		var body createComplaintRequest
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if err := jsonbody.Decode(r.Body, &body); err != nil {
 			sendInvalidJSON(w)
 			return
 		}
@@ -237,7 +188,7 @@ func (h *GatewayComplaintHandler) UpdateComplaintStatus(w http.ResponseWriter, r
 	}
 
 	var body updateStatusRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	if err := jsonbody.Decode(r.Body, &body); err != nil {
 		sendInvalidJSON(w)
 		return
 	}
@@ -296,9 +247,9 @@ func mapComplaintTypeFromString(t string) complaintv1.ComplaintType {
 	switch strings.ToLower(strings.TrimSpace(t)) {
 	case "bug":
 		return complaintv1.ComplaintType_COMPLAINT_TYPE_BUG
-	case "product":
+	case "suggestion":
 		return complaintv1.ComplaintType_COMPLAINT_TYPE_PRODUCT
-	case "upgrade":
+	case "complaint":
 		return complaintv1.ComplaintType_COMPLAINT_TYPE_UPGRADE
 	default:
 		return complaintv1.ComplaintType_COMPLAINT_TYPE_UNSPECIFIED

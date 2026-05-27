@@ -11,6 +11,11 @@ postgres:
 media:
   grpc_addr: "media:8003"
 
+redis:
+  host: redis
+  port: "6379"
+  database: 0
+
 app:
   shutdown_seconds: 20
   log_level: info

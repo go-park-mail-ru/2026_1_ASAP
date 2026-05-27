@@ -184,14 +184,14 @@ func (h *GatewaySearchHandler) SearchChats(w http.ResponseWriter, r *http.Reques
 	limit, _ := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 32)
 
 	if isOnlyChannelKindFilter(kinds) {
-		gResp, err := h.Search.SearchGlobalChannels(ctx, &searchv1.SearchGlobalChannelsRequest{
+		gResp, searchErr := h.Search.SearchGlobalChannels(ctx, &searchv1.SearchGlobalChannelsRequest{
 			UserId:   uid,
 			Query:    q,
 			Limit:    int32(limit),
 			BeforeId: beforeID,
 		})
-		if err != nil {
-			sendSearchError(w, err)
+		if searchErr != nil {
+			sendSearchError(w, searchErr)
 			return
 		}
 		items := make([]searchChatItemJSON, 0, len(gResp.GetChannels()))
@@ -334,19 +334,22 @@ func parseChatKinds(raw string) ([]searchv1.SearchChatKind, error) {
 	seen := make(map[searchv1.SearchChatKind]struct{}, len(parts))
 	kinds := make([]searchv1.SearchChatKind, 0, len(parts))
 	for _, p := range parts {
+		var kind searchv1.SearchChatKind
 		switch strings.ToLower(strings.TrimSpace(p)) {
 		case "dialog":
-			seen[searchv1.SearchChatKind_SEARCH_CHAT_KIND_DIALOG] = struct{}{}
+			kind = searchv1.SearchChatKind_SEARCH_CHAT_KIND_DIALOG
 		case "group":
-			seen[searchv1.SearchChatKind_SEARCH_CHAT_KIND_GROUP] = struct{}{}
+			kind = searchv1.SearchChatKind_SEARCH_CHAT_KIND_GROUP
 		case "channel":
-			seen[searchv1.SearchChatKind_SEARCH_CHAT_KIND_CHANNEL] = struct{}{}
+			kind = searchv1.SearchChatKind_SEARCH_CHAT_KIND_CHANNEL
 		default:
 			return nil, fmt.Errorf("invalid type filter: use dialog,group,channel")
 		}
-	}
-	for k := range seen {
-		kinds = append(kinds, k)
+		if _, ok := seen[kind]; ok {
+			continue
+		}
+		seen[kind] = struct{}{}
+		kinds = append(kinds, kind)
 	}
 	return kinds, nil
 }

@@ -44,7 +44,7 @@ func LoadComplaintConfig() (*ComplaintConfig, error) {
 	}
 
 	var raw complaintFile
-	if err := cleanenv.ReadConfig(path, &raw); err != nil {
+	if err = cleanenv.ReadConfig(path, &raw); err != nil {
 		return nil, fmt.Errorf("load complaint config %q: %w", path, err)
 	}
 

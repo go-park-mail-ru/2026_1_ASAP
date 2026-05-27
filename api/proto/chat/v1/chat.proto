@@ -21,6 +21,9 @@ service Chat {
   rpc QuitChat(RequestQuitChat) returns (google.protobuf.Empty);
   rpc JoinChannel(RequestJoinChannel) returns (google.protobuf.Empty);
   rpc UpdateChatDescription(RequestUpdateDescription) returns (ChatInformation);
+  rpc UploadMessageAttachment(RequestUploadMessageAttachment) returns (ResponseUploadMessageAttachment);
+  rpc AuthorizeMessageAttachment(RequestAuthorizeMessageAttachment) returns (ResponseAuthorizeMessageAttachment);
+  rpc GetStickerPacks(google.protobuf.Empty) returns (ResponseGetStickerPacks);
 }
 
 enum ChatErrorCode {
@@ -63,6 +66,13 @@ enum ChatErrorCode {
   CHAT_ERROR_ONLY_CHANNEL_CAN_BE_JOINED = 28;
   CHAT_ERROR_DIALOG_CANT_HAVE_CUSTOM_DESCRIPTION = 29;
   CHAT_ERROR_ONLY_OWNER_CAN_CHANGE_DESCRIPTION = 30;
+
+  CHAT_ERROR_INVALID_ATTACHMENT = 31;
+  CHAT_ERROR_ATTACHMENT_NOT_OWNED = 32;
+  CHAT_ERROR_CONTACT_NOT_FOUND = 33;
+  CHAT_ERROR_TOO_MANY_ATTACHMENTS = 34;
+  CHAT_ERROR_INVALID_STICKER = 35;
+  CHAT_ERROR_STICKER_NOT_FOUND = 36;
 }
 
 message RequestQuitChat {
@@ -154,10 +164,72 @@ message ChatInformation {
   optional string avatar = 5;
   int64 owner_id = 6;
   optional string description = 7;
+  int64 unread_count = 8;
+  int64 last_read_message_id = 9;
 }
 
 enum ChatType {
   DIALOG = 0;
   GROUP = 1;
   CHANNEL = 2;
+}
+
+enum MessageAttachmentKind {
+  MESSAGE_ATTACHMENT_KIND_UNSPECIFIED = 0;
+  MESSAGE_ATTACHMENT_KIND_PHOTO = 1;
+  MESSAGE_ATTACHMENT_KIND_VIDEO = 2;
+  MESSAGE_ATTACHMENT_KIND_FILE = 3;
+  MESSAGE_ATTACHMENT_KIND_VOICE = 4;
+}
+
+message RequestUploadMessageAttachment {
+  int64 user_id = 1;
+  MessageAttachmentKind kind = 2;
+  bytes content = 3;
+  string type = 4;
+  optional string file_name = 5;
+}
+
+message ResponseUploadMessageAttachment {
+  string attachment_url = 1;
+  string mime_type = 2;
+  int64 file_size = 3;
+  optional string file_name = 4;
+  string object_key = 5;
+  int32 duration_ms = 6;
+  repeated uint32 waveform = 7;
+}
+
+message RequestAuthorizeMessageAttachment {
+  int64 user_id = 1;
+  string object_key = 2;
+}
+
+message ResponseAuthorizeMessageAttachment {
+  string content_type = 1;
+  int64 size = 2;
+  optional string file_name = 3;
+}
+
+message Sticker {
+  int64 id = 1;
+  int64 pack_id = 2;
+  string file_url = 3;
+  optional string slug = 4;
+  optional string emoji = 5;
+  optional int32 width = 6;
+  optional int32 height = 7;
+}
+
+message StickerPack {
+  int64 id = 1;
+  string name = 2;
+  string title = 3;
+  optional string slug = 4;
+  optional string thumbnail_url = 5;
+  repeated Sticker stickers = 6;
+}
+
+message ResponseGetStickerPacks {
+  repeated StickerPack packs = 1;
 }

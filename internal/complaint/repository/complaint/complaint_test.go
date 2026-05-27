@@ -14,7 +14,6 @@ import (
 
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/domain/complaint"
 	complaintsql "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/repository/complaint/sql"
-	//"github.com/go-park-mail-ru/2026_1_ASAP/pkg/null"
 )
 
 func ptrInt64(i int64) *int64 {
@@ -128,9 +127,9 @@ func TestNegativeComplaintRepository_GetAllComplaints(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		name     string
-		wantErr  string
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		wantErr string
 	}{
 		{
 			name: "Query error",
@@ -266,9 +265,9 @@ func TestNegativeComplaintRepository_Create(t *testing.T) {
 	}
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		name     string
-		wantErr  string
+		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
+		name    string
+		wantErr string
 	}{
 		{
 			name: "Insert error",
@@ -300,9 +299,9 @@ func TestPositiveComplaintRepository_GetComplaintByID(t *testing.T) {
 	now := time.Date(2024, 7, 1, 10, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		want     domain.Complaint
-		name     string
+		prepare     func(t *testing.T, m pgxmock.PgxPoolIface)
+		want        domain.Complaint
+		name        string
 		complaintID int64
 	}{
 		{
@@ -346,10 +345,10 @@ func TestNegativeComplaintRepository_GetComplaintByID(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		prepare  func(t *testing.T, m pgxmock.PgxPoolIface)
-		name     string
+		prepare     func(t *testing.T, m pgxmock.PgxPoolIface)
+		name        string
 		complaintID int64
-		wantErr  string
+		wantErr     string
 	}{
 		{
 			name:        "Complaint not found",
@@ -590,11 +589,11 @@ func TestPositiveComplaintRepository_UpdateComplaint(t *testing.T) {
 	now := time.Date(2024, 7, 1, 10, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		prepare      func(t *testing.T, m pgxmock.PgxPoolIface)
-		want         domain.Complaint
-		name         string
-		complaintID  int64
-		status       domain.ComplaintStatus
+		prepare     func(t *testing.T, m pgxmock.PgxPoolIface)
+		want        domain.Complaint
+		name        string
+		complaintID int64
+		status      domain.ComplaintStatus
 	}{
 		{
 			name:        "Update complaint status successfully",
@@ -681,7 +680,6 @@ func TestComplaintRepository_Close(t *testing.T) {
 	mock := newPGMock(t)
 	repo := newTestComplaintRepository(mock)
 
-	// Close не должен паниковать
 	repo.Close()
 }
 

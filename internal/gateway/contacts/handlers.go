@@ -1,19 +1,20 @@
 package contacts
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
-	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
-	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
+	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/jsonbody"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
+	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 )
 
 type GatewayContactsHandler struct {
@@ -32,6 +33,7 @@ func contactItemToResponse(c *profilev1.ContactItem) *contactdto.ContactResponse
 		UserID:        c.GetUserId(),
 		ContactUserID: c.GetContactUserId(),
 		FirstName:     c.GetFirstName(),
+		IsOnline:      c.GetIsOnline(),
 	}
 	if c.LastName != nil {
 		ln := c.GetLastName()
@@ -85,7 +87,7 @@ func (h *GatewayContactsHandler) CreateContact(w http.ResponseWriter, r *http.Re
 		return
 	}
 	var body contactdto.AddContactRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	if err := jsonbody.Decode(r.Body, &body); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{

@@ -19,6 +19,7 @@ type ContactResponse struct {
 	FirstName        string    `json:"first_name"`
 	UserID           int64     `json:"user_id"`
 	ContactUserID    int64     `json:"contact_user_id"`
+	IsOnline         bool      `json:"is_online"`
 }
 
 type ResponseDeleteSuccess struct {

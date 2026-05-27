@@ -326,7 +326,7 @@ func TestNegativeProfileService_UpdateBio(t *testing.T) {
 	}
 }
 
-func TestPositiveProfileService_UpdateBioEscapesHTML(t *testing.T) {
+func TestPositiveProfileService_UpdateBioSanitizesHTML(t *testing.T) {
 	type fields struct {
 		profileRepository *mock.MockProfileRepositoryInterface
 		mediaRepository   *mock.MockMediaService
@@ -407,7 +407,7 @@ func TestPositiveProfileService_UpdateBioEscapesHTML(t *testing.T) {
 	}
 }
 
-func TestPositiveProfileService_UpdateNameEscapesHTML(t *testing.T) {
+func TestPositiveProfileService_UpdateNameSanitizesHTML(t *testing.T) {
 	type fields struct {
 		profileRepository *mock.MockProfileRepositoryInterface
 		mediaRepository   *mock.MockMediaService

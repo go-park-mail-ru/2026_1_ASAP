@@ -3,14 +3,16 @@ package contacts
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sqllog"
 
 	"github.com/jackc/pgx/v5/pgconn"
 
@@ -116,6 +118,29 @@ func (r *ContactsRepository) DeleteContact(ctx context.Context, userID, contactU
 	}
 
 	return nil
+}
+
+func (r *ContactsRepository) GetContact(ctx context.Context, userID, contactUserID int64) (*contactdom.Contact, error) {
+	q := contactssql.GetContact
+	start := time.Now()
+	contact := &ContactModel{}
+	err := r.db.QueryRow(ctx, q, userID, contactUserID).Scan(
+		&contact.UserID,
+		&contact.FirstName,
+		&contact.LastName,
+		&contact.ContactUserID,
+		&contact.ContactAvatarUrl,
+		&contact.CreatedAt,
+		&contact.UpdatedAt,
+	)
+	sqllog.LogQuery(ctx, r.log(ctx), "GetContact", q, start, err, []any{userID, contactUserID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, contactdom.ErrContactNotFound
+		}
+		return nil, fmt.Errorf("failed to get contact: %w", err)
+	}
+	return toDomainContact(contact), nil
 }
 
 func (r *ContactsRepository) IsContact(ctx context.Context, userID, contactUserID int64) (bool, error) {

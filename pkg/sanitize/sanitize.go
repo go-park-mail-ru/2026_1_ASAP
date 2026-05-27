@@ -10,7 +10,18 @@ func TextPtr(value *string) *string {
 	if value == nil {
 		return nil
 	}
+	s := Text(*value)
+	return &s
+}
 
-	escaped := html.EscapeString(*value)
-	return &escaped
+func HTML(value string) string {
+	return html.EscapeString(value)
+}
+
+func HTMLPtr(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	s := HTML(*value)
+	return &s
 }

@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
-	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
-	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/profile/sql"
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
+	usersql "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/profile/sql"
 )
 
 func ptr[T any](v T) *T {
@@ -49,8 +50,8 @@ func newProfileRow(t *testing.T) *pgxmock.Rows {
 func TestUserRepository_Create_Positive(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
-		name    string
+		prepare   func(t *testing.T, m pgxmock.PgxPoolIface)
+		name      string
 		profileID int64
 		firstName string
 	}{
@@ -82,9 +83,9 @@ func TestUserRepository_Create_Positive(t *testing.T) {
 func TestUserRepository_Create_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
-		assert  func(t *testing.T, err error)
-		name    string
+		prepare   func(t *testing.T, m pgxmock.PgxPoolIface)
+		assert    func(t *testing.T, err error)
+		name      string
 		profileID int64
 		firstName string
 	}{
@@ -246,9 +247,9 @@ func TestUserRepository_GetProfileById_Positive(t *testing.T) {
 func TestUserRepository_GetProfileById_Negative(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		prepare func(t *testing.T, m pgxmock.PgxPoolIface)
-		assert  func(t *testing.T, err error)
-		name    string
+		prepare   func(t *testing.T, m pgxmock.PgxPoolIface)
+		assert    func(t *testing.T, err error)
+		name      string
 		profileID int64
 	}{
 		{

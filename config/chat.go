@@ -8,12 +8,20 @@ import (
 )
 
 type ChatConfig struct {
-	ServerConfig      ServerConfig
-	WSServerConfig    ServerConfig
-	PostgresConfig    PostgresConfig
-	ChatMediaConfig   ChatMediaConfig
-	ChatProfileConfig ChatProfileConfig
-	AppConfig         AppConfig
+	ServerConfig           ServerConfig
+	WSServerConfig         ServerConfig
+	PostgresConfig         PostgresConfig
+	RedisConfig            RedisConfig
+	ChatMediaConfig        ChatMediaConfig
+	ChatProfileConfig      ChatProfileConfig
+	ChatSubscriptionConfig ChatSubscriptionConfig
+	ProfanityRootsPath     string `yaml:"profanity_roots_path" env:"PROFANITY_ROOTS_PATH" env-default:""`
+	GatewayPublicURL       string `yaml:"gateway_public_url" env-default:"http://localhost:8088"`
+	AppConfig              AppConfig
+}
+
+type ChatSubscriptionConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" env-default:"subscription:8011"`
 }
 
 type ChatMediaConfig struct {
@@ -40,9 +48,18 @@ type chatFile struct {
 		DB       string `yaml:"db"`
 		Password string `yaml:"password" env:"POSTGRES_PASSWORD" env-default:""`
 	} `yaml:"postgres"`
-	Media   ChatMediaConfig   `yaml:"media"`
-	Profile ChatProfileConfig `yaml:"profile"`
-	App     struct {
+	Media              ChatMediaConfig        `yaml:"media"`
+	Profile            ChatProfileConfig      `yaml:"profile"`
+	Subscription       ChatSubscriptionConfig `yaml:"subscription"`
+	ProfanityRootsPath string                 `yaml:"profanity_roots_path" env:"PROFANITY_ROOTS_PATH" env-default:""`
+	GatewayPublicURL   string                 `yaml:"gateway_public_url"`
+	Redis              struct {
+		Host     string `yaml:"host"`
+		Port     string `yaml:"port"`
+		Password string `yaml:"password" env:"REDIS_PASSWORD" env-default:""`
+		Database int    `yaml:"database"`
+	} `yaml:"redis"`
+	App struct {
 		ShutdownSeconds int    `yaml:"shutdown_seconds"`
 		LogLevel        string `yaml:"log_level"`
 	} `yaml:"app"`
@@ -77,8 +94,17 @@ func LoadChatConfigFromPath(path string) (*ChatConfig, error) {
 			Password: raw.Postgres.Password,
 			Database: raw.Postgres.DB,
 		},
-		ChatMediaConfig:   ChatMediaConfig{GRPCAddr: raw.Media.GRPCAddr},
-		ChatProfileConfig: ChatProfileConfig{GRPCAddr: raw.Profile.GRPCAddr},
+		ChatMediaConfig:        ChatMediaConfig{GRPCAddr: raw.Media.GRPCAddr},
+		ChatProfileConfig:      ChatProfileConfig{GRPCAddr: raw.Profile.GRPCAddr},
+		ChatSubscriptionConfig: ChatSubscriptionConfig{GRPCAddr: raw.Subscription.GRPCAddr},
+		ProfanityRootsPath:     raw.ProfanityRootsPath,
+		GatewayPublicURL:       raw.GatewayPublicURL,
+		RedisConfig: RedisConfig{
+			Host:     raw.Redis.Host,
+			Port:     raw.Redis.Port,
+			Password: raw.Redis.Password,
+			Database: raw.Redis.Database,
+		},
 		AppConfig: AppConfig{
 			ShutdownTime: time.Duration(raw.App.ShutdownSeconds) * time.Second,
 			LogLevel:     logLevel,

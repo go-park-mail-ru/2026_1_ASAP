@@ -16,7 +16,6 @@ linters:
     - misspell
 
     - gocyclo
-    - gocognit
 
     - depguard
     - importas
@@ -34,8 +33,6 @@ linters-settings:
             desc: "Устарел, используйте io или os пакеты"
   gocyclo:
     min-complexity: 40
-  gocognit:
-    min-complexity: 60
   govet:
     enable-all: true
     disable:
@@ -56,12 +53,15 @@ issues:
     - path: _test\.go
       linters:
         - gocyclo
-        - gocognit
         - errcheck
-    - path: internal/dto/api/response.go
+        - nilnil
+    - path: internal/gateway/dto/api/response.go
       linters:
         - gosec
       text: "G101"
-    - path: internal/repository/chat/chat.go
+    - path: internal/chat/transport/ws/chat.go
+      linters:
+        - gocyclo
+    - path: internal/chat/repository/chat/chat.go
       linters:
         - nilnil

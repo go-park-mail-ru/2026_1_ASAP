@@ -1,26 +1,30 @@
 package auth
 
 import (
-	"encoding/json"
 	"net/http"
 
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	auth2 "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/auth"
 	dtoVK "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/vkid"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/jsonbody"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/mapper"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/validation"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 )
 
 type GatewayAuthHandler struct {
-	AuthService authv1.AuthClient
+	AuthService   authv1.AuthClient
+	sessionCookie config.GatewaySessionCookieConfig
 }
 
-func NewGatewayAuthHandler(authService authv1.AuthClient) *GatewayAuthHandler {
+func NewGatewayAuthHandler(authService authv1.AuthClient, sessionCookie config.GatewaySessionCookieConfig) *GatewayAuthHandler {
 	return &GatewayAuthHandler{
-		AuthService: authService,
+		AuthService:   authService,
+		sessionCookie: sessionCookie,
 	}
 }
 
@@ -29,7 +33,7 @@ func (h *GatewayAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	newRequestLogin := new(auth2.RequestLogin)
-	if err := json.NewDecoder(r.Body).Decode(newRequestLogin); err != nil {
+	if err := jsonbody.Decode(r.Body, newRequestLogin); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -71,14 +75,7 @@ func (h *GatewayAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    session.GetSession().GetSessionId(),
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
-	})
+	http.SetCookie(w, gatewaySessionCookie(h.sessionCookie, session.GetSession().GetSessionId(), 0))
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.GetSession().GetCsrfToken())
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseLoginSuccess]{
@@ -92,7 +89,7 @@ func (h *GatewayAuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	newRequestRegister := new(auth2.RequestRegistrate)
-	if err := json.NewDecoder(r.Body).Decode(newRequestRegister); err != nil {
+	if err := jsonbody.Decode(r.Body, newRequestRegister); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -139,14 +136,7 @@ func (h *GatewayAuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    resp.GetSession().GetSessionId(),
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
-	})
+	http.SetCookie(w, gatewaySessionCookie(h.sessionCookie, resp.GetSession().GetSessionId(), 0))
 	w.Header().Set("X-NEW-CSRF-TOKEN", resp.GetSession().GetCsrfToken())
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseRegisterSuccess]{
@@ -185,6 +175,8 @@ func (h *GatewayAuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	http.SetCookie(w, gatewaySessionCookie(h.sessionCookie, "", -1))
+
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseLogoutSuccess]{
 		Status: dtoApi.Success,
 		Body:   auth2.ResponseLogoutSuccess{},
@@ -196,7 +188,7 @@ func (h *GatewayAuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var request dtoVK.RequestVKID
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	if err := jsonbody.Decode(r.Body, &request); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -232,14 +224,7 @@ func (h *GatewayAuthHandler) VkIDLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    session.GetSession().GetSessionId(),
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   false,
-	})
+	http.SetCookie(w, gatewaySessionCookie(h.sessionCookie, session.GetSession().GetSessionId(), 0))
 	w.Header().Set("X-NEW-CSRF-TOKEN", session.GetSession().GetCsrfToken())
 
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[auth2.ResponseLoginSuccess]{

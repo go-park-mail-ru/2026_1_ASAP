@@ -17,6 +17,10 @@ type SearchRepository interface {
 	SearchMessagesInChat(ctx context.Context, params *searchdomain.SearchMessagesInChatParams) (*searchdomain.SearchMessagesInChatResult, error)
 }
 
+type OnlineRepository interface {
+	FilterOnline(ctx context.Context, userIDs []int64) (map[int64]bool, error)
+}
+
 const (
 	defaultLimit  = 20
 	maxLimit      = 50
@@ -24,11 +28,12 @@ const (
 )
 
 type Service struct {
-	repo SearchRepository
+	repo       SearchRepository
+	onlineRepo OnlineRepository
 }
 
-func NewService(repo SearchRepository) *Service {
-	return &Service{repo: repo}
+func NewService(repo SearchRepository, onlineRepo OnlineRepository) *Service {
+	return &Service{repo: repo, onlineRepo: onlineRepo}
 }
 
 func clampLimit(limit int32) int32 {
@@ -138,10 +143,28 @@ func (s *Service) SearchContacts(ctx context.Context, req *searchdto.SearchConta
 	if err != nil {
 		return nil, err
 	}
+	s.enrichContactsOnline(ctx, res.Contacts)
 	return &searchdto.SearchContactsResponse{
 		Contacts:     res.Contacts,
 		NextBeforeID: res.NextBeforeID,
 	}, nil
+}
+
+func (s *Service) enrichContactsOnline(ctx context.Context, contacts []searchdomain.ContactHit) {
+	if s.onlineRepo == nil || len(contacts) == 0 {
+		return
+	}
+	ids := make([]int64, 0, len(contacts))
+	for i := range contacts {
+		ids = append(ids, contacts[i].UserID)
+	}
+	online, err := s.onlineRepo.FilterOnline(ctx, ids)
+	if err != nil {
+		return
+	}
+	for i := range contacts {
+		contacts[i].IsOnline = online[contacts[i].UserID]
+	}
 }
 
 func (s *Service) SearchUsers(ctx context.Context, req *searchdto.SearchUsersRequest) (*searchdto.SearchUsersResponse, error) {

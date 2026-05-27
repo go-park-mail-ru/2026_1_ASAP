@@ -16,10 +16,10 @@ import (
 
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
-	//pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
+
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
-	//msgdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
+
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/transport/grpc/mock"
 )
 
@@ -34,8 +34,8 @@ func TestPositiveChatServer_GetChats(t *testing.T) {
 	}
 
 	type args struct {
-		ctx    context.Context
-		req    *chatv1.RequestGetUserChats
+		ctx context.Context
+		req *chatv1.RequestGetUserChats
 	}
 
 	now := time.Now()
@@ -71,10 +71,10 @@ func TestPositiveChatServer_GetChats(t *testing.T) {
 			want: &chatv1.ResponseGetUserChats{
 				Chats: []*chatv1.ChatInformation{
 					{
-						Id:     1,
-						Type:   chatv1.ChatType_GROUP,
-						Title:  "Group Chat",
-						Avatar: strPtr("avatar.jpg"),
+						Id:      1,
+						Type:    chatv1.ChatType_GROUP,
+						Title:   "Group Chat",
+						Avatar:  strPtr("avatar.jpg"),
 						OwnerId: 100,
 						LastMessage: &chatv1.MessageInformation{
 							SenderId:  101,
@@ -192,8 +192,6 @@ func TestPositiveChatServer_Create(t *testing.T) {
 		ctx context.Context
 		req *chatv1.RequestChatCreate
 	}
-
-	//now := time.Now()
 
 	tests := []struct {
 		prepare func(*fields)

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	mediav1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/media/v1"
@@ -17,13 +18,15 @@ import (
 	grpcTransport "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/transport/grpc"
 	grpcMedia "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/transport/grpc/clients/media"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
-	contactuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/contact"
-	profileuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/profile"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
+	onlinerepo "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/repository/online"
+	contactuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/contact"
+	profileuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/usecase/profile"
 )
 
 func main() {
@@ -58,8 +61,10 @@ func main() {
 	}
 	defer cRepo.Close()
 
-	contactService := contactuc.NewContactService(cRepo, pRepo)
-	svc := profileuc.NewProfileService(pRepo, mRepo)
+	onlineRepo := onlinerepo.NewRedisRepository(cfg.RedisConfig, logger.Named("presence"))
+
+	contactService := contactuc.NewContactService(cRepo, pRepo, onlineRepo)
+	svc := profileuc.NewProfileService(pRepo, mRepo, onlineRepo)
 	srv := grpcTransport.NewProfileServer(svc, contactService, logger.Named("profile.transport"))
 
 	lis, err := net.Listen("tcp", cfg.ServerConfig.ServerInfo())
@@ -70,8 +75,9 @@ func main() {
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("profile")))
 	profilev1.RegisterProfileServer(grpcServer, srv)
 	metricsServer := &http.Server{
-		Addr:    ":9102",
-		Handler: promhttp.Handler(),
+		Addr:              ":9102",
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)

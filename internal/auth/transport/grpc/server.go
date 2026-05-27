@@ -11,6 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
 	domainSession "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/domain/session"
@@ -20,10 +25,6 @@ import (
 	dtoVK "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/dto/vkid"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/loggerctx"
-	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type AuthUsecaseInterface interface {
@@ -290,7 +291,7 @@ func (a *AuthServer) AuthVKID(ctx context.Context, req *authv1.RequestVKID) (*au
 	)
 
 	var token dtoVK.CallbackResponseFromVKID
-	if err := json.Unmarshal(tokenRaw, &token); err != nil {
+	if err = json.Unmarshal(tokenRaw, &token); err != nil {
 		a.Log(ctx).Warn(
 			"vkid: decode token response",
 			zap.Error(err),

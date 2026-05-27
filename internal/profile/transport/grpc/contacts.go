@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 
+	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
 	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	contactdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/domain/contact"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/grpcerr"
-	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (p ProfileServer) ListContacts(ctx context.Context, req *profilev1.RequestListContacts) (*profilev1.ResponseListContacts, error) {
@@ -71,6 +72,36 @@ func (p ProfileServer) DeleteContact(ctx context.Context, req *profilev1.Request
 	return &profilev1.ResponseDeleteContact{}, nil
 }
 
+func (p ProfileServer) HasContact(ctx context.Context, req *profilev1.RequestHasContact) (*profilev1.ResponseHasContact, error) {
+	if req == nil || req.GetUserId() <= 0 || req.GetContactUserId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INVALID_INPUT), "user_id and contact_user_id are required")
+	}
+	if p.contactService == nil {
+		return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "contacts not configured")
+	}
+	exists, err := p.contactService.HasContact(ctx, req.GetUserId(), req.GetContactUserId())
+	if err != nil {
+		p.Log(ctx).Error("failed to check contact", zap.Int64("user_id", req.GetUserId()), zap.Error(err))
+		return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "contacts internal error")
+	}
+	return &profilev1.ResponseHasContact{Exists: exists}, nil
+}
+
+func (p ProfileServer) GetContact(ctx context.Context, req *profilev1.RequestGetContact) (*profilev1.ResponseGetContact, error) {
+	if req == nil || req.GetUserId() <= 0 || req.GetContactUserId() <= 0 {
+		return nil, grpcerr.New(codes.InvalidArgument, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INVALID_INPUT), "user_id and contact_user_id are required")
+	}
+	if p.contactService == nil {
+		return nil, grpcerr.New(codes.Internal, int32(profilev1.ProfileErrorCode_PROFILE_ERROR_INTERNAL), "contacts not configured")
+	}
+	contact, err := p.contactService.GetContact(ctx, req.GetUserId(), req.GetContactUserId())
+	if err != nil {
+		p.Log(ctx).Info("failed to get contact", zap.Int64("user_id", req.GetUserId()), zap.Int64("contact_user_id", req.GetContactUserId()), zap.Error(err))
+		return nil, mapContactError(err)
+	}
+	return &profilev1.ResponseGetContact{Contact: contactResponseToProto(contact)}, nil
+}
+
 func mapContactError(err error) error {
 	switch {
 	case errors.Is(err, contactdomain.ErrCantCreateContactWithYourself):
@@ -95,6 +126,7 @@ func contactResponseToProto(c *dto.ContactResponse) *profilev1.ContactItem {
 		ContactUserId: c.ContactUserID,
 		FirstName:     c.FirstName,
 		CreatedAt:     timestamppb.New(c.CreatedAt),
+		IsOnline:      c.IsOnline,
 	}
 	if c.LastName != nil {
 		ln := *c.LastName

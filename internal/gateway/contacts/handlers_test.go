@@ -17,9 +17,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	profilev1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1"
-	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/contacts/mock"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
+	contactdto "github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/contact"
 )
 
 func strPtr(s string) *string {
@@ -35,8 +35,6 @@ func TestPositiveGatewayContactsHandler_GetContacts(t *testing.T) {
 		userID int64
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int
@@ -51,20 +49,20 @@ func TestPositiveGatewayContactsHandler_GetContacts(t *testing.T) {
 				}).Return(&profilev1.ResponseListContacts{
 					Contacts: []*profilev1.ContactItem{
 						{
-							UserId:        100,
-							ContactUserId: 101,
-							FirstName:     "John",
-							LastName:      strPtr("Doe"),
+							UserId:           100,
+							ContactUserId:    101,
+							FirstName:        "John",
+							LastName:         strPtr("Doe"),
 							ContactAvatarUrl: strPtr("avatar.jpg"),
-							CreatedAt:     timestamppb.Now(),
+							CreatedAt:        timestamppb.Now(),
 						},
 						{
-							UserId:        100,
-							ContactUserId: 102,
-							FirstName:     "Jane",
-							LastName:      nil,
+							UserId:           100,
+							ContactUserId:    102,
+							FirstName:        "Jane",
+							LastName:         nil,
 							ContactAvatarUrl: nil,
-							CreatedAt:     timestamppb.Now(),
+							CreatedAt:        timestamppb.Now(),
 						},
 					},
 				}, nil)
@@ -200,8 +198,6 @@ func TestPositiveGatewayContactsHandler_CreateContact(t *testing.T) {
 		userID int64
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int
@@ -218,12 +214,12 @@ func TestPositiveGatewayContactsHandler_CreateContact(t *testing.T) {
 					LastName:      strPtr("Doe"),
 				}).Return(&profilev1.ResponseAddContact{
 					Contact: &profilev1.ContactItem{
-						UserId:        100,
-						ContactUserId: 101,
-						FirstName:     "John",
-						LastName:      strPtr("Doe"),
+						UserId:           100,
+						ContactUserId:    101,
+						FirstName:        "John",
+						LastName:         strPtr("Doe"),
 						ContactAvatarUrl: strPtr("avatar.jpg"),
-						CreatedAt:     timestamppb.Now(),
+						CreatedAt:        timestamppb.Now(),
 					},
 				}, nil)
 			},
@@ -429,7 +425,6 @@ func TestNegativeGatewayContactsHandler_CreateContact(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/contacts", bytes.NewBuffer(bodyBytes))
 			req.Header.Set("Content-Type", "application/json")
 
-			// Добавляем user_id в контекст только если это не тест на missing user_id
 			if tt.name != "Missing user_id" {
 				ctx := context.WithValue(req.Context(), middleware.UserID, int64(100))
 				req = req.WithContext(ctx)
@@ -514,11 +509,11 @@ func TestNegativeGatewayContactsHandler_DeleteContact(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		prepare        func(*fields)
-		want           int
-		contactUserID  string
-		userID         interface{}
+		name          string
+		prepare       func(*fields)
+		want          int
+		contactUserID string
+		userID        interface{}
 	}{
 		{
 			name:          "Invalid contact_user_id",

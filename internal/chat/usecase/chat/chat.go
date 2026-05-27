@@ -11,12 +11,13 @@ import (
 	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
-	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/sanitize"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/present"
 )
 
-//go:generate go run github.com/golang/mock/mockgen@v1.6.0 -source=chat.go -destination=mock/chat_mock.go -package=mock
+//go:generate mockgen -source=chat.go -destination=mock/chat_mock.go -package=mock
 type ChatRepositoryInterface interface {
 	GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error)
+	GetChatMemberUnread(ctx context.Context, chatID, userID int64) (lastRead, unread int64, err error)
 	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
 	CreateChat(ctx context.Context, newChat *domain.Chat) (*domain.Chat, error)
 	GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error)
@@ -41,6 +42,10 @@ type MediaRepositoryInterface interface {
 	UploadChatAvatar(ctx context.Context, chatID int64, input *media.FileInput) (string, error)
 }
 
+type SubscriptionChecker interface {
+	IsActive(ctx context.Context, userID int64) (bool, error)
+}
+
 type ChatRealtimeNotifier interface {
 	NotifyChatNew(ctx context.Context, viewerUserID int64, chat *dto.ChatInformationDTO)
 	NotifyChatDeleted(ctx context.Context, formerMemberUserIDs []int64, chatID int64)
@@ -51,19 +56,58 @@ type ChatRealtimeNotifier interface {
 }
 
 type ChatService struct {
-	chatRepo  ChatRepositoryInterface
-	userSvc   ProfileServiceInterface
-	mediaRepo MediaRepositoryInterface
-	notifier  ChatRealtimeNotifier
+	chatRepo     ChatRepositoryInterface
+	userSvc      ProfileServiceInterface
+	mediaRepo    MediaRepositoryInterface
+	notifier     ChatRealtimeNotifier
+	subscription SubscriptionChecker
 }
 
-func NewChatService(chatRepo ChatRepositoryInterface, userSvc ProfileServiceInterface, mediaRepo MediaRepositoryInterface, notifier ChatRealtimeNotifier) *ChatService {
+func NewChatService(
+	chatRepo ChatRepositoryInterface,
+	userSvc ProfileServiceInterface,
+	mediaRepo MediaRepositoryInterface,
+	notifier ChatRealtimeNotifier,
+	subscription SubscriptionChecker,
+) *ChatService {
 	return &ChatService{
-		chatRepo:  chatRepo,
-		userSvc:   userSvc,
-		mediaRepo: mediaRepo,
-		notifier:  notifier,
+		chatRepo:     chatRepo,
+		userSvc:      userSvc,
+		mediaRepo:    mediaRepo,
+		notifier:     notifier,
+		subscription: subscription,
 	}
+}
+
+func (s *ChatService) formatTextForViewer(ctx context.Context, viewerID int64, raw string) (string, error) {
+	active, err := s.isSubscriptionActive(ctx, viewerID)
+	if err != nil {
+		return "", err
+	}
+	return present.TextForViewer(raw, active), nil
+}
+
+func (s *ChatService) formatPlainTextForViewer(ctx context.Context, viewerID int64, raw string) (string, error) {
+	active, err := s.isSubscriptionActive(ctx, viewerID)
+	if err != nil {
+		return "", err
+	}
+	return present.PlainTextForViewer(raw, active), nil
+}
+
+func (s *ChatService) formatPlainTextPtrForViewer(ctx context.Context, viewerID int64, raw *string) (*string, error) {
+	active, err := s.isSubscriptionActive(ctx, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	return present.PlainTextPtrForViewer(raw, active), nil
+}
+
+func (s *ChatService) isSubscriptionActive(ctx context.Context, userID int64) (bool, error) {
+	if s.subscription == nil {
+		return false, nil
+	}
+	return s.subscription.IsActive(ctx, userID)
 }
 
 func (s *ChatService) profileDisplayName(ctx context.Context, userID int64) string {
@@ -129,6 +173,15 @@ func (s *ChatService) getDialogAvatar(ctx context.Context, chatID int64, userID 
 	return user.Avatar, nil
 }
 
+func (s *ChatService) fillReadState(ctx context.Context, chatID, userID int64, out *dto.ChatInformationDTO) {
+	lastRead, unread, err := s.chatRepo.GetChatMemberUnread(ctx, chatID, userID)
+	if err != nil {
+		return
+	}
+	out.LastReadMessageID = lastRead
+	out.UnreadCount = unread
+}
+
 func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInformationDTO, error) {
 	chats, err := s.chatRepo.GetAllChatsByUserID(ctx, id)
 	if err != nil {
@@ -147,40 +200,67 @@ func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInfo
 
 	result := make([]dto.ChatInformationDTO, 0, len(chats))
 	for _, chat := range chats {
-		lastMsg := lastMsgMap[chat.Id]
-		var messageDTO dto.MessageDTO
-		if lastMsg != nil {
-			messageDTO = dto.MessageDTO{
-				SenderId:  lastMsg.SenderId,
-				Text:      sanitize.Text(lastMsg.Content),
-				CreatedAt: lastMsg.CreatedAt,
-			}
+		item, err := s.chatInformationForViewer(ctx, id, chat, lastMsgMap[chat.Id])
+		if err != nil {
+			return nil, err
 		}
-
-		displayTitle := chat.Title
-		displayAvatar := chat.AvatarUrl
-
-		if chat.Type == domain.ChatTypeDialog {
-			if name, err := s.getDialogName(ctx, chat.Id, id); err == nil && name != "" {
-				displayTitle = name
-			}
-			if avatar, err := s.getDialogAvatar(ctx, chat.Id, id); err == nil {
-				displayAvatar = avatar
-			}
-		}
-
-		result = append(result, dto.ChatInformationDTO{
-			ID:          chat.Id,
-			Title:       sanitize.Text(displayTitle),
-			ChatType:    dto.ChatType(chat.Type),
-			LastMessage: messageDTO,
-			Avatar:      displayAvatar,
-			OwnerID:     chat.OwnerId,
-			Description: sanitize.TextPtr(chat.Description),
-		})
+		result = append(result, *item)
 	}
 
 	return result, nil
+}
+
+func (s *ChatService) chatInformationForViewer(
+	ctx context.Context,
+	viewerID int64,
+	chat *domain.Chat,
+	lastMsg *domain.Message,
+) (*dto.ChatInformationDTO, error) {
+	var messageDTO dto.MessageDTO
+	if lastMsg != nil {
+		text, err := s.formatTextForViewer(ctx, viewerID, lastMsg.Content)
+		if err != nil {
+			return nil, fmt.Errorf("format last message: %w", err)
+		}
+		messageDTO = dto.MessageDTO{
+			SenderId:  lastMsg.SenderId,
+			Text:      text,
+			CreatedAt: lastMsg.CreatedAt,
+		}
+	}
+
+	displayTitle := chat.Title
+	displayAvatar := chat.AvatarUrl
+
+	if chat.Type == domain.ChatTypeDialog {
+		if name, err := s.getDialogName(ctx, chat.Id, viewerID); err == nil && name != "" {
+			displayTitle = name
+		}
+		if avatar, err := s.getDialogAvatar(ctx, chat.Id, viewerID); err == nil {
+			displayAvatar = avatar
+		}
+	}
+
+	title, err := s.formatPlainTextForViewer(ctx, viewerID, displayTitle)
+	if err != nil {
+		return nil, fmt.Errorf("format chat title: %w", err)
+	}
+	description, err := s.formatPlainTextPtrForViewer(ctx, viewerID, chat.Description)
+	if err != nil {
+		return nil, fmt.Errorf("format chat description: %w", err)
+	}
+
+	return &dto.ChatInformationDTO{
+		ID:                chat.Id,
+		Title:             title,
+		ChatType:          dto.ChatType(chat.Type),
+		LastMessage:       messageDTO,
+		Avatar:            displayAvatar,
+		OwnerID:           chat.OwnerId,
+		Description:       description,
+		UnreadCount:       chat.UnreadCount,
+		LastReadMessageID: chat.LastReadMessageID,
+	}, nil
 }
 
 func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ownerID int64) (*dto.ChatInformationDTO, error) {
@@ -213,6 +293,9 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 
 	for _, memberID := range chatDTO.MembersID {
 		if _, err := s.userSvc.GetUserByID(ctx, memberID); err != nil {
+			if errors.Is(err, pdomain.ErrNotFound) {
+				return nil, domain.ErrUserNotFound
+			}
 			return nil, fmt.Errorf("get user %d: %w", memberID, err)
 		}
 	}
@@ -235,30 +318,14 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 		if memberID == ownerID {
 			role = "owner"
 		}
-		if err := s.chatRepo.AddMember(ctx, created.Id, memberID, role); err != nil {
-			return nil, fmt.Errorf("add member %d: %w", memberID, err)
+		if addErr := s.chatRepo.AddMember(ctx, created.Id, memberID, role); addErr != nil {
+			return nil, fmt.Errorf("add member %d: %w", memberID, addErr)
 		}
 	}
 
-	displayTitle := created.Title
-	displayAvatar := created.AvatarUrl
-	if created.Type == domain.ChatTypeDialog {
-		if name, err := s.getDialogName(ctx, created.Id, ownerID); err == nil && name != "" {
-			displayTitle = name
-		}
-		if avatar, err := s.getDialogAvatar(ctx, created.Id, ownerID); err == nil {
-			displayAvatar = avatar
-		}
-	}
-
-	out := &dto.ChatInformationDTO{
-		ID:          created.Id,
-		ChatType:    dto.ChatType(created.Type),
-		Title:       sanitize.Text(displayTitle),
-		LastMessage: dto.MessageDTO{},
-		Avatar:      displayAvatar,
-		OwnerID:     created.OwnerId,
-		Description: sanitize.TextPtr(created.Description),
+	out, err := s.chatInformationForViewer(ctx, ownerID, created, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	if s.notifier != nil {
@@ -274,6 +341,7 @@ func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ow
 		}
 	}
 
+	s.fillReadState(ctx, created.Id, ownerID, out)
 	return out, nil
 }
 
@@ -292,35 +360,17 @@ func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*d
 	}
 
 	lastMsg, err := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
-	var messageDTO dto.MessageDTO
+	var lastMsgPtr *domain.Message
 	if err == nil && lastMsg != nil {
-		messageDTO = dto.MessageDTO{
-			SenderId:  lastMsg.SenderId,
-			Text:      sanitize.Text(lastMsg.Content),
-			CreatedAt: lastMsg.CreatedAt,
-		}
+		lastMsgPtr = lastMsg
 	}
 
-	displayTitle := chat.Title
-	displayAvatar := chat.AvatarUrl
-	if chat.Type == domain.ChatTypeDialog {
-		if name, err := s.getDialogName(ctx, chat.Id, userID); err == nil && name != "" {
-			displayTitle = name
-		}
-		if avatar, err := s.getDialogAvatar(ctx, chat.Id, userID); err == nil {
-			displayAvatar = avatar
-		}
+	out, err := s.chatInformationForViewer(ctx, userID, chat, lastMsgPtr)
+	if err != nil {
+		return nil, err
 	}
-
-	return &dto.ChatInformationDTO{
-		ID:          chat.Id,
-		ChatType:    dto.ChatType(chat.Type),
-		Title:       sanitize.Text(displayTitle),
-		LastMessage: messageDTO,
-		Avatar:      displayAvatar,
-		OwnerID:     chat.OwnerId,
-		Description: sanitize.TextPtr(chat.Description),
-	}, nil
+	s.fillReadState(ctx, chatID, userID, out)
+	return out, nil
 }
 
 func (s *ChatService) DeleteChat(ctx context.Context, userID, chatID int64) error {
@@ -409,23 +459,9 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 	}
 
 	lastMsg, _ := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
-	var messageDTO dto.MessageDTO
-	if lastMsg != nil {
-		messageDTO = dto.MessageDTO{
-			SenderId:  lastMsg.SenderId,
-			Text:      sanitize.Text(lastMsg.Content),
-			CreatedAt: lastMsg.CreatedAt,
-		}
-	}
-
-	out := &dto.ChatInformationDTO{
-		ID:          result.Id,
-		ChatType:    dto.ChatType(result.Type),
-		Title:       sanitize.Text(result.Title),
-		LastMessage: messageDTO,
-		Avatar:      result.AvatarUrl,
-		OwnerID:     result.OwnerId,
-		Description: sanitize.TextPtr(result.Description),
+	out, err := s.chatInformationForViewer(ctx, userID, result, lastMsg)
+	if err != nil {
+		return nil, err
 	}
 
 	if s.notifier != nil {
@@ -439,6 +475,7 @@ func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64
 		}
 	}
 
+	s.fillReadState(ctx, chatID, userID, out)
 	return out, nil
 }
 
@@ -472,23 +509,9 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 	}
 
 	lastMsg, _ := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
-	var messageDTO dto.MessageDTO
-	if lastMsg != nil {
-		messageDTO = dto.MessageDTO{
-			SenderId:  lastMsg.SenderId,
-			Text:      sanitize.Text(lastMsg.Content),
-			CreatedAt: lastMsg.CreatedAt,
-		}
-	}
-
-	out := &dto.ChatInformationDTO{
-		ID:          result.Id,
-		ChatType:    dto.ChatType(result.Type),
-		Title:       sanitize.Text(result.Title),
-		LastMessage: messageDTO,
-		Avatar:      result.AvatarUrl,
-		OwnerID:     result.OwnerId,
-		Description: sanitize.TextPtr(result.Description),
+	out, err := s.chatInformationForViewer(ctx, userID, result, lastMsg)
+	if err != nil {
+		return nil, err
 	}
 
 	if s.notifier != nil {
@@ -498,6 +521,7 @@ func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64,
 		}
 	}
 
+	s.fillReadState(ctx, chatID, userID, out)
 	return out, nil
 }
 
@@ -534,23 +558,9 @@ func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID 
 	}
 
 	lastMsg, _ := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
-	var messageDTO dto.MessageDTO
-	if lastMsg != nil {
-		messageDTO = dto.MessageDTO{
-			SenderId:  lastMsg.SenderId,
-			Text:      sanitize.Text(lastMsg.Content),
-			CreatedAt: lastMsg.CreatedAt,
-		}
-	}
-
-	out := &dto.ChatInformationDTO{
-		ID:          result.Id,
-		ChatType:    dto.ChatType(result.Type),
-		Title:       sanitize.Text(result.Title),
-		LastMessage: messageDTO,
-		Avatar:      result.AvatarUrl,
-		OwnerID:     result.OwnerId,
-		Description: sanitize.TextPtr(result.Description),
+	out, err := s.chatInformationForViewer(ctx, userID, result, lastMsg)
+	if err != nil {
+		return nil, err
 	}
 
 	if s.notifier != nil {
@@ -560,6 +570,7 @@ func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID 
 		}
 	}
 
+	s.fillReadState(ctx, chatID, userID, out)
 	return out, nil
 }
 

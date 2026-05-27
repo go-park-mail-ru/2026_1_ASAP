@@ -36,8 +36,6 @@ func TestPositiveGatewaySearchHandler_SearchMessages(t *testing.T) {
 		beforeID string
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int
@@ -271,8 +269,6 @@ func TestPositiveGatewaySearchHandler_SearchUsers(t *testing.T) {
 		beforeID string
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int
@@ -476,8 +472,6 @@ func TestPositiveGatewaySearchHandler_SearchChats(t *testing.T) {
 		beforeID string
 	}
 
-	//now := time.Now()
-
 	tests := []struct {
 		prepare func(*fields)
 		want    int
@@ -498,8 +492,8 @@ func TestPositiveGatewaySearchHandler_SearchChats(t *testing.T) {
 						{
 							ChatId:             1,
 							Type:               searchv1.ChatType_CHAT_TYPE_GROUP,
-							Title:             "Team Chat",
-							AvatarUrl:         strPtr("avatar.jpg"),
+							Title:              "Team Chat",
+							AvatarUrl:          strPtr("avatar.jpg"),
 							LastMessagePreview: strPtr("Hello!"),
 							LastMessageAt:      timestamppb.Now(),
 							UnreadCount:        3,
@@ -552,8 +546,8 @@ func TestPositiveGatewaySearchHandler_SearchChats(t *testing.T) {
 					Channels: []*searchv1.SearchGlobalChannelItem{
 						{
 							ChatId:             10,
-							Title:             "Public Channel",
-							AvatarUrl:         strPtr("channel.jpg"),
+							Title:              "Public Channel",
+							AvatarUrl:          strPtr("channel.jpg"),
 							LastMessagePreview: strPtr("Welcome!"),
 							LastMessageAt:      timestamppb.Now(),
 							IsMember:           false,

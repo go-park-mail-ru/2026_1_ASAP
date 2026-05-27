@@ -1,18 +1,19 @@
 package chat
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	chatv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/chat/v1"
 	dtoApi "github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/jsonbody"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/middleware"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/profile/dto/media"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/utils/response"
@@ -25,51 +26,6 @@ type GatewayChatHandler struct {
 
 func NewGatewayChatHandler(chat chatv1.ChatClient) *GatewayChatHandler {
 	return &GatewayChatHandler{ChatService: chat}
-}
-
-// DTO types
-
-type MessageInfoResponse struct {
-	CreatedAt time.Time `json:"created_at"`
-	Text      string    `json:"text"`
-	SenderID  int64     `json:"sender_id"`
-}
-
-type ChatInfoResponse struct {
-	Avatar      *string             `json:"avatar"`
-	Description *string             `json:"description"`
-	Type        string              `json:"type"`
-	Title       string              `json:"title"`
-	LastMessage MessageInfoResponse `json:"last_message"`
-	ID          int64               `json:"id"`
-	OwnerID     int64               `json:"owner_id"`
-}
-
-type CreateChatRequest struct {
-	Title     string  `json:"title"`
-	Type      string  `json:"type"`
-	MembersID []int64 `json:"members_id"`
-}
-
-type UpdateTitleRequest struct {
-	Title string `json:"title"`
-}
-
-type UpdateDescriptionRequest struct {
-	Description string `json:"description"`
-}
-
-type AddMembersRequest struct {
-	MembersID []int64 `json:"members_id"`
-}
-
-type JoinChannelRequest struct {
-	UserId int64 `json:"user_id"`
-	ChatId int64 `json:"chat_id"`
-}
-
-type ChatMembersResponse struct {
-	MembersID []int64 `json:"members_id"`
 }
 
 // helpers
@@ -105,6 +61,11 @@ func sendChatError(w http.ResponseWriter, err error) {
 		response.Send(w, http.StatusNotFound, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.NotFound, Message: dtoApi.CantFindChatMsg}},
+		})
+	case chatv1.ChatErrorCode_CHAT_ERROR_USER_NOT_FOUND:
+		response.Send(w, http.StatusNotFound, dtoApi.ApiErrorResponse{
+			Status: dtoApi.Error,
+			Errors: []dtoApi.ApiError{{Code: dtoApi.UserNotFound, Message: dtoApi.UserNotFoundMsg}},
 		})
 	case chatv1.ChatErrorCode_CHAT_ERROR_USER_NOT_MEMBER,
 		chatv1.ChatErrorCode_CHAT_ERROR_NOT_MEMBER:
@@ -231,10 +192,12 @@ func parseChatType(s string) (chatv1.ChatType, error) {
 
 func mapChatInfo(c *chatv1.ChatInformation) ChatInfoResponse {
 	out := ChatInfoResponse{
-		ID:      c.GetId(),
-		Type:    mapChatType(c.GetType()),
-		Title:   c.GetTitle(),
-		OwnerID: c.GetOwnerId(),
+		ID:                c.GetId(),
+		Type:              mapChatType(c.GetType()),
+		Title:             c.GetTitle(),
+		OwnerID:           c.GetOwnerId(),
+		UnreadCount:       c.GetUnreadCount(),
+		LastReadMessageID: c.GetLastReadMessageId(),
 	}
 	if a := c.GetAvatar(); a != "" {
 		v := a
@@ -254,7 +217,50 @@ func mapChatInfo(c *chatv1.ChatInformation) ChatInfoResponse {
 	return out
 }
 
-// Handlers
+func mapStickerPacks(resp *chatv1.ResponseGetStickerPacks) StickerPacksResponse {
+	if resp == nil {
+		return StickerPacksResponse{}
+	}
+	packs := make([]StickerPackResponse, 0, len(resp.GetPacks()))
+	for _, pack := range resp.GetPacks() {
+		item := StickerPackResponse{
+			ID:       pack.GetId(),
+			Name:     pack.GetName(),
+			Title:    pack.GetTitle(),
+			Stickers: make([]StickerResponse, 0, len(pack.GetStickers())),
+		}
+		if slug := pack.GetSlug(); slug != "" {
+			item.Slug = &slug
+		}
+		if thumbnail := pack.GetThumbnailUrl(); thumbnail != "" {
+			item.ThumbnailURL = &thumbnail
+		}
+		for _, sticker := range pack.GetStickers() {
+			stickerItem := StickerResponse{
+				ID:      sticker.GetId(),
+				PackID:  sticker.GetPackId(),
+				FileURL: sticker.GetFileUrl(),
+			}
+			if slug := sticker.GetSlug(); slug != "" {
+				stickerItem.Slug = &slug
+			}
+			if emoji := sticker.GetEmoji(); emoji != "" {
+				stickerItem.Emoji = &emoji
+			}
+			if sticker.Width != nil {
+				width := sticker.GetWidth()
+				stickerItem.Width = &width
+			}
+			if sticker.Height != nil {
+				height := sticker.GetHeight()
+				stickerItem.Height = &height
+			}
+			item.Stickers = append(item.Stickers, stickerItem)
+		}
+		packs = append(packs, item)
+	}
+	return StickerPacksResponse{Packs: packs}
+}
 
 func (h *GatewayChatHandler) GetChats(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -290,7 +296,7 @@ func (h *GatewayChatHandler) CreateChat(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var req CreateChatRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := jsonbody.Decode(r.Body, &req); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -469,7 +475,7 @@ func (h *GatewayChatHandler) UpdateChatTitle(w http.ResponseWriter, r *http.Requ
 	}
 
 	var req UpdateTitleRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err = jsonbody.Decode(r.Body, &req); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -509,7 +515,7 @@ func (h *GatewayChatHandler) UpdateChatDescription(w http.ResponseWriter, r *htt
 	}
 
 	var req UpdateDescriptionRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err = jsonbody.Decode(r.Body, &req); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -518,9 +524,9 @@ func (h *GatewayChatHandler) UpdateChatDescription(w http.ResponseWriter, r *htt
 	}
 
 	resp, err := h.ChatService.UpdateChatDescription(ctx, &chatv1.RequestUpdateDescription{
-		UserId: uid,
-		ChatId: chatID,
-		Description:  req.Description,
+		UserId:      uid,
+		ChatId:      chatID,
+		Description: req.Description,
 	})
 	if err != nil {
 		sendChatError(w, err)
@@ -549,7 +555,7 @@ func (h *GatewayChatHandler) AddMembers(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var req AddMembersRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err = jsonbody.Decode(r.Body, &req); err != nil {
 		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
 			Status: dtoApi.Error,
 			Errors: []dtoApi.ApiError{{Code: dtoApi.InvalidJson, Message: dtoApi.InvalidJsonMsg}},
@@ -683,5 +689,18 @@ func (h *GatewayChatHandler) QuitChat(w http.ResponseWriter, r *http.Request) {
 	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[struct{}]{
 		Status: dtoApi.Success,
 		Body:   struct{}{},
+	})
+}
+
+func (h *GatewayChatHandler) GetStickerPacks(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.ChatService.GetStickerPacks(r.Context(), &emptypb.Empty{})
+	if err != nil {
+		sendChatError(w, err)
+		return
+	}
+
+	response.Send(w, http.StatusOK, dtoApi.ApiSuccessResponse[StickerPacksResponse]{
+		Status: dtoApi.Success,
+		Body:   mapStickerPacks(resp),
 	})
 }

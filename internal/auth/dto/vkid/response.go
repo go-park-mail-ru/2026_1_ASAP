@@ -83,7 +83,7 @@ func decodePublicInfoUser(userRaw json.RawMessage, oauthUserID int64) (*RequestA
 				}
 			}
 		}
-		// VK can return differently named fields depending on scopes/version.
+
 		if u.Email == "" {
 			u.Email = extractStringField(loose, "email", "mail")
 		}

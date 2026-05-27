@@ -626,7 +626,7 @@ func TestMapSearchChatKindsProtoToDomain(t *testing.T) {
 			want:  []searchdomain.ChatType{searchdomain.ChatTypeChannel},
 		},
 		{
-			name:  "Multiple kinds",
+			name: "Multiple kinds",
 			kinds: []searchv1.SearchChatKind{
 				searchv1.SearchChatKind_SEARCH_CHAT_KIND_DIALOG,
 				searchv1.SearchChatKind_SEARCH_CHAT_KIND_GROUP,

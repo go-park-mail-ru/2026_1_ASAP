@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
 	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/message"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/usecase/messages/mock"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 )
 
-func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
+func TestPositiveMessageService_SendMessageSanitizesHTML(t *testing.T) {
 	type fields struct {
 		msgRepo  *mock.MockMessageRepositoryInterface
 		chatRepo *mock.MockChatRepositoryInterface
@@ -114,12 +115,52 @@ func TestPositiveMessageService_SendMessageEscapesHTML(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo)
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			resp, err := s.SendMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.NoError(t, err)
 			require.Equal(t, tt.wantText, resp.Text)
 		})
 	}
+}
+
+func TestPositiveMessageService_SendMessageTempIDPassthrough(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	msgRepo := mock.NewMockMessageRepositoryInterface(ctrl)
+	chatRepo := mock.NewMockChatRepositoryInterface(ctrl)
+
+	chatRepo.EXPECT().IsMember(context.Background(), int64(1), int64(10)).Return(true, nil)
+	chatRepo.EXPECT().GetChatByID(context.Background(), int64(1)).Return(&domain.Chat{
+		Id:   1,
+		Type: domain.ChatTypeGroup,
+	}, nil)
+	msgRepo.EXPECT().CreateMessage(context.Background(), &domain.Message{
+		ChatId:   1,
+		SenderId: 10,
+		Content:  "hi",
+	}).DoAndReturn(func(_ context.Context, msg *domain.Message) (*domain.Message, error) {
+		require.Equal(t, int64(1), msg.ChatId)
+		require.Equal(t, int64(10), msg.SenderId)
+		require.Equal(t, "hi", msg.Content)
+		return &domain.Message{
+			Id:        42,
+			ChatId:    1,
+			SenderId:  10,
+			Content:   "hi",
+			CreatedAt: time.Unix(1700000000, 0).UTC(),
+		}, nil
+	})
+
+	s := NewMessageService(msgRepo, chatRepo, nil, nil, "http://localhost:8088", nil)
+	resp, err := s.SendMessage(context.Background(), 10, 1, &dto.RequestSendMessage{
+		ChatID: 1,
+		Text:   "hi",
+		TempID: "client-abc-123",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "client-abc-123", resp.TempID)
+	require.Equal(t, int64(42), resp.ID)
 }
 
 func TestNegativeMessageService_SendMessage(t *testing.T) {
@@ -149,8 +190,8 @@ func TestNegativeMessageService_SendMessage(t *testing.T) {
 		wantSubstr string
 	}{
 		{
-			name:    "nil request",
-			args:    args{ctx: context.Background(), userID: 1, chatID: 1, req: nil},
+			name:       "nil request",
+			args:       args{ctx: context.Background(), userID: 1, chatID: 1, req: nil},
 			wantAnyErr: true,
 			wantSubstr: "send message nil request",
 		},
@@ -219,7 +260,7 @@ func TestNegativeMessageService_SendMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo)
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			resp, err := s.SendMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.Nil(t, resp)
 			if tt.wantAnyErr {
@@ -267,6 +308,12 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 					{Id: 4, ChatId: 1, SenderId: 11, Content: "two", CreatedAt: now.Add(-time.Minute), Edited: true},
 					{Id: 3, ChatId: 1, SenderId: 12, Content: "three", CreatedAt: now.Add(-2 * time.Minute)},
 				}, nil)
+				f.chatRepo.EXPECT().GetMemberLastReads(context.Background(), int64(1)).Return(map[int64]*int64{
+					10: ptrInt64(50),
+					11: ptrInt64(5),
+					12: ptrInt64(5),
+				}, nil)
+				f.msgRepo.EXPECT().GetAttachmentsByMessageIDs(gomock.Any(), []int64{5, 4}).Return(map[int64][]domain.MessageAttachment{}, nil)
 			},
 			args: args{
 				ctx:    context.Background(),
@@ -276,8 +323,8 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 			},
 			want: &dto.ResponseGetMessages{
 				Messages: []dto.MessageDTO{
-					{ID: 5, ChatID: 1, SenderID: 10, Text: "one", CreatedAt: now, Edited: false},
-					{ID: 4, ChatID: 1, SenderID: 11, Text: "two", CreatedAt: now.Add(-time.Minute), Edited: true},
+					{ID: 5, ChatID: 1, SenderID: 10, Text: "one", CreatedAt: now, Edited: false, Read: true},
+					{ID: 4, ChatID: 1, SenderID: 11, Text: "two", CreatedAt: now.Add(-time.Minute), Edited: true, Read: false},
 				},
 				NextBeforeID: ptrInt64(4),
 				HasMore:      true,
@@ -294,6 +341,10 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 				f.msgRepo.EXPECT().GetMessagesByChatId(context.Background(), int64(2), (*int64)(nil), 21).Return([]*domain.Message{
 					{Id: 9, ChatId: 2, SenderId: 1, Content: "post", CreatedAt: now},
 				}, nil)
+				f.chatRepo.EXPECT().GetMemberLastReads(context.Background(), int64(2)).Return(map[int64]*int64{
+					1: ptrInt64(100),
+				}, nil)
+				f.msgRepo.EXPECT().GetAttachmentsByMessageIDs(gomock.Any(), []int64{9}).Return(map[int64][]domain.MessageAttachment{}, nil)
 			},
 			args: args{
 				ctx:    context.Background(),
@@ -303,7 +354,7 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 			},
 			want: &dto.ResponseGetMessages{
 				Messages: []dto.MessageDTO{
-					{ID: 9, ChatID: 2, SenderID: 1, Text: "post", CreatedAt: now, Edited: false},
+					{ID: 9, ChatID: 2, SenderID: 1, Text: "post", CreatedAt: now, Edited: false, Read: false},
 				},
 				NextBeforeID: ptrInt64(9),
 				HasMore:      false,
@@ -325,7 +376,7 @@ func TestPositiveMessageService_GetMessagesByChatId(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo)
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.GetMessagesByChatId(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
@@ -403,7 +454,7 @@ func TestNegativeMessageService_GetMessagesByChatId(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo)
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.GetMessagesByChatId(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.Nil(t, got)
 			if tt.wantAnyErr {
@@ -454,6 +505,11 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 					CreatedAt: now,
 					Edited:    true,
 				}, true, nil)
+				f.chatRepo.EXPECT().GetMemberLastReads(context.Background(), int64(1)).Return(map[int64]*int64{
+					10: ptrInt64(7),
+					11: ptrInt64(7),
+					12: ptrInt64(7),
+				}, nil)
 			},
 			args: args{
 				ctx:    context.Background(),
@@ -466,13 +522,16 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 				ChatID:            1,
 				SenderID:          10,
 				Text:              "edited &lt;b&gt;text&lt;/b&gt;",
+				ContentRaw:        "edited <b>text</b>",
 				CreatedAt:         now,
 				Edited:            true,
+				Read:              true,
 				LastMessageEdited: true,
 				LastMessage: &dto.LastMessageDTO{
-					SenderId:  10,
-					Text:      "edited &lt;b&gt;text&lt;/b&gt;",
-					CreatedAt: now,
+					SenderId:   10,
+					Text:       "edited &lt;b&gt;text&lt;/b&gt;",
+					ContentRaw: "edited <b>text</b>",
+					CreatedAt:  now,
 				},
 			},
 		},
@@ -492,7 +551,7 @@ func TestPositiveMessageService_EditMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo)
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.EditMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
@@ -581,7 +640,7 @@ func TestNegativeMessageService_EditMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo)
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.EditMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.Nil(t, got)
 			if tt.wantAnyErr {
@@ -648,9 +707,10 @@ func TestPositiveMessageService_DeleteMessage(t *testing.T) {
 				SenderID:          10,
 				LastMessageEdited: true,
 				LastMessage: &dto.LastMessageDTO{
-					SenderId:  11,
-					Text:      "prev &lt;b&gt;msg&lt;/b&gt;",
-					CreatedAt: now,
+					SenderId:   11,
+					Text:       "prev &lt;b&gt;msg&lt;/b&gt;",
+					ContentRaw: "prev <b>msg</b>",
+					CreatedAt:  now,
 				},
 			},
 		},
@@ -670,7 +730,7 @@ func TestPositiveMessageService_DeleteMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo)
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.DeleteMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
@@ -756,7 +816,7 @@ func TestNegativeMessageService_DeleteMessage(t *testing.T) {
 				tt.prepare(&f)
 			}
 
-			s := NewMessageService(f.msgRepo, f.chatRepo)
+			s := NewMessageService(f.msgRepo, f.chatRepo, nil, nil, "http://localhost:8088", nil)
 			got, err := s.DeleteMessage(tt.args.ctx, tt.args.userID, tt.args.chatID, tt.args.req)
 			require.Nil(t, got)
 			if tt.wantAnyErr {

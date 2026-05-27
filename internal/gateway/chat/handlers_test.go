@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
-	"mime/multipart" 
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -132,22 +132,22 @@ func TestNegativeGatewayChatHandler_GetChats(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		want       int
-		userID     interface{}
+		name    string
+		prepare func(*fields)
+		want    int
+		userID  interface{}
 	}{
 		{
-			name:       "Missing user_id in context",
-			prepare:    nil,
-			want:       http.StatusUnauthorized,
-			userID:     nil,
+			name:    "Missing user_id in context",
+			prepare: nil,
+			want:    http.StatusUnauthorized,
+			userID:  nil,
 		},
 		{
-			name:       "Invalid user_id type",
-			prepare:    nil,
-			want:       http.StatusUnauthorized,
-			userID:     "invalid",
+			name:    "Invalid user_id type",
+			prepare: nil,
+			want:    http.StatusUnauthorized,
+			userID:  "invalid",
 		},
 		{
 			name: "Chat service error",
@@ -409,7 +409,7 @@ func TestNegativeGatewayChatHandler_CreateChat(t *testing.T) {
 					"members_id": []int64{999},
 				},
 			},
-			want: http.StatusInternalServerError,
+			want: http.StatusNotFound,
 		},
 	}
 
@@ -524,23 +524,23 @@ func TestNegativeGatewayChatHandler_GetChatByID(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		prepare    func(*fields)
-		want       int
-		chatID     string
-		userID     interface{}
+		name    string
+		prepare func(*fields)
+		want    int
+		chatID  string
+		userID  interface{}
 	}{
 		{
-			name:       "Invalid chat id",
-			want:       http.StatusBadRequest,
-			chatID:     "invalid",
-			userID:     int64(100),
+			name:   "Invalid chat id",
+			want:   http.StatusBadRequest,
+			chatID: "invalid",
+			userID: int64(100),
 		},
 		{
-			name:       "Missing user_id",
-			want:       http.StatusUnauthorized,
-			chatID:     "1",
-			userID:     nil,
+			name:   "Missing user_id",
+			want:   http.StatusUnauthorized,
+			chatID: "1",
+			userID: nil,
 		},
 		{
 			name: "Chat not found",
@@ -1093,9 +1093,9 @@ func TestPositiveGatewayChatHandler_UpdateChatDescription(t *testing.T) {
 	}
 
 	type args struct {
-		chatID      string
-		body        map[string]string
-		userID      int64
+		chatID string
+		body   map[string]string
+		userID int64
 	}
 
 	tests := []struct {
@@ -1534,12 +1534,14 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 		{
 			name: "Full chat info",
 			c: &chatv1.ChatInformation{
-				Id:      1,
-				Type:    chatv1.ChatType_GROUP,
-				Title:   "Group Chat",
-				OwnerId: 100,
-				Avatar:  strPtr("avatar.jpg"),
-				Description: strPtr("Description"),
+				Id:                1,
+				Type:              chatv1.ChatType_GROUP,
+				Title:             "Group Chat",
+				OwnerId:           100,
+				Avatar:            strPtr("avatar.jpg"),
+				Description:       strPtr("Description"),
+				UnreadCount:       3,
+				LastReadMessageId: 10,
 				LastMessage: &chatv1.MessageInformation{
 					SenderId:  101,
 					Text:      "Hello!",
@@ -1547,12 +1549,14 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 				},
 			},
 			want: ChatInfoResponse{
-				ID:      1,
-				Type:    "group",
-				Title:   "Group Chat",
-				OwnerID: 100,
-				Avatar:  strPtr("avatar.jpg"),
-				Description: strPtr("Description"),
+				ID:                1,
+				Type:              "group",
+				Title:             "Group Chat",
+				OwnerID:           100,
+				Avatar:            strPtr("avatar.jpg"),
+				Description:       strPtr("Description"),
+				UnreadCount:       3,
+				LastReadMessageID: 10,
 				LastMessage: MessageInfoResponse{
 					SenderID:  101,
 					Text:      "Hello!",
@@ -1569,10 +1573,10 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 				OwnerId: 200,
 			},
 			want: ChatInfoResponse{
-				ID:      2,
-				Type:    "dialog",
-				Title:   "Dialog",
-				OwnerID: 200,
+				ID:          2,
+				Type:        "dialog",
+				Title:       "Dialog",
+				OwnerID:     200,
 				LastMessage: MessageInfoResponse{},
 			},
 		},
@@ -1585,6 +1589,8 @@ func TestGatewayChatHandler_MapChatInfo(t *testing.T) {
 			require.Equal(t, tt.want.Type, got.Type)
 			require.Equal(t, tt.want.Title, got.Title)
 			require.Equal(t, tt.want.OwnerID, got.OwnerID)
+			require.Equal(t, tt.want.UnreadCount, got.UnreadCount)
+			require.Equal(t, tt.want.LastReadMessageID, got.LastReadMessageID)
 			if tt.want.Avatar != nil {
 				require.Equal(t, *tt.want.Avatar, *got.Avatar)
 			}
@@ -1638,10 +1644,10 @@ func TestGatewayChatHandler_UserID(t *testing.T) {
 
 func TestGatewayChatHandler_ChatIDParam(t *testing.T) {
 	tests := []struct {
-		name       string
-		urlParam   string
-		wantID     int64
-		wantErr    bool
+		name     string
+		urlParam string
+		wantID   int64
+		wantErr  bool
 	}{
 		{
 			name:     "Valid id",

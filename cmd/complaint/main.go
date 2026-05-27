@@ -8,6 +8,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	complaintv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/complaint/v1"
@@ -19,10 +25,6 @@ import (
 	analyticuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/usecase/analytic"
 	complaintuc "github.com/go-park-mail-ru/2026_1_ASAP/internal/complaint/usecase/complaint"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -70,8 +72,9 @@ func main() {
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("complaint")))
 	complaintv1.RegisterComplaintServer(grpcServer, srv)
 	metricsServer := &http.Server{
-		Addr:    ":9106",
-		Handler: promhttp.Handler(),
+		Addr:              ":9106",
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)

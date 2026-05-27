@@ -113,11 +113,11 @@ func TestPositiveComplaintServer_CreateComplaint_Unauthorized(t *testing.T) {
 							FeedBackName:  "Jane Smith",
 							FeedBackEmail: "jane@example.com",
 						},
-						Body:         "Bug with attachment",
-						UserID:       0,
+						Body:          "Bug with attachment",
+						UserID:        0,
 						AttachmentURL: strPtr("attachment.jpg"),
-						CreatedAt:    now,
-						UpdatedAt:    now,
+						CreatedAt:     now,
+						UpdatedAt:     now,
 					},
 				}, nil)
 			},
@@ -146,11 +146,11 @@ func TestPositiveComplaintServer_CreateComplaint_Unauthorized(t *testing.T) {
 						FeedbackName:  "Jane Smith",
 						FeedbackEmail: "jane@example.com",
 					},
-					Body:         "Bug with attachment",
-					UserId:       0,
+					Body:          "Bug with attachment",
+					UserId:        0,
 					AttachmentUrl: strPtr("attachment.jpg"),
-					CreatedAt:    timestamppb.New(now),
-					UpdatedAt:    timestamppb.New(now),
+					CreatedAt:     timestamppb.New(now),
+					UpdatedAt:     timestamppb.New(now),
 				},
 			},
 		},
@@ -206,7 +206,7 @@ func TestPositiveComplaintServer_CreateComplaint_Authorized(t *testing.T) {
 		{
 			name: "Successful create authorized complaint",
 			prepare: func(f *fields) {
-				//userId := int64(100)
+
 				f.complaintUsecase.EXPECT().CreateAuthrozied(gomock.Any(), int64(100), dtoComplaint.RequestCreateComplaint{
 					Type: "bug",
 					FeedBackInfo: dtoComplaint.FeedbackDTO{

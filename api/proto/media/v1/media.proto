@@ -9,7 +9,20 @@ service Media {
   rpc UpdateUserAvatar(RequestUpdateUserAvatar) returns (ResponseUpdateUserAvatar);
   rpc UploadChatAvatar(RequestUpdateChatAvatar) returns (ResponseUpdateChatAvatar);
   rpc UploadComplaintAttachment(RequestUpdateComplaintAttachment) returns (ResponseUpdateComplaintAttachment);
+  rpc UploadMessageAttachment(RequestUploadMessageAttachment) returns (ResponseUploadMessageAttachment);
+  rpc GetMessageAttachment(RequestGetMessageAttachment) returns (ResponseGetMessageAttachment);
+  rpc GetMessageVoiceMetadata(RequestGetMessageVoiceMetadata) returns (ResponseGetMessageVoiceMetadata);
+  rpc TranscribeVoice(RequestTranscribeVoice) returns (ResponseTranscribeVoice);
+  rpc ClassifyMessagePhoto(RequestClassifyMessagePhoto) returns (ResponseClassifyMessagePhoto);
   rpc DeleteUserAvatar(RequestDeleteUserAvatar) returns (ResponseDeleteUserAvatar);
+}
+
+enum MessageAttachmentKind {
+  MESSAGE_ATTACHMENT_KIND_UNSPECIFIED = 0;
+  MESSAGE_ATTACHMENT_KIND_PHOTO = 1;
+  MESSAGE_ATTACHMENT_KIND_VIDEO = 2;
+  MESSAGE_ATTACHMENT_KIND_FILE = 3;
+  MESSAGE_ATTACHMENT_KIND_VOICE = 4;
 }
 
 enum MediaErrorCode {
@@ -19,6 +32,8 @@ enum MediaErrorCode {
   MEDIA_ERROR_FILE_EMPTY       = 3;
   MEDIA_ERROR_INTERNAL         = 4;
   MEDIA_ERROR_INVALID_INPUT    = 5;
+  MEDIA_ERROR_VOICE_TOO_LONG   = 6;
+  MEDIA_ERROR_TRANSCRIPTION_FAILED = 7;
 }
 
 message File {
@@ -52,6 +67,61 @@ message RequestUpdateComplaintAttachment {
 
 message ResponseUpdateComplaintAttachment {
   string attachment_url = 1;
+}
+
+message RequestUploadMessageAttachment {
+  int64 user_id = 1;
+  MessageAttachmentKind kind = 2;
+  File file = 3;
+  optional string file_name = 4;
+}
+
+message ResponseUploadMessageAttachment {
+  string attachment_url = 1;
+  string mime_type = 2;
+  int64 file_size = 3;
+  optional string file_name = 4;
+  string object_key = 5;
+  int32 duration_ms = 6;
+  repeated uint32 waveform = 7;
+  bool is_capybara = 8;
+}
+
+message RequestClassifyMessagePhoto {
+  string object_key = 1;
+}
+
+message ResponseClassifyMessagePhoto {
+  bool is_capybara = 1;
+}
+
+message RequestGetMessageVoiceMetadata {
+  string object_key = 1;
+}
+
+message ResponseGetMessageVoiceMetadata {
+  int32 duration_ms = 1;
+  repeated uint32 waveform = 2;
+  string mime_type = 3;
+  int64 file_size = 4;
+}
+
+message RequestTranscribeVoice {
+  string object_key = 1;
+}
+
+message ResponseTranscribeVoice {
+  string transcript = 1;
+}
+
+message RequestGetMessageAttachment {
+  string object_key = 1;
+}
+
+message ResponseGetMessageAttachment {
+  bytes content = 1;
+  string content_type = 2;
+  int64 size = 3;
 }
 
 message RequestDeleteUserAvatar {

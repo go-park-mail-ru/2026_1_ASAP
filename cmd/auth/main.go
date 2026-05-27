@@ -8,6 +8,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/go-park-mail-ru/2026_1_ASAP/config"
 	authv1 "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/auth/v1"
@@ -19,10 +25,6 @@ import (
 	authUsecase "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/usecase/auth"
 	sessionUsecase "github.com/go-park-mail-ru/2026_1_ASAP/internal/auth/usecase/session"
 	"github.com/go-park-mail-ru/2026_1_ASAP/internal/metrics"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -67,8 +69,9 @@ func main() {
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(metrics.GRPCMetricsUnaryInterceptor("auth")))
 	authv1.RegisterAuthServer(grpcServer, authServer)
 	metricsServer := &http.Server{
-		Addr:    ":9101",
-		Handler: promhttp.Handler(),
+		Addr:              ":9101",
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)
