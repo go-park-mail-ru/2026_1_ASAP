@@ -253,13 +253,6 @@ func (h *GatewayProfileHandler) UpdateUserBio(w http.ResponseWriter, r *http.Req
 		})
 		return
 	}
-	if body.Bio == nil || strings.TrimSpace(*body.Bio) == "" {
-		response.Send(w, http.StatusBadRequest, dtoApi.ApiErrorResponse{
-			Status: dtoApi.Error,
-			Errors: []dtoApi.ApiError{{Code: dtoApi.EmptyBIO, Message: dtoApi.EmptyBIOMsg}},
-		})
-		return
-	}
 	bio := strings.TrimSpace(*body.Bio)
 	resp, err := h.ProfileService.UpdateProfileBio(ctx, &profilev1.RequestUpdateBio{
 		UserId: uid,

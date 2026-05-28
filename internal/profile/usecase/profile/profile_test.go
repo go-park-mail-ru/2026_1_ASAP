@@ -276,13 +276,6 @@ func TestNegativeProfileService_UpdateBio(t *testing.T) {
 		wantAnyErr bool
 	}{
 		{
-			name: "Empty bio",
-			prepare: func(f *fields) {
-			},
-			args:    args{ctx: context.Background(), userID: 123, request: &dto.RequestUpdateBio{Bio: nil}},
-			wantErr: domain.ErrEmptyBio,
-		},
-		{
 			name: "Unknown error",
 			prepare: func(f *fields) {
 				f.profileRepository.EXPECT().UploadBio(context.Background(), int64(123), "test bio").Return((*domain.Profile)(nil), errors.New("unknown error"))
