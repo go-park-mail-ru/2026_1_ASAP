@@ -127,9 +127,6 @@ func (p ProfileService) UpdateProfileBio(ctx context.Context, userID int64, requ
 	if request == nil {
 		return nil, errors.New("update profile bio nil request")
 	}
-	if request.Bio == nil {
-		return nil, profile3.ErrEmptyBio
-	}
 
 	profile, err := p.profileRepository.UploadBio(ctx, userID, *request.Bio)
 	if err != nil {
