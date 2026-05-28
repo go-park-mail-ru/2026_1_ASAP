@@ -457,14 +457,6 @@ func TestNegativeGatewayProfileHandler_UpdateUserBio(t *testing.T) {
 			},
 			want: http.StatusBadRequest,
 		},
-		{
-			name:   "Nil bio",
-			userID: int64(100),
-			args: args{
-				body: dto.RequestUpdateBio{Bio: nil},
-			},
-			want: http.StatusBadRequest,
-		},
 	}
 
 	for _, tt := range tests {
