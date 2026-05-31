@@ -1,0 +1,793 @@
+package chat
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"slices"
+	"time"
+
+	domain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/chat"
+	pdomain "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/domain/profile"
+	dto "github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/chat"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/chat/dto/media"
+	"github.com/go-park-mail-ru/2026_1_ASAP/pkg/present"
+)
+
+//go:generate mockgen -source=chat.go -destination=mock/chat_mock.go -package=mock
+type ChatRepositoryInterface interface {
+	GetAllChatsByUserID(ctx context.Context, id int64) ([]*domain.Chat, error)
+	GetChatMemberUnread(ctx context.Context, chatID, userID int64) (lastRead, unread int64, err error)
+	GetChatByID(ctx context.Context, chatID int64) (*domain.Chat, error)
+	CreateChat(ctx context.Context, newChat *domain.Chat) (*domain.Chat, error)
+	GetLastMessageOfChat(ctx context.Context, chatID int64) (*domain.Message, error)
+	GetLastMessagesOfChats(ctx context.Context, id int64) ([]*domain.Message, error)
+	GetChatMembers(ctx context.Context, chatID int64) ([]int64, error)
+	AddMember(ctx context.Context, chatID, userID int64, role string) error
+	IsMember(ctx context.Context, chatID, userID int64) (bool, error)
+	GetDialogBetweenUsers(ctx context.Context, user1ID, user2ID int64) (*domain.Chat, error)
+	DeleteChat(ctx context.Context, chatID int64) error
+	GetMemberRole(ctx context.Context, userID, chatID int64) (string, error)
+	UploadAvatarUrl(ctx context.Context, chatID int64, avatarURL string) (*domain.Chat, error)
+	UpdateTitle(ctx context.Context, chatID int64, title string) (*domain.Chat, error)
+	DeleteMember(ctx context.Context, chatID, userID int64) error
+	UpdateDescription(ctx context.Context, chatID int64, description string) (*domain.Chat, error)
+}
+
+type ProfileServiceInterface interface {
+	GetUserByID(ctx context.Context, id int64) (*pdomain.Profile, error)
+}
+
+type MediaRepositoryInterface interface {
+	UploadChatAvatar(ctx context.Context, chatID int64, input *media.FileInput) (string, error)
+}
+
+type SubscriptionChecker interface {
+	IsActive(ctx context.Context, userID int64) (bool, error)
+}
+
+type ChatRealtimeNotifier interface {
+	NotifyChatNew(ctx context.Context, viewerUserID int64, chat *dto.ChatInformationDTO)
+	NotifyChatDeleted(ctx context.Context, formerMemberUserIDs []int64, chatID int64)
+	NotifyChatAvatarUpdated(ctx context.Context, memberUserIDs []int64, chatID int64, avatarURL string)
+	NotifyChatTitleUpdated(ctx context.Context, memberUserIDs []int64, chatID int64, title string)
+	NotifyChatDescriptionUpdated(ctx context.Context, memberUserIDs []int64, chatID int64, description *string)
+	NotifyChatMembersUpdated(ctx context.Context, memberUserIDs []int64, chatID int64, changeType string, updatedMemberIDs []int64, name string)
+}
+
+type ChatService struct {
+	chatRepo     ChatRepositoryInterface
+	userSvc      ProfileServiceInterface
+	mediaRepo    MediaRepositoryInterface
+	notifier     ChatRealtimeNotifier
+	subscription SubscriptionChecker
+}
+
+func NewChatService(
+	chatRepo ChatRepositoryInterface,
+	userSvc ProfileServiceInterface,
+	mediaRepo MediaRepositoryInterface,
+	notifier ChatRealtimeNotifier,
+	subscription SubscriptionChecker,
+) *ChatService {
+	return &ChatService{
+		chatRepo:     chatRepo,
+		userSvc:      userSvc,
+		mediaRepo:    mediaRepo,
+		notifier:     notifier,
+		subscription: subscription,
+	}
+}
+
+func (s *ChatService) formatTextForViewer(ctx context.Context, viewerID int64, raw string) (string, error) {
+	active, err := s.isSubscriptionActive(ctx, viewerID)
+	if err != nil {
+		return "", err
+	}
+	return present.TextForViewer(raw, active), nil
+}
+
+func (s *ChatService) formatPlainTextForViewer(ctx context.Context, viewerID int64, raw string) (string, error) {
+	active, err := s.isSubscriptionActive(ctx, viewerID)
+	if err != nil {
+		return "", err
+	}
+	return present.PlainTextForViewer(raw, active), nil
+}
+
+func (s *ChatService) formatPlainTextPtrForViewer(ctx context.Context, viewerID int64, raw *string) (*string, error) {
+	active, err := s.isSubscriptionActive(ctx, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	return present.PlainTextPtrForViewer(raw, active), nil
+}
+
+func (s *ChatService) isSubscriptionActive(ctx context.Context, userID int64) (bool, error) {
+	if s.subscription == nil {
+		return false, nil
+	}
+	return s.subscription.IsActive(ctx, userID)
+}
+
+func (s *ChatService) profileDisplayName(ctx context.Context, userID int64) string {
+	u, err := s.userSvc.GetUserByID(ctx, userID)
+	if err != nil || u == nil {
+		return ""
+	}
+	if u.LastName != nil {
+		return u.FirstName + " " + *u.LastName
+	}
+	return u.FirstName
+}
+
+func (s *ChatService) getDialogName(ctx context.Context, chatID int64, userID int64) (string, error) {
+	members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get members: %w", err)
+	}
+
+	var friendID int64
+	for _, m := range members {
+		if m != userID {
+			friendID = m
+			break
+		}
+	}
+	if friendID == 0 {
+		return "", errors.New("no other user found in dialog")
+	}
+
+	user, err := s.userSvc.GetUserByID(ctx, friendID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get user: %w", err)
+	}
+
+	if user.LastName != nil {
+		return user.FirstName + " " + *user.LastName, nil
+	}
+	return user.FirstName, nil
+}
+
+func (s *ChatService) getDialogAvatar(ctx context.Context, chatID int64, userID int64) (*string, error) {
+	members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get members: %w", err)
+	}
+
+	var friendID int64
+	for _, m := range members {
+		if m != userID {
+			friendID = m
+			break
+		}
+	}
+	if friendID == 0 {
+		return nil, errors.New("no other user found in dialog")
+	}
+
+	user, err := s.userSvc.GetUserByID(ctx, friendID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+	return user.Avatar, nil
+}
+
+func (s *ChatService) fillReadState(ctx context.Context, chatID, userID int64, out *dto.ChatInformationDTO) {
+	lastRead, unread, err := s.chatRepo.GetChatMemberUnread(ctx, chatID, userID)
+	if err != nil {
+		return
+	}
+	out.LastReadMessageID = lastRead
+	out.UnreadCount = unread
+}
+
+func (s *ChatService) GetAllChats(ctx context.Context, id int64) ([]dto.ChatInformationDTO, error) {
+	chats, err := s.chatRepo.GetAllChatsByUserID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chats: %w", err)
+	}
+
+	lastMessages, err := s.chatRepo.GetLastMessagesOfChats(ctx, id)
+	if err != nil {
+		lastMessages = []*domain.Message{}
+	}
+
+	lastMsgMap := make(map[int64]*domain.Message)
+	for _, msg := range lastMessages {
+		lastMsgMap[msg.ChatId] = msg
+	}
+
+	result := make([]dto.ChatInformationDTO, 0, len(chats))
+	for _, chat := range chats {
+		item, err := s.chatInformationForViewer(ctx, id, chat, lastMsgMap[chat.Id])
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, *item)
+	}
+
+	return result, nil
+}
+
+func (s *ChatService) chatInformationForViewer(
+	ctx context.Context,
+	viewerID int64,
+	chat *domain.Chat,
+	lastMsg *domain.Message,
+) (*dto.ChatInformationDTO, error) {
+	var messageDTO dto.MessageDTO
+	if lastMsg != nil {
+		text, err := s.formatTextForViewer(ctx, viewerID, lastMsg.Content)
+		if err != nil {
+			return nil, fmt.Errorf("format last message: %w", err)
+		}
+		messageDTO = dto.MessageDTO{
+			SenderId:  lastMsg.SenderId,
+			Text:      text,
+			CreatedAt: lastMsg.CreatedAt,
+		}
+	}
+
+	displayTitle := chat.Title
+	displayAvatar := chat.AvatarUrl
+
+	if chat.Type == domain.ChatTypeDialog {
+		if name, err := s.getDialogName(ctx, chat.Id, viewerID); err == nil && name != "" {
+			displayTitle = name
+		}
+		if avatar, err := s.getDialogAvatar(ctx, chat.Id, viewerID); err == nil {
+			displayAvatar = avatar
+		}
+	}
+
+	title, err := s.formatPlainTextForViewer(ctx, viewerID, displayTitle)
+	if err != nil {
+		return nil, fmt.Errorf("format chat title: %w", err)
+	}
+	description, err := s.formatPlainTextPtrForViewer(ctx, viewerID, chat.Description)
+	if err != nil {
+		return nil, fmt.Errorf("format chat description: %w", err)
+	}
+
+	return &dto.ChatInformationDTO{
+		ID:                chat.Id,
+		Title:             title,
+		ChatType:          dto.ChatType(chat.Type),
+		LastMessage:       messageDTO,
+		Avatar:            displayAvatar,
+		OwnerID:           chat.OwnerId,
+		Description:       description,
+		UnreadCount:       chat.UnreadCount,
+		LastReadMessageID: chat.LastReadMessageID,
+	}, nil
+}
+
+func (s *ChatService) CreateChat(ctx context.Context, chatDTO dto.ChatCreate, ownerID int64) (*dto.ChatInformationDTO, error) {
+	if !slices.Contains(chatDTO.MembersID, ownerID) {
+		chatDTO.MembersID = append(chatDTO.MembersID, ownerID)
+	}
+
+	if chatDTO.Type == dto.ChatTypeDialog && len(chatDTO.MembersID) != 2 {
+		return nil, domain.ErrDialogMustHave2Users
+	}
+
+	if chatDTO.Type == dto.ChatTypeDialog {
+		u1, u2 := chatDTO.MembersID[0], chatDTO.MembersID[1]
+		if u1 == u2 {
+			return nil, domain.ErrCantCreateDialogWithYourself
+		}
+		existing, err := s.chatRepo.GetDialogBetweenUsers(ctx, u1, u2)
+		if err != nil && !errors.Is(err, domain.ErrChatNotFound) {
+			return nil, fmt.Errorf("check dialog: %w", err)
+		}
+		if existing != nil {
+			return nil, domain.ErrDialogAlreadyExists
+		}
+	}
+
+	title := chatDTO.Title
+	if chatDTO.Type == dto.ChatTypeDialog {
+		title = ""
+	}
+
+	for _, memberID := range chatDTO.MembersID {
+		if _, err := s.userSvc.GetUserByID(ctx, memberID); err != nil {
+			if errors.Is(err, pdomain.ErrNotFound) {
+				return nil, domain.ErrUserNotFound
+			}
+			return nil, fmt.Errorf("get user %d: %w", memberID, err)
+		}
+	}
+
+	chat := &domain.Chat{
+		Type:      domain.ChatType(chatDTO.Type),
+		Title:     title,
+		OwnerId:   ownerID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	created, err := s.chatRepo.CreateChat(ctx, chat)
+	if err != nil {
+		return nil, fmt.Errorf("create chat: %w", err)
+	}
+
+	for _, memberID := range chatDTO.MembersID {
+		role := "member"
+		if memberID == ownerID {
+			role = "owner"
+		}
+		if addErr := s.chatRepo.AddMember(ctx, created.Id, memberID, role); addErr != nil {
+			return nil, fmt.Errorf("add member %d: %w", memberID, addErr)
+		}
+	}
+
+	out, err := s.chatInformationForViewer(ctx, ownerID, created, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, created.Id)
+		if err == nil {
+			for _, uid := range members {
+				info, err := s.GetChatByID(ctx, created.Id, uid)
+				if err != nil {
+					continue
+				}
+				s.notifier.NotifyChatNew(ctx, uid, info)
+			}
+		}
+	}
+
+	s.fillReadState(ctx, created.Id, ownerID, out)
+	return out, nil
+}
+
+func (s *ChatService) GetChatByID(ctx context.Context, chatID, userID int64) (*dto.ChatInformationDTO, error) {
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember && chat.Type != domain.ChatTypeChannel {
+		return nil, domain.ErrNotMember
+	}
+
+	lastMsg, err := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
+	var lastMsgPtr *domain.Message
+	if err == nil && lastMsg != nil {
+		lastMsgPtr = lastMsg
+	}
+
+	out, err := s.chatInformationForViewer(ctx, userID, chat, lastMsgPtr)
+	if err != nil {
+		return nil, err
+	}
+	s.fillReadState(ctx, chatID, userID, out)
+	return out, nil
+}
+
+func (s *ChatService) DeleteChat(ctx context.Context, userID, chatID int64) error {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember {
+		return domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return err
+	}
+
+	if chat.Type != domain.ChatTypeDialog {
+		role, err := s.chatRepo.GetMemberRole(ctx, userID, chatID)
+		if err != nil {
+			return fmt.Errorf("get role: %w", err)
+		}
+		if role != "owner" {
+			return domain.ErrOnlyOwnerCanDeleteChat
+		}
+	}
+
+	var formerMembers []int64
+	if s.notifier != nil {
+		var err error
+		formerMembers, err = s.chatRepo.GetChatMembers(ctx, chatID)
+		if err != nil {
+			return fmt.Errorf("get chat members: %w", err)
+		}
+	}
+
+	if err := s.chatRepo.DeleteChat(ctx, chatID); err != nil {
+		return err
+	}
+
+	if s.notifier != nil && len(formerMembers) > 0 {
+		s.notifier.NotifyChatDeleted(ctx, formerMembers, chatID)
+	}
+
+	return nil
+}
+
+func (s *ChatService) UpdateChatAvatar(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateAvatar) (*dto.ChatInformationDTO, error) {
+	if request == nil {
+		return nil, errors.New("nil request")
+	}
+	if err := checkAvatar(request.File); err != nil {
+		return nil, err
+	}
+
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember {
+		return nil, domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	if chat.Type == domain.ChatTypeChannel {
+		if chat.OwnerId != userID {
+			return nil, domain.ErrOnlyOwnerCanChangeAvatar
+		}
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		return nil, domain.ErrDialogCannotHaveCustomAvatar
+	}
+
+	avatarURL, err := s.mediaRepo.UploadChatAvatar(ctx, chatID, request.File)
+	if err != nil {
+		return nil, fmt.Errorf("upload avatar: %w", err)
+	}
+
+	result, err := s.chatRepo.UploadAvatarUrl(ctx, chatID, avatarURL)
+	if err != nil {
+		return nil, fmt.Errorf("save avatar url: %w", err)
+	}
+
+	lastMsg, _ := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
+	out, err := s.chatInformationForViewer(ctx, userID, result, lastMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil {
+			var url string
+			if result.AvatarUrl != nil {
+				url = *result.AvatarUrl
+			}
+			s.notifier.NotifyChatAvatarUpdated(ctx, members, chatID, url)
+		}
+	}
+
+	s.fillReadState(ctx, chatID, userID, out)
+	return out, nil
+}
+
+func (s *ChatService) UpdateChatTitle(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateTitle) (*dto.ChatInformationDTO, error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember {
+		return nil, domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	if chat.Type == domain.ChatTypeChannel {
+		if chat.OwnerId != userID {
+			return nil, domain.ErrOnlyOwnerCanChangeTitle
+		}
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		return nil, domain.ErrDialogCannotHaveCustomTitle
+	}
+
+	result, err := s.chatRepo.UpdateTitle(ctx, chatID, request.Title)
+	if err != nil {
+		return nil, err
+	}
+
+	lastMsg, _ := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
+	out, err := s.chatInformationForViewer(ctx, userID, result, lastMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil {
+			s.notifier.NotifyChatTitleUpdated(ctx, members, chatID, out.Title)
+		}
+	}
+
+	s.fillReadState(ctx, chatID, userID, out)
+	return out, nil
+}
+
+func (s *ChatService) UpdateChatDescription(ctx context.Context, userID, chatID int64, request *dto.RequestUpdateDescription) (*dto.ChatInformationDTO, error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember {
+		return nil, domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	if chat.Type == domain.ChatTypeChannel {
+		if chat.OwnerId != userID {
+			return nil, domain.ErrOnlyOwnerCanChangeDescription
+		}
+	}
+
+	if chat.Type == domain.ChatTypeDialog {
+		return nil, domain.ErrDialogCannotHaveCustomDescription
+	}
+
+	result, err := s.chatRepo.UpdateDescription(ctx, chatID, request.Description)
+	if err != nil {
+		if errors.Is(err, domain.ErrChatNotFound) {
+			return nil, domain.ErrChatNotFound
+		}
+		return nil, fmt.Errorf("failed to update description: %w", err)
+	}
+
+	lastMsg, _ := s.chatRepo.GetLastMessageOfChat(ctx, chatID)
+	out, err := s.chatInformationForViewer(ctx, userID, result, lastMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil {
+			s.notifier.NotifyChatDescriptionUpdated(ctx, members, chatID, out.Description)
+		}
+	}
+
+	s.fillReadState(ctx, chatID, userID, out)
+	return out, nil
+}
+
+func (s *ChatService) AddMembersToChat(ctx context.Context, userID, chatID int64, request *dto.RequestAddMember) error {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember {
+		return domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return err
+	}
+	if chat.Type == domain.ChatTypeDialog {
+		return domain.ErrCantAddMemberToDialog
+	}
+	if chat.OwnerId != userID {
+		return domain.ErrOnlyOwnerCanAddPeople
+	}
+
+	for _, memberID := range request.MembersId {
+		already, err := s.chatRepo.IsMember(ctx, chatID, memberID)
+		if err != nil {
+			return fmt.Errorf("check member %d: %w", memberID, err)
+		}
+		if already {
+			return domain.ErrMemberAlreadyInChat
+		}
+		if err := s.chatRepo.AddMember(ctx, chatID, memberID, "member"); err != nil {
+			return fmt.Errorf("add member %d: %w", memberID, err)
+		}
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil && len(request.MembersId) > 0 {
+			name := ""
+			if len(request.MembersId) == 1 {
+				name = s.profileDisplayName(ctx, request.MembersId[0])
+			}
+			added := append([]int64(nil), request.MembersId...)
+			s.notifier.NotifyChatMembersUpdated(ctx, members, chatID, "added", added, name)
+		}
+	}
+
+	return nil
+}
+
+func (s *ChatService) DeleteMemberFromChat(ctx context.Context, userID, chatID int64, request *dto.RequestDeleteMember) error {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember {
+		return domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return err
+	}
+	if chat.Type == domain.ChatTypeDialog {
+		return domain.ErrCantDeleteMemberFromDialog
+	}
+	if chat.OwnerId != userID {
+		return domain.ErrOnlyOwnerCanDeletePeople
+	}
+	if request.MemberId == chat.OwnerId {
+		return domain.ErrCantDeleteOwnerOfChat
+	}
+
+	exists, err := s.chatRepo.IsMember(ctx, chatID, request.MemberId)
+	if err != nil {
+		return fmt.Errorf("check target member: %w", err)
+	}
+	if !exists {
+		return domain.ErrUserNotMember
+	}
+
+	var formerMembers []int64
+	if s.notifier != nil {
+		var err error
+		formerMembers, err = s.chatRepo.GetChatMembers(ctx, chatID)
+		if err != nil {
+			return fmt.Errorf("get chat members: %w", err)
+		}
+	}
+
+	if err := s.chatRepo.DeleteMember(ctx, chatID, request.MemberId); err != nil {
+		return err
+	}
+
+	if s.notifier != nil && len(formerMembers) > 0 {
+		name := s.profileDisplayName(ctx, request.MemberId)
+		s.notifier.NotifyChatMembersUpdated(ctx, formerMembers, chatID, "deleted", []int64{request.MemberId}, name)
+	}
+
+	return nil
+}
+
+func (s *ChatService) GetAllChatMembers(ctx context.Context, userID, chatID int64) (*dto.ResponseGetChatMembers, error) {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember {
+		return nil, domain.ErrNotMember
+	}
+
+	members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+	if err != nil {
+		return nil, fmt.Errorf("get members: %w", err)
+	}
+	return &dto.ResponseGetChatMembers{MembersId: members}, nil
+}
+
+func (s *ChatService) QuitChat(ctx context.Context, userID, chatID int64) error {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("check membership: %w", err)
+	}
+	if !isMember {
+		return domain.ErrNotMember
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return err
+	}
+	if chat.Type == domain.ChatTypeDialog {
+		return domain.ErrCantQuitDialog
+	}
+	if chat.OwnerId == userID {
+		return domain.ErrOwnerCantQuitGroup
+	}
+
+	var formerMembers []int64
+	if s.notifier != nil {
+		var err error
+		formerMembers, err = s.chatRepo.GetChatMembers(ctx, chatID)
+		if err != nil {
+			return fmt.Errorf("get chat members: %w", err)
+		}
+	}
+
+	if err := s.chatRepo.DeleteMember(ctx, chatID, userID); err != nil {
+		return err
+	}
+
+	if s.notifier != nil && len(formerMembers) > 0 {
+		name := s.profileDisplayName(ctx, userID)
+		s.notifier.NotifyChatMembersUpdated(ctx, formerMembers, chatID, "deleted", []int64{userID}, name)
+	}
+
+	return nil
+}
+
+func (s *ChatService) JoinChannel(ctx context.Context, userID, chatID int64) error {
+	isMember, err := s.chatRepo.IsMember(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("check membership: %w", err)
+	}
+	if isMember {
+		return nil
+	}
+
+	chat, err := s.chatRepo.GetChatByID(ctx, chatID)
+	if err != nil {
+		return err
+	}
+	if chat.Type != domain.ChatTypeChannel {
+		return domain.ErrCanJoinOnlyChannel
+	}
+
+	err = s.chatRepo.AddMember(ctx, chatID, userID, "member")
+	if err != nil {
+		return fmt.Errorf("failed to join chat: %w", err)
+	}
+
+	if s.notifier != nil {
+		members, err := s.chatRepo.GetChatMembers(ctx, chatID)
+		if err == nil {
+			name := s.profileDisplayName(ctx, userID)
+			s.notifier.NotifyChatMembersUpdated(ctx, members, chatID, "added", []int64{userID}, name)
+		}
+	}
+
+	return nil
+}
+
+func (s *ChatService) GetChatMemberIDs(ctx context.Context, chatID int64) ([]int64, error) {
+	return s.chatRepo.GetChatMembers(ctx, chatID)
+}
+
+var allowedAvatarTypes = map[string]bool{
+	"image/jpeg": true,
+	"image/jpg":  true,
+	"image/png":  true,
+	"image/webp": true,
+	"image/gif":  true,
+}
+
+func checkAvatar(input *media.FileInput) error {
+	if input == nil || input.Body == nil {
+		return media.ErrEmptyFile
+	}
+	if input.Size <= 0 {
+		return media.ErrEmptyFile
+	}
+	if input.Size > media.MaxAvatarBytes {
+		return media.ErrFileTooLarge
+	}
+	if !allowedAvatarTypes[input.ContentType] {
+		return media.ErrInvalidFileType
+	}
+	return nil
+}

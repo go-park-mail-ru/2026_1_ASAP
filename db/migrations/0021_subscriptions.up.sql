@@ -1,0 +1,6 @@
+CREATE TABLE subscriptions (
+    user_id BIGINT PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    active BOOLEAN NOT NULL DEFAULT false,
+    start_at TIMESTAMPTZ NOT NULL,
+    end_at TIMESTAMPTZ NOT NULL
+);

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-park-mail-ru/2026_1_ASAP/internal/dto/api"
+	"github.com/go-park-mail-ru/2026_1_ASAP/internal/gateway/dto/api"
 )
 
 func Send(w http.ResponseWriter, status int, response interface{}) {

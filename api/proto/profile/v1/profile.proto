@@ -1,0 +1,155 @@
+syntax = "proto3";
+
+package profile.v1;
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/profile/v1;profilev1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service Profile {
+    rpc CreateProfile(RequestCreateProfile) returns (google.protobuf.Empty);
+    rpc GetProfile(RequestGetProfile) returns (ResponseGetProfile);
+    rpc UpdateProfileAvatar(RequestUpdateAvatar) returns (ResponseGetProfile);
+    rpc UpdateProfileAvatarURL(RequestUpdateAvatarURL) returns (ResponseGetProfile);
+    rpc UpdateProfileBio(RequestUpdateBio) returns (ResponseGetProfile);
+    rpc UpdateProfileBirthDate(RequestUpdateBirthDate) returns (ResponseGetProfile);
+    rpc UpdateProfileName(RequestUpdateName) returns (ResponseGetProfile);
+    rpc SearchIdByLogin(RequestSearchIdByLogin) returns (ResponseSearchIdByLogin);
+    rpc ListContacts(RequestListContacts) returns (ResponseListContacts);
+    rpc AddContact(RequestAddContact) returns (ResponseAddContact);
+    rpc DeleteContact(RequestDeleteContact) returns (ResponseDeleteContact);
+    rpc HasContact(RequestHasContact) returns (ResponseHasContact);
+    rpc GetContact(RequestGetContact) returns (ResponseGetContact);
+    rpc UpdateLastSeen(RequestUpdateLastSeen) returns (google.protobuf.Empty);
+}
+
+enum ProfileErrorCode {
+    PROFILE_ERROR_UNSPECIFIED          = 0;
+    PROFILE_ERROR_INVALID_INPUT        = 1;
+    PROFILE_ERROR_NOT_FOUND            = 2;
+    PROFILE_ERROR_INTERNAL             = 3;
+    PROFILE_ERROR_AVATAR_TOO_LARGE     = 4;
+    PROFILE_ERROR_AVATAR_INVALID_TYPE  = 5;
+    PROFILE_ERROR_AVATAR_EMPTY         = 6;
+    PROFILE_ERROR_BIRTH_DATE_INVALID   = 7;
+    PROFILE_ERROR_BIRTH_DATE_FORMAT    = 8;
+    PROFILE_ERROR_FIRST_NAME_EMPTY     = 9;
+    PROFILE_ERROR_CONTACT_SELF         = 10;
+    PROFILE_ERROR_CONTACT_ALREADY_EXISTS = 11;
+    PROFILE_ERROR_CONTACT_NOT_FOUND    = 12;
+}
+
+message RequestCreateProfile {
+    int64 profile_id = 1;
+    string first_name = 2;
+}
+
+message RequestUpdateName {
+    int64 user_id = 1;
+    string first_name = 2;
+    optional string second_name = 3;
+}
+
+message RequestUpdateBirthDate {
+    int64 user_id = 1;
+    optional string birth_date = 2;
+}
+
+message RequestUpdateBio {
+    int64 user_id = 1;
+    optional string bio = 2;
+}
+
+message RequestUpdateAvatar {
+    int64 user_id = 1;
+    bytes content = 2;
+    string type = 3;
+}
+
+message RequestUpdateAvatarURL {
+    int64 user_id = 1;
+    string avatar_url = 2;
+}
+
+message RequestGetProfile {
+    int64 user_id = 1;
+}
+
+message RequestUpdateLastSeen {
+    int64 user_id = 1;
+}
+
+message RequestSearchIdByLogin {
+    string login = 1;
+}
+
+message ResponseSearchIdByLogin {
+    int64 user_id = 1;
+    string login = 2;
+}
+
+message RequestListContacts {
+    int64 user_id = 1;
+}
+
+message ContactItem {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+    string first_name = 3;
+    optional string last_name = 4;
+    optional string contact_avatar_url = 5;
+    google.protobuf.Timestamp created_at = 6;
+    bool is_online = 7;
+}
+
+message ResponseListContacts {
+    repeated ContactItem contacts = 1;
+}
+
+message RequestAddContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+    string first_name = 3;
+    optional string last_name = 4;
+}
+
+message ResponseAddContact {
+    ContactItem contact = 1;
+}
+
+message RequestDeleteContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+}
+
+message ResponseDeleteContact {}
+
+message RequestHasContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+}
+
+message ResponseHasContact {
+    bool exists = 1;
+}
+
+message RequestGetContact {
+    int64 user_id = 1;
+    int64 contact_user_id = 2;
+}
+
+message ResponseGetContact {
+    ContactItem contact = 1;
+}
+
+message ResponseGetProfile {
+    int64 user_id = 1;
+    string first_name = 2;
+    optional string last_name = 3;
+    optional google.protobuf.Timestamp last_seen = 4;
+    string bio = 5;
+    string birth_date = 6;
+    string avatar = 7;
+    bool is_online = 8;
+}

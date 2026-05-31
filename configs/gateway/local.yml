@@ -1,0 +1,35 @@
+server:
+  host: 0.0.0.0
+  port: "8088"
+
+public_base_url: http://localhost:8088
+
+media:
+  grpc_addr: media:8003
+
+session_cookie:
+  secure: false
+  http_only: true
+  same_site: Lax
+
+auth:
+  grpc_addr: auth:8001
+
+profile:
+  grpc_addr: profile:8002
+
+chat:
+  ws_addr: chat:8005
+  grpc_addr: chat:8004
+
+complaint:
+  grpc_addr: complaint:8006
+
+search:
+  grpc_addr: search:8010
+
+subscription:
+  grpc_addr: subscription:8011
+
+payment:
+  grpc_addr: payment:8012

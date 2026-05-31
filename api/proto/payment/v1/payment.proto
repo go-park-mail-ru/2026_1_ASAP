@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/go-park-mail-ru/2026_1_ASAP/gen/go/payment/v1;paymentv1";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service Payment {
+  rpc CreatePayment(RequestCreatePayment) returns (ResponseCreatePayment);
+  rpc GetPayment(RequestGetPayment) returns (ResponseGetPayment);
+ 
+  rpc SyncOpenPayment(RequestSyncOpenPayment) returns (ResponseGetPayment);
+  rpc ProcessYooKassaWebhook(ProcessYooKassaWebhookRequest) returns (google.protobuf.Empty);
+}
+
+message PaymentDetails {
+  int64 id = 1;
+  string payment_id = 2;
+  int64 user_id = 3;
+  string status = 4;
+  int32 amount = 5;
+  int32 subscription_days = 6;
+  optional string payment_url = 7;
+  optional string message = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message RequestCreatePayment {
+  int64 user_id = 1;
+  string payment_id = 2;
+  string status = 3;
+  int32 amount = 4;
+  int32 subscription_days = 5;
+}
+
+message ResponseCreatePayment {
+  PaymentDetails payment = 1;
+}
+
+message RequestGetPayment {
+  int64 id = 1;
+}
+
+message RequestSyncOpenPayment {
+  int64 user_id = 1;
+}
+
+message ResponseGetPayment {
+  PaymentDetails payment = 1;
+}
+
+message ProcessYooKassaWebhookRequest {
+  bytes raw_body = 1;
+}

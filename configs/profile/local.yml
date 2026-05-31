@@ -1,0 +1,23 @@
+# Profile gRPC (когда вынесете в cmd/profile). Секреты: POSTGRES_PASSWORD, S3_* — через .env.
+server:
+  host: 0.0.0.0
+  port: "8002"
+
+postgres:
+  host: db
+  port: "5432"
+  user: postgres
+  db: asap
+
+
+media:
+  grpc_addr: "media:8003"
+
+redis:
+  host: redis
+  port: "6379"
+  database: 0
+
+app:
+  shutdown_seconds: 10
+  log_level: info
