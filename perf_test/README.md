@@ -225,6 +225,7 @@ COUNT=100 RATE=20 TIMEOUT=60s perf_test/scripts/run_create.sh
 
 Результат для 100 созданий:
 
+```text
 Requests      [total, rate, throughput]         100, 20.20, 20.15
 Duration      [total, attack, wait]             4.963s, 4.95s, 13.311ms
 Latencies     [min, mean, 50, 90, 95, 99, max]  12.749ms, 21.882ms, 14.853ms, 20.141ms, 66.063ms, 185.787ms, 191.254ms
@@ -232,9 +233,11 @@ Bytes In      [total, mean]                     24492, 244.92
 Bytes Out     [total, mean]                     6000, 60.00
 Success       [ratio]                           100.00%
 Status Codes  [code:count]                      200:100  
+```
 
 Также выполнялись промежуточные создания большего числа чатов. Например, создание 360 чатов при `RATE=20` завершилось успешно:
 
+```text
 Requests      [total, rate, throughput]         360, 20.06, 20.04
 Duration      [total, attack, wait]             17.963s, 17.95s, 12.529ms
 Latencies     [min, mean, 50, 90, 95, 99, max]  10.181ms, 13.34ms, 12.964ms, 15.26ms, 16.887ms, 21.879ms, 25.866ms
@@ -242,9 +245,11 @@ Bytes In      [total, mean]                     88452, 245.70
 Bytes Out     [total, mean]                     21600, 60.00
 Success       [ratio]                           100.00%
 Status Codes  [code:count]                      200:360 
+```
 
 И наконец для 460 чатов:
 
+```text
 ubuntu@2026-1-asap:~/pulseapp/backend/2026_1_ASAP$ COUNT=450 RATE=20 TIMEOUT=60s perf_test/scripts/run_create.sh
 Requests      [total, rate, throughput]         460, 20.04, 20.03
 Duration      [total, attack, wait]             22.965s, 22.95s, 14.578ms
@@ -253,6 +258,7 @@ Bytes In      [total, mean]                     113052, 245.77
 Bytes Out     [total, mean]                     27600, 60.00
 Success       [ratio]                           100.00%
 Status Codes  [code:count]                      200:460  
+```
 
 Вывод по созданию: endpoint `POST /api/v1/chats/` стабильно обрабатывает умеренную нагрузку на выделенной VM. Проблемы начались не на создании, а на чтении полного списка чатов.
 
@@ -274,6 +280,7 @@ GET /api/v1/chats/
 
 для 100 чатов:
 
+```text
 ubuntu@2026-1-asap:~/pulseapp/backend/2026_1_ASAP$ RATE=1 DURATION=30s TIMEOUT=120s perf_test/scripts/run_read.sh
 Requests      [total, rate, throughput]         30, 1.03, 1.03
 Duration      [total, attack, wait]             29.075s, 29s, 74.977ms
@@ -282,9 +289,11 @@ Bytes In      [total, mean]                     654630, 21821.00
 Bytes Out     [total, mean]                     0, 0.00
 Success       [ratio]                           100.00%
 Status Codes  [code:count]                      200:30  
+```
 
 Для 200 чатов:
 
+```text
 ubuntu@2026-1-asap:~/pulseapp/backend/2026_1_ASAP$ RATE=1 DURATION=30s TIMEOUT=120s perf_test/scripts/run_read.sh
 Requests      [total, rate, throughput]         30, 1.03, 1.03
 Duration      [total, attack, wait]             29.128s, 29s, 127.476ms
@@ -293,9 +302,11 @@ Bytes In      [total, mean]                     1311630, 43721.00
 Bytes Out     [total, mean]                     0, 0.00
 Success       [ratio]                           100.00%
 Status Codes  [code:count]                      200:30  
+```
 
-Для 350 чатов:
+Для 360 чатов:
 
+```text
 ubuntu@2026-1-asap:~/pulseapp/backend/2026_1_ASAP$ RATE=1 DURATION=30s TIMEOUT=120s perf_test/scripts/run_read.sh
 Requests      [total, rate, throughput]         30, 1.03, 1.03
 Duration      [total, attack, wait]             29.241s, 29s, 241.119ms
@@ -304,9 +315,11 @@ Bytes In      [total, mean]                     2362830, 78761.00
 Bytes Out     [total, mean]                     0, 0.00
 Success       [ratio]                           100.00%
 Status Codes  [code:count]                      200:30  
+```
 
 Для 460 чатов:
 
+```text
 ubuntu@2026-1-asap:~/pulseapp/backend/2026_1_ASAP$ RATE=1 DURATION=30s TIMEOUT=120s perf_test/scripts/run_read.sh
 Requests      [total, rate, throughput]         30, 1.03, 1.02
 Duration      [total, attack, wait]             29.311s, 29.001s, 309.993ms
@@ -315,6 +328,7 @@ Bytes In      [total, mean]                     3019830, 100661.00
 Bytes Out     [total, mean]                     0, 0.00
 Success       [ratio]                           100.00%
 Status Codes  [code:count]                      200:30  
+```
 
 Дополнительный эксперимент на 10000 чатах:
 
