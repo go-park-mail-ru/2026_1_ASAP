@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Generate vegeta JSON targets for chat performance tests."""
 
 import argparse
 import base64
